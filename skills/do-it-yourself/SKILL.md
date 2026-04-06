@@ -19,7 +19,7 @@ description: Use when an approved spec and written implementation plan exist, an
 ## Core Rules
 
 - Read the full plan once before giving guidance
-- Track progress against the plan with a todo list
+- Track plan progress with a todo list, but keep the written plan as the source of truth for step order
 - Present only the current step unless the user asks for more
 - Keep explanations concise by default
 - The human is the default implementer
@@ -28,7 +28,7 @@ description: Use when an approved spec and written implementation plan exist, an
 
 ## Execution Loop
 
-1. Read the plan and find the current unchecked step.
+1. Read the plan and find the current unchecked step. Follow the plan's step order; use the todo list only to mirror progress.
 2. Tell the user only that next step.
 3. Explain briefly why it comes now.
 4. Mention any relevant watch-outs.
@@ -64,7 +64,7 @@ description: Use when an approved spec and written implementation plan exist, an
 Treat these as explicit permission to make a targeted code change:
 
 - The user directly asks you to make the change
-- The user leaves a targeted instruction comment such as `// TODO: fill the function`
+- The user points to a specific targeted instruction comment in the current session, or otherwise makes that instruction explicit now, such as `// TODO: fill the function`
 
 When that happens, keep the edit narrow. Do not expand it into autonomous implementation of the whole task.
 
@@ -106,7 +106,7 @@ If verification fails, stay on the current step and help diagnose the problem.
 
 | Situation | What to do |
 |-----------|------------|
-| Plan just loaded | Read it once, build todo list, identify first unchecked step |
+| Plan just loaded | Read it once, build todo list, identify first unchecked step from the plan |
 | User asks "what now?" | Give the next step only |
 | User seems stuck | Explain the current step, fetch docs, suggest the smallest move |
 | User asks for an edit | Make the smallest explicit change only |
