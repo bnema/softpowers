@@ -19,24 +19,25 @@ description: Use when an approved spec and written implementation plan exist, an
 ## Core Rules
 
 - Read the full plan once before giving guidance
-- Track plan progress with a todo list, but keep the written plan as the source of truth for step order
+- Track plan progress with TodoWrite, but keep the written plan as the source of truth for step order
 - Present only the current step unless the user asks for more
 - Keep explanations concise by default
 - The human is the default implementer
 - Do not write implementation code unless the user explicitly asks
-- You may offer to handle low-value mechanical work such as setup, generators, dependency installation, or running verification commands
+- You may proactively offer help, especially for read-only research, review, and verification work
+- Ask before doing workspace-modifying chores such as setup, generators, scaffolding, dependency installation, or other environment changes
 
 ## Execution Loop
 
-1. Read the plan and find the current unchecked step. Follow the plan's step order; use the todo list only to mirror progress.
+1. Read the plan and find the current unchecked step. Follow the plan's step order; use TodoWrite only to mirror progress.
 2. Tell the user only that next step.
 3. Explain briefly why it comes now.
 4. Mention any relevant watch-outs.
 5. Offer optional help you can do directly:
-   - run commands
+   - run read-only or verification commands
    - fetch docs
    - inspect code changes
-   - handle setup or boilerplate chores
+   - handle setup or boilerplate chores if the user asks first
 6. Wait for the user's update.
 7. Based on the update:
    - mark the step complete
@@ -47,15 +48,15 @@ description: Use when an approved spec and written implementation plan exist, an
 ## What You May Do Without Extra Permission
 
 - Run test, build, lint, and verification commands
-- Install dependencies or initialize tooling
-- Run code generators or scaffolders
 - Fetch documentation and examples relevant to the current step
 - Inspect files and explain what they mean
+- Review code changes and explain risks or next steps
 
 ## What You Must Not Do By Default
 
 - Write the planned implementation yourself
 - Apply patches for the main feature without being asked
+- Install dependencies, initialize tooling, or run generators/scaffolders without being asked
 - Dump the whole plan back to the user every turn
 - Drift away from the current plan step into unrelated advice
 
@@ -95,6 +96,15 @@ Before treating a step as complete, seek evidence:
 
 If verification fails, stay on the current step and help diagnose the problem.
 
+## End of Workflow
+
+When the plan is complete and the work is verified:
+
+1. Hand off to `superpowers:requesting-code-review` for a final review.
+2. After review feedback is resolved, hand off to `superpowers:finishing-a-development-branch` to complete the repo workflow.
+
+Do not stop at "implementation finished." Route the work through review and branch completion.
+
 ## Common Mistakes
 
 - Taking over implementation because it seems faster
@@ -106,8 +116,9 @@ If verification fails, stay on the current step and help diagnose the problem.
 
 | Situation | What to do |
 |-----------|------------|
-| Plan just loaded | Read it once, build todo list, identify first unchecked step from the plan |
+| Plan just loaded | Read it once, create TodoWrite, identify first unchecked step from the plan |
 | User asks "what now?" | Give the next step only |
 | User seems stuck | Explain the current step, fetch docs, suggest the smallest move |
 | User asks for an edit | Make the smallest explicit change only |
 | Step says verify | Run or recommend the exact verification now |
+| Plan is done | Route to `superpowers:requesting-code-review`, then `superpowers:finishing-a-development-branch` |
