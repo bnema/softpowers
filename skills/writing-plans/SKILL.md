@@ -135,11 +135,13 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 After saving the plan, offer execution choice:
 
-**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Two execution options:**
+**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Three execution options:**
 
 **1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
 
 **2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints
+
+**3. Do It Yourself** - You implement the plan while I guide you step by step, fetch docs, review progress, and handle boilerplate chores when useful
 
 **Which approach?"**
 
@@ -150,3 +152,9 @@ After saving the plan, offer execution choice:
 **If Inline Execution chosen:**
 - **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
 - Batch execution with checkpoints for review
+
+**If Do It Yourself chosen:**
+- **REQUIRED SUB-SKILL:** Use superpowers:do-it-yourself
+- The human remains the primary implementer
+- Guide one step at a time, not by dumping the entire plan again
+- Offer to do low-value mechanical chores, verification commands, and documentation lookup
