@@ -113,7 +113,7 @@ Start a new session in your chosen platform and ask for something that should tr
 
 3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
 
-4. **subagent-driven-development** or **executing-plans** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
+4. **subagent-driven-development**, **executing-plans**, or **do-it-yourself** - Activates with plan. The agent can dispatch fresh subagents per task with two-stage review, execute in batches with checkpoints, or guide a human step by step while the human does the implementation.
 
 5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
 
@@ -138,6 +138,7 @@ Start a new session in your chosen platform and ask for something that should tr
 - **brainstorming** - Socratic design refinement
 - **writing-plans** - Detailed implementation plans
 - **executing-plans** - Batch execution with checkpoints
+- **do-it-yourself** - Guide a human through implementation one step at a time while they stay the primary implementer
 - **dispatching-parallel-agents** - Concurrent subagent workflows
 - **requesting-code-review** - Pre-review checklist
 - **receiving-code-review** - Responding to feedback
