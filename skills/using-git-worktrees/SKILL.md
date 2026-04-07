@@ -210,8 +210,8 @@ Ready to implement auth feature
 
 **Called by:**
 - **brainstorming** (Phase 4) - REQUIRED when design is approved and implementation follows
-- **subagent-driven-development** - REQUIRED before executing any tasks
-- **executing-plans** - REQUIRED before executing any tasks
+- **subagent-driven-development** - REQUIRED only when the chosen workspace mode is `New worktree`
+- **executing-plans** - REQUIRED only when the chosen workspace mode is `New worktree`
 - Any skill needing isolated workspace
 
 **Pairs with:**

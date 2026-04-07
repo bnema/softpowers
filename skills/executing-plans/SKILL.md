@@ -15,13 +15,28 @@ Load plan, review critically, execute all tasks, report when complete.
 
 ## The Process
 
-### Step 1: Load and Review Plan
+### Step 1: Establish Workspace
+1. Determine the repository default branch if possible. If it cannot be detected reliably, treat `main` and `master` as the default-branch candidates.
+2. Determine the current branch before starting implementation
+3. If already told which workspace mode to use, follow it
+4. Otherwise ask:
+   - On the default branch: `New worktree` or `New branch here`
+   - On any other branch: `Continue here`, `New worktree`, or `New branch here`
+5. For `New worktree`: use `superpowers:using-git-worktrees`
+6. For `New branch here`:
+   - Ask for the new branch name before creating it
+   - Check whether the working tree is dirty
+   - If dirty, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue
+   - Create and switch to the fresh branch in the current directory only after confirmation
+7. For `Continue here`: verify the current branch is not the default branch, then proceed in place
+
+### Step 2: Load and Review Plan
 1. Read plan file
 2. Review critically - identify any questions or concerns about the plan
 3. If concerns: Raise them with your human partner before starting
 4. If no concerns: Create TodoWrite and proceed
 
-### Step 2: Execute Tasks
+### Step 3: Execute Tasks
 
 For each task:
 1. Mark as in_progress
@@ -29,7 +44,7 @@ For each task:
 3. Run verifications as specified
 4. Mark as completed
 
-### Step 3: Complete Development
+### Step 4: Complete Development
 
 After all tasks complete and verified:
 - Announce: "I'm using the finishing-a-development-branch skill to complete this work."
@@ -48,7 +63,7 @@ After all tasks complete and verified:
 
 ## When to Revisit Earlier Steps
 
-**Return to Review (Step 1) when:**
+**Return to Review (Step 2) when:**
 - Partner updates the plan based on your feedback
 - Fundamental approach needs rethinking
 
@@ -60,11 +75,11 @@ After all tasks complete and verified:
 - Don't skip verifications
 - Reference skills when plan says to
 - Stop when blocked, don't guess
-- Never start implementation on main/master branch without explicit user consent
+- Never start implementation on the default branch without explicit user consent
 
 ## Integration
 
 **Required workflow skills:**
-- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **superpowers:using-git-worktrees** - REQUIRED only when the chosen workspace mode is `New worktree`
 - **superpowers:writing-plans** - Creates the plan this skill executes
 - **superpowers:finishing-a-development-branch** - Complete development after all tasks

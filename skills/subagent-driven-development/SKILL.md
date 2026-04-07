@@ -58,11 +58,13 @@ digraph process {
         "Mark task complete in TodoWrite" [shape=box];
     }
 
+    "Establish workspace mode" [shape=box style=filled fillcolor=lightyellow];
     "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Dispatch final code reviewer subagent for entire implementation" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
+    "Establish workspace mode" -> "Read plan, extract all tasks with full text, note context, create TodoWrite";
     "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
     "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer subagent asks questions?";
     "Implementer subagent asks questions?" -> "Answer questions, provide context" [label="yes"];
@@ -83,6 +85,24 @@ digraph process {
     "Dispatch final code reviewer subagent for entire implementation" -> "Use superpowers:finishing-a-development-branch";
 }
 ```
+
+### Workspace Setup
+
+Before dispatching any implementer subagent:
+
+1. Determine the repository default branch if possible. If it cannot be detected reliably, treat `main` and `master` as the default-branch candidates.
+2. Determine the current branch
+3. If already told which workspace mode to use, follow it
+4. Otherwise ask:
+   - On the default branch: `New worktree` or `New branch here`
+   - On any other branch: `Continue here`, `New worktree`, or `New branch here`
+5. For `New worktree`: use `superpowers:using-git-worktrees`
+6. For `New branch here`:
+   - Ask for the new branch name before creating it
+   - Check whether the working tree is dirty
+   - If dirty, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue
+   - Create and switch to the fresh branch in the current directory only after confirmation
+7. For `Continue here`: verify the current branch is not the default branch, then proceed in place
 
 ## Model Selection
 
@@ -265,7 +285,7 @@ Done!
 ## Integration
 
 **Required workflow skills:**
-- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **superpowers:using-git-worktrees** - REQUIRED only when the chosen workspace mode is `New worktree`
 - **superpowers:writing-plans** - Creates the plan this skill executes
 - **superpowers:requesting-code-review** - Code review template for reviewer subagents
 - **superpowers:finishing-a-development-branch** - Complete development after all tasks

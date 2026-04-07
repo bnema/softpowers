@@ -13,7 +13,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Context:** This should be run in an isolated workspace. A dedicated worktree is recommended, but a fresh branch in the current directory is also supported when the human chooses that workflow.
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
@@ -158,3 +158,17 @@ After saving the plan, offer execution choice:
 - The human remains the primary implementer
 - Guide one step at a time, not by dumping the entire plan again
 - Offer to do low-value mechanical chores, verification commands, and documentation lookup
+
+**If Subagent-Driven or Inline Execution is chosen:**
+- Ask one more workspace question before implementation starts.
+- First detect the repository default branch if possible. If it cannot be detected reliably, treat `main` and `master` as the default-branch candidates.
+- If the current branch is the default branch, offer:
+  - `New worktree` - create an isolated worktree using `superpowers:using-git-worktrees`
+  - `New branch here` - create and switch to a fresh branch in the current directory
+- If the current branch is any other non-default branch, offer:
+  - `Continue here` - keep working on the current branch in the current directory
+  - `New worktree` - create an isolated worktree using `superpowers:using-git-worktrees`
+  - `New branch here` - create and switch to a fresh branch in the current directory
+- For `New branch here`, ask for the new branch name before creating it.
+- If the working tree is dirty and the user chooses `New branch here`, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue.
+- Do not offer `Continue here` on the default branch.
