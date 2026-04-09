@@ -11,9 +11,24 @@ TIMESTAMP=$(date +%s)
 OUTPUT_DIR="/tmp/superpowers-tests/${TIMESTAMP}/explicit-skill-requests/haiku"
 mkdir -p "$OUTPUT_DIR"
 
-PROJECT_DIR="$OUTPUT_DIR/project"
+PROJECT_DIR="$OUTPUT_DIR/project-run-haiku-test-${TIMESTAMP}-$$"
 mkdir -p "$PROJECT_DIR/docs/superpowers/plans"
 mkdir -p "$PROJECT_DIR/.claude"
+
+resolve_plan_path() {
+    local plan_name="$1"
+    local repo_name
+
+    repo_name="$(basename "$PROJECT_DIR")"
+    if [ -n "${OBSIDIAN_PROJECTS_PATH:-}" ]; then
+        printf '%s/%s/plans/%s.md' "$OBSIDIAN_PROJECTS_PATH" "$repo_name" "$plan_name"
+    else
+        printf '%s/docs/superpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
+    fi
+}
+
+PLAN_PATH="$(resolve_plan_path auth-system)"
+mkdir -p "$(dirname "$PLAN_PATH")"
 
 echo "=== Haiku Model Test with User CLAUDE.md ==="
 echo "Output dir: $OUTPUT_DIR"
@@ -31,7 +46,7 @@ else
 fi
 
 # Create a dummy plan file
-cat > "$PROJECT_DIR/docs/superpowers/plans/auth-system.md" << 'EOF'
+cat > "$PLAN_PATH" << 'EOF'
 # Auth System Implementation Plan
 
 ## Task 1: Add User Model

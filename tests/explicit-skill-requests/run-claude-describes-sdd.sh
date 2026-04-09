@@ -11,8 +11,23 @@ TIMESTAMP=$(date +%s)
 OUTPUT_DIR="/tmp/superpowers-tests/${TIMESTAMP}/explicit-skill-requests/claude-describes"
 mkdir -p "$OUTPUT_DIR"
 
-PROJECT_DIR="$OUTPUT_DIR/project"
+PROJECT_DIR="$OUTPUT_DIR/project-run-claude-describes-sdd-${TIMESTAMP}-$$"
 mkdir -p "$PROJECT_DIR/docs/superpowers/plans"
+
+resolve_plan_path() {
+    local plan_name="$1"
+    local repo_name
+
+    repo_name="$(basename "$PROJECT_DIR")"
+    if [ -n "${OBSIDIAN_PROJECTS_PATH:-}" ]; then
+        printf '%s/%s/plans/%s.md' "$OBSIDIAN_PROJECTS_PATH" "$repo_name" "$plan_name"
+    else
+        printf '%s/docs/superpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
+    fi
+}
+
+PLAN_PATH="$(resolve_plan_path auth-system)"
+mkdir -p "$(dirname "$PLAN_PATH")"
 
 echo "=== Test: Claude Describes SDD First ==="
 echo "Output dir: $OUTPUT_DIR"
@@ -21,7 +36,7 @@ echo ""
 cd "$PROJECT_DIR"
 
 # Create a plan
-cat > "$PROJECT_DIR/docs/superpowers/plans/auth-system.md" << 'EOF'
+cat > "$PLAN_PATH" << 'EOF'
 # Auth System Implementation Plan
 
 ## Task 1: Add User Model
@@ -36,7 +51,7 @@ EOF
 
 # Turn 1: Have Claude describe execution options including SDD
 echo ">>> Turn 1: Ask Claude to describe execution options..."
-claude -p "I have a plan at docs/superpowers/plans/auth-system.md. Tell me about my options for executing it, including what subagent-driven-development means and how it works." \
+claude -p "I have a plan at $PLAN_PATH. Tell me about my options for executing it, including what subagent-driven-development means and how it works." \
     --model haiku \
     --plugin-dir "$PLUGIN_DIR" \
     --dangerously-skip-permissions \

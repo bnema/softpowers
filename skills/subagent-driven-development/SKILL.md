@@ -145,10 +145,12 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 ## Example Workflow
 
+`<resolved-plan-path>` means the actual plan location after resolving `$OBSIDIAN_PROJECTS_PATH`, if configured.
+
 ```
 You: I'm using Subagent-Driven Development to execute this plan.
 
-[Read plan file once: docs/superpowers/plans/feature-plan.md]
+[Read plan file once: <resolved-plan-path>]
 [Extract all 5 tasks with full text and context]
 [Create TodoWrite with all tasks]
 

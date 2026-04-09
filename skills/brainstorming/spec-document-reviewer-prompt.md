@@ -4,7 +4,7 @@ Use this template when dispatching a spec document reviewer subagent.
 
 **Purpose:** Verify the spec is complete, consistent, and ready for implementation planning.
 
-**Dispatch after:** Spec document is written to docs/superpowers/specs/
+**Dispatch after:** Spec document is written to its resolved location: `$OBSIDIAN_PROJECTS_PATH/{repoName}/specs/...` when set, otherwise `docs/superpowers/specs/...`
 
 ```
 Task tool (general-purpose):

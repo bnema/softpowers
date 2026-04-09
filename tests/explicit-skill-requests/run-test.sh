@@ -24,6 +24,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Get the superpowers plugin root (two levels up)
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+resolve_plan_path() {
+    local plan_name="$1"
+    local repo_name
+
+    repo_name="$(basename "$PROJECT_DIR")"
+    if [ -n "${OBSIDIAN_PROJECTS_PATH:-}" ]; then
+        printf '%s/%s/plans/%s.md' "$OBSIDIAN_PROJECTS_PATH" "$repo_name" "$plan_name"
+    else
+        printf '%s/docs/superpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
+    fi
+}
+
 TIMESTAMP=$(date +%s)
 OUTPUT_DIR="/tmp/superpowers-tests/${TIMESTAMP}/explicit-skill-requests/${SKILL_NAME}"
 mkdir -p "$OUTPUT_DIR"
@@ -38,15 +50,20 @@ echo "Max turns: $MAX_TURNS"
 echo "Output dir: $OUTPUT_DIR"
 echo ""
 
-# Copy prompt for reference
-cp "$PROMPT_FILE" "$OUTPUT_DIR/prompt.txt"
-
 # Create a minimal project directory for the test
-PROJECT_DIR="$OUTPUT_DIR/project"
+PROJECT_DIR="$OUTPUT_DIR/project-run-test-${TIMESTAMP}-$$"
 mkdir -p "$PROJECT_DIR/docs/superpowers/plans"
+PLAN_PATH="$(resolve_plan_path auth-system)"
+mkdir -p "$(dirname "$PLAN_PATH")"
+
+# Read prompt from file and resolve plan path placeholder
+PROMPT=${PROMPT//<resolved-plan-path>/$PLAN_PATH}
+
+# Save the resolved prompt for reference
+printf '%s\n' "$PROMPT" > "$OUTPUT_DIR/prompt.txt"
 
 # Create a dummy plan file for mid-conversation tests
-cat > "$PROJECT_DIR/docs/superpowers/plans/auth-system.md" << 'EOF'
+cat > "$PLAN_PATH" << 'EOF'
 # Auth System Implementation Plan
 
 ## Task 1: Add User Model

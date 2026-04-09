@@ -15,8 +15,23 @@ OUTPUT_DIR="/tmp/superpowers-tests/${TIMESTAMP}/explicit-skill-requests/multitur
 mkdir -p "$OUTPUT_DIR"
 
 # Create project directory (conversation is cwd-based)
-PROJECT_DIR="$OUTPUT_DIR/project"
+PROJECT_DIR="$OUTPUT_DIR/project-run-multiturn-test-${TIMESTAMP}-$$"
 mkdir -p "$PROJECT_DIR/docs/superpowers/plans"
+
+resolve_plan_path() {
+    local plan_name="$1"
+    local repo_name
+
+    repo_name="$(basename "$PROJECT_DIR")"
+    if [ -n "${OBSIDIAN_PROJECTS_PATH:-}" ]; then
+        printf '%s/%s/plans/%s.md' "$OBSIDIAN_PROJECTS_PATH" "$repo_name" "$plan_name"
+    else
+        printf '%s/docs/superpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
+    fi
+}
+
+PLAN_PATH="$(resolve_plan_path auth-system)"
+mkdir -p "$(dirname "$PLAN_PATH")"
 
 echo "=== Multi-Turn Explicit Skill Request Test ==="
 echo "Output dir: $OUTPUT_DIR"
@@ -27,7 +42,7 @@ echo ""
 cd "$PROJECT_DIR"
 
 # Create a dummy plan file
-cat > "$PROJECT_DIR/docs/superpowers/plans/auth-system.md" << 'EOF'
+cat > "$PLAN_PATH" << 'EOF'
 # Auth System Implementation Plan
 
 ## Task 1: Add User Model
@@ -59,7 +74,7 @@ echo ""
 # Turn 2: Continue with more planning detail
 echo ">>> Turn 2: Continuing planning..."
 TURN2_LOG="$OUTPUT_DIR/turn2.json"
-claude -p "Good analysis. I've already written the plan to docs/superpowers/plans/auth-system.md. Now I'm ready to implement. What are my options for execution?" \
+claude -p "Good analysis. I've already written the plan to $PLAN_PATH. Now I'm ready to implement. What are my options for execution?" \
     --continue \
     --plugin-dir "$PLUGIN_DIR" \
     --dangerously-skip-permissions \

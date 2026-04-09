@@ -15,8 +15,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Context:** This should be run in an isolated workspace. A dedicated worktree is recommended, but a fresh branch in the current directory is also supported when the human chooses that workflow.
 
-**Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
-- (User preferences for plan location override this default)
+**Save plans to:** `$OBSIDIAN_PROJECTS_PATH/{repoName}/plans/YYYY-MM-DD-<feature-name>.md` if `OBSIDIAN_PROJECTS_PATH` is set; otherwise use `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 
 ## Scope Check
 
@@ -135,7 +134,7 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 After saving the plan, offer execution choice:
 
-**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Three execution options:**
+**"Plan complete and saved to `<resolved-plan-path>`. Three execution options:**
 
 **1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
 

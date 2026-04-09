@@ -138,12 +138,45 @@ cleanup_test_project() {
     fi
 }
 
+# Resolve the document root for a project
+# Usage: resolved_doc_root "$project_dir"
+resolved_doc_root() {
+    local project_dir="$1"
+    local repo_name
+    repo_name=$(basename "$project_dir")
+
+    if [ -n "${OBSIDIAN_PROJECTS_PATH:-}" ]; then
+        echo "$OBSIDIAN_PROJECTS_PATH/$repo_name"
+    else
+        echo "$project_dir/docs/superpowers"
+    fi
+}
+
+# Resolve a plan path for a project
+# Usage: resolved_plan_path "$project_dir" "$plan_name"
+resolved_plan_path() {
+    local project_dir="$1"
+    local plan_name="$2"
+
+    echo "$(resolved_doc_root "$project_dir")/plans/$plan_name.md"
+}
+
+# Resolve a spec path for a project
+# Usage: resolved_spec_path "$project_dir" "$spec_name"
+resolved_spec_path() {
+    local project_dir="$1"
+    local spec_name="$2"
+
+    echo "$(resolved_doc_root "$project_dir")/specs/$spec_name.md"
+}
+
 # Create a simple plan file for testing
 # Usage: create_test_plan "$project_dir" "$plan_name"
 create_test_plan() {
     local project_dir="$1"
     local plan_name="${2:-test-plan}"
-    local plan_file="$project_dir/docs/superpowers/plans/$plan_name.md"
+    local plan_file
+    plan_file=$(resolved_plan_path "$project_dir" "$plan_name")
 
     mkdir -p "$(dirname "$plan_file")"
 
@@ -199,4 +232,7 @@ export -f assert_count
 export -f assert_order
 export -f create_test_project
 export -f cleanup_test_project
+export -f resolved_doc_root
+export -f resolved_plan_path
+export -f resolved_spec_path
 export -f create_test_plan
