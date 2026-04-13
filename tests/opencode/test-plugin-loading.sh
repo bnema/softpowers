@@ -69,7 +69,7 @@ else
     echo "  [PASS] Plugin does not advertise a misleading skills path"
 fi
 
-echo "Test 5: Checking TUI plugin surface..."
+echo "Test 6: Checking TUI plugin surface..."
 if grep -q '"./tui"' "$REPO_ROOT/package.json"; then
   echo "  [PASS] package exports a TUI entrypoint"
 else
@@ -84,7 +84,7 @@ else
   exit 1
 fi
 
-echo "Test 6: Checking TUI plugin config..."
+echo "Test 7: Checking TUI plugin config..."
 if [ -f "$OPENCODE_CONFIG_DIR/tui.json" ] && grep -q "superpowers-tui.tsx" "$OPENCODE_CONFIG_DIR/tui.json"; then
   echo "  [PASS] TUI plugin config exists"
 else
@@ -92,8 +92,8 @@ else
   exit 1
 fi
 
-# Test 7: Verify personal test skill was created
-echo "Test 7: Checking test fixtures..."
+# Test 8: Verify personal test skill was created
+echo "Test 8: Checking test fixtures..."
 if [ -f "$OPENCODE_CONFIG_DIR/skills/personal-test/SKILL.md" ]; then
     echo "  [PASS] Personal test skill fixture created"
 else
