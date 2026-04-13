@@ -95,12 +95,18 @@ export function formatReviewPrompt(review) {
     lines.push(`- ${comment.side} ${label}: ${body}`)
 
     if (Array.isArray(comment.snippetLines) && comment.snippetLines.length > 0) {
+      const maxBacktickRun = Math.max(...comment.snippetLines.map((snippetLine) => {
+        const matches = String(snippetLine).match(/`+/g)
+        return matches ? Math.max(...matches.map((run) => run.length)) : 0
+      }))
+      const fenceLength = Math.max(3, maxBacktickRun + 1)
+      const fence = "`".repeat(fenceLength)
       lines.push("  Snippet:")
-      lines.push("  ```")
+      lines.push(`  ${fence}`)
       for (const snippetLine of comment.snippetLines) {
         lines.push(`  ${String(snippetLine)}`)
       }
-      lines.push("  ```")
+      lines.push(`  ${fence}`)
     } else if (comment.snippet) {
       lines.push(`  Snippet: ${comment.snippet}`)
     }

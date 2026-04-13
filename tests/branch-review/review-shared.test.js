@@ -52,6 +52,31 @@ test("formatReviewPrompt renders range comments with both lines", () => {
   assert.match(text, /- new lines 20-21: This path needs a guard/)
 })
 
+test("formatReviewPrompt uses a longer fence when a snippet contains triple backticks", () => {
+  const text = formatReviewPrompt({
+    comments: [
+      {
+        path: "src/app.js",
+        side: "new",
+        startLine: 20,
+        endLine: 22,
+        body: "This path needs a guard",
+        snippetLines: ["before", "```", "after"],
+      },
+    ],
+  })
+
+  const lines = text.split("\n")
+  const start = lines.indexOf("  Snippet:")
+
+  assert.ok(start >= 0)
+  assert.match(lines[start + 1], /^  `{4,}$/)
+  assert.equal(lines[start + 2], "  before")
+  assert.equal(lines[start + 3], "  ```")
+  assert.equal(lines[start + 4], "  after")
+  assert.match(lines[start + 5], /^  `{4,}$/)
+})
+
 test("resolveBaseRef prefers an explicit base", () => {
   const base = resolveBaseRef({ explicitBase: "main", currentBranch: "feature/x", upstreamBranch: "origin/feature/x" })
 

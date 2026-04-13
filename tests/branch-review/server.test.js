@@ -211,6 +211,7 @@ test("root page includes review bootstrap state", async (t) => {
 
   const root = await request(startup.port, "/?session=ses_expected")
   assert.equal(root.status, 200)
+  assert.match(root.body, /<meta name="viewport" content="width=device-width, initial-scale=1">/)
   assert.match(root.body, /<script id="review-bootstrap" type="application\/json">/)
   assert.match(root.body, /review-client\.js/)
   assert.doesNotMatch(root.body, /assets\/highlight\.js/)
