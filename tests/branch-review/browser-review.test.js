@@ -1,10 +1,12 @@
 import test from "node:test"
 import assert from "node:assert/strict"
+import { pathToFileURL } from "node:url"
 import { formatReviewPrompt, parseUnifiedDiff } from "../../.opencode/plugins/branch-review/review-prompt.js"
 import { buildFileTree } from "../../.opencode/plugins/branch-review/review-file-tree.js"
 import { groupDraftComments } from "../../.opencode/plugins/branch-review/review-draft-panel.js"
 import * as reviewClient from "../../.opencode/plugins/branch-review/review-client.js"
 import { initTheme } from "../../.opencode/plugins/branch-review/review-theme.js"
+import * as reviewTheme from "../../.opencode/plugins/branch-review/review-theme.js"
 
 const { renderHighlightedCode, storageKey } = reviewClient
 
@@ -262,6 +264,20 @@ test("initTheme prefers saved storage over system preference", () => {
   assert.equal(document.documentElement.dataset.theme, "dark")
 })
 
+test("applyThemeToRoot updates theme attributes in one place", () => {
+  assert.equal(typeof reviewTheme.applyThemeToRoot, "function")
+
+  const root = {
+    dataset: {},
+    style: {},
+  }
+
+  reviewTheme.applyThemeToRoot(root, "dark")
+
+  assert.equal(root.dataset.theme, "dark")
+  assert.equal(root.style.colorScheme, "dark")
+})
+
 test("toggleTheme persists a theme choice to storage", () => {
   const calls = []
   const storage = {
@@ -288,4 +304,89 @@ test("toggleTheme persists a theme choice to storage", () => {
 
   assert.equal(next, "dark")
   assert.deepEqual(calls, [["superpowers:review:theme", "dark"]])
+})
+
+test("renderApp registers the mouseup listener", async () => {
+  const previousDocument = globalThis.document
+  const previousFetch = globalThis.fetch
+  let mouseupListener = null
+  let mouseupOptions = null
+
+  function createNode(tagName) {
+    return {
+      tagName: String(tagName || "div").toUpperCase(),
+      children: [],
+      classList: {
+        add() {},
+        remove() {},
+        toggle() {},
+      },
+      dataset: {},
+      hidden: false,
+      innerHTML: "",
+      style: {},
+      textContent: "",
+      append(...nodes) {
+        this.children.push(...nodes)
+      },
+      replaceChildren(...nodes) {
+        this.children = [...nodes]
+      },
+      querySelector() {
+        return null
+      },
+      querySelectorAll() {
+        return []
+      },
+      setAttribute() {},
+      addEventListener() {},
+    }
+  }
+
+  const elements = new Map([
+    ["review-bootstrap", { textContent: JSON.stringify({ repo: "repo", base: "main", head: "feature", session: "ses_123", token: "token" }) }],
+    ["file-list", createNode("div")],
+    ["diff-view", createNode("div")],
+    ["draft-editor", createNode("div")],
+    ["review-toolbar", createNode("div")],
+    ["status", createNode("p")],
+  ])
+
+  const document = {
+    documentElement: { dataset: {}, style: {} },
+    getElementById(id) {
+      return elements.get(id) || null
+    },
+    createElement(tagName) {
+      return createNode(tagName)
+    },
+    querySelector() {
+      return null
+    },
+    querySelectorAll() {
+      return []
+    },
+    addEventListener(type, handler, options = {}) {
+      if (type !== "mouseup") return
+      mouseupListener = handler
+      mouseupOptions = options
+    },
+    removeEventListener() {},
+  }
+
+  globalThis.document = document
+  globalThis.fetch = async () => ({ ok: false, status: 500 })
+
+  try {
+    await import(`${pathToFileURL(new URL("../../.opencode/plugins/branch-review/review-client.js", import.meta.url).pathname).href}?cleanup=${Date.now()}`)
+
+    assert.equal(typeof mouseupListener, "function")
+    assert.ok(mouseupOptions?.signal)
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document
+    else globalThis.document = previousDocument
+
+    if (previousFetch === undefined) delete globalThis.fetch
+    else globalThis.fetch = previousFetch
+  }
 })

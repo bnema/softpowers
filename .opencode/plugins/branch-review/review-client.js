@@ -302,6 +302,8 @@ export function renderHighlightedCode(node, text) {
   }
 }
 
+let lineDragCleanup = null
+
 function renderDraftPreview(state) {
   const draft = document.getElementById("draft-preview")
   if (!draft) return
@@ -563,7 +565,7 @@ function renderFileSection(state, file, refreshComments, refreshDraftOverview, s
 
     for (const line of hunk.lines) {
       section.append(renderDiffLine(state, file, line, refreshComments, refreshDraftOverview, selectLine))
-  }
+    }
   }
 
   return section
@@ -593,6 +595,9 @@ async function submitReview(state, bootstrap) {
 }
 
 function renderApp(bootstrap) {
+  lineDragCleanup?.abort()
+  lineDragCleanup = new AbortController()
+
   const state = createState(bootstrap)
   const fileList = document.getElementById("file-list")
   const diffView = document.getElementById("diff-view")
@@ -837,7 +842,7 @@ function renderApp(bootstrap) {
     applyComposerSelection(file, nextSelection, keepBody)
   }
 
-  document.addEventListener("mouseup", stopLineDrag)
+  document.addEventListener("mouseup", stopLineDrag, { signal: lineDragCleanup.signal })
 
   const renderSidebar = () => {
     fileList.replaceChildren()

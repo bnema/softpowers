@@ -90,6 +90,29 @@ function startReviewStart(args, env = {}) {
   })
 }
 
+function cleanupReviewLaunchArtifacts({ tempDir, stateFile, markerFile }) {
+  try {
+    if (fs.existsSync(stateFile)) {
+      spawnSync(process.execPath, [reviewStopPath(), "--state-file", stateFile], {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        timeout: 10000,
+      })
+    } else if (markerFile && fs.existsSync(markerFile)) {
+      try {
+        const marker = readJson(markerFile)
+        if (typeof marker.pid === "number" && isProcessAlive(marker.pid)) {
+          process.kill(marker.pid)
+        }
+      } catch {
+        // best-effort cleanup
+      }
+    }
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true })
+  }
+}
+
 test("review start requires a session", () => {
   const result = startReviewStart([])
 
@@ -97,7 +120,7 @@ test("review start requires a session", () => {
   assert.match(result.stderr, /session is required/)
 })
 
-test("review start prints the url and writes state", () => {
+test("review start prints the url and writes state", (t) => {
   const tempDir = makeTempDir("superpowers-review-launch-")
   const launcherPath = createFakeLauncherScript(tempDir)
   const stateFile = path.join(tempDir, "state.json")
@@ -105,6 +128,14 @@ test("review start prints the url and writes state", () => {
   const stopMarkerFile = path.join(tempDir, "stop-marker.txt")
   const repoDir = path.join(tempDir, "repo")
   fs.mkdirSync(repoDir)
+
+  t.after(() => {
+    cleanupReviewLaunchArtifacts({ tempDir, stateFile, markerFile })
+    assert.equal(fs.existsSync(stateFile), false)
+    assert.equal(fs.existsSync(markerFile), false)
+    assert.equal(fs.existsSync(stopMarkerFile), false)
+    assert.equal(fs.existsSync(tempDir), false)
+  })
 
   const result = startReviewStart(
     ["--session", "ses_123", "--base", "main", "--repo", repoDir, "--state-file", stateFile, "--launcher-path", launcherPath],
@@ -130,13 +161,20 @@ test("review start prints the url and writes state", () => {
   assert.equal(fs.existsSync(stopMarkerFile), false)
 })
 
-test("review stop kills the process and removes state", () => {
+test("review stop kills the process and removes state", (t) => {
   const tempDir = makeTempDir("superpowers-review-launch-")
   const launcherPath = createFakeLauncherScript(tempDir)
   const stateFile = path.join(tempDir, "state.json")
   const stopMarkerFile = path.join(tempDir, "stop-marker.txt")
   const repoDir = path.join(tempDir, "repo")
   fs.mkdirSync(repoDir)
+
+  t.after(() => {
+    cleanupReviewLaunchArtifacts({ tempDir, stateFile })
+    assert.equal(fs.existsSync(stateFile), false)
+    assert.equal(fs.existsSync(stopMarkerFile), false)
+    assert.equal(fs.existsSync(tempDir), false)
+  })
 
   const start = startReviewStart(
     ["--session", "ses_456", "--base", "main", "--repo", repoDir, "--state-file", stateFile, "--launcher-path", launcherPath],

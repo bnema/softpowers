@@ -155,11 +155,22 @@ async function main() {
           } else {
             const result = spawnSync("opencode", ["run", "-s", session, "--dir", repo, text], {
               cwd: process.cwd(),
-              stdio: "ignore",
+              encoding: "utf8",
             })
 
-            if (result.error) throw result.error
-            if (result.status !== 0) throw new Error(`opencode exited with ${result.status ?? result.signal}`)
+            const stderr = result.stderr?.toString().trim()
+            const stdout = result.stdout?.toString().trim()
+            const output = [stderr && `stderr:\n${stderr}`, stdout && `stdout:\n${stdout}`].filter(Boolean).join("\n")
+
+            if (result.error) {
+              const error = result.error instanceof Error ? result.error : new Error(String(result.error))
+              if (output) error.message = `${error.message}\n${output}`
+              throw error
+            }
+
+            if (result.status !== 0) {
+              throw new Error(`opencode exited with ${result.status ?? result.signal}${output ? `\n${output}` : ""}`)
+            }
           }
 
           await stopChild()

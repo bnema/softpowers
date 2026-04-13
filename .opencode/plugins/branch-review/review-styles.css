@@ -9,6 +9,11 @@
   --diff-context-bg: #f8fafc;
   --selection-bg: rgba(59, 130, 246, 0.15);
   --selection-border: #2563eb;
+  --syntax-keyword: #7c3aed;
+  --syntax-string: #15803d;
+  --syntax-number: #b45309;
+  --status-error: #b91c1c;
+  --status-success: #15803d;
   color-scheme: light;
 }
 
@@ -23,6 +28,11 @@
   --diff-context-bg: rgba(15, 23, 42, 0.92);
   --selection-bg: rgba(96, 165, 250, 0.24);
   --selection-border: #60a5fa;
+  --syntax-keyword: #c084fc;
+  --syntax-string: #4ade80;
+  --syntax-number: #fbbf24;
+  --status-error: #f87171;
+  --status-success: #4ade80;
   color-scheme: dark;
 }
 
@@ -228,10 +238,10 @@ textarea {
   font-family: ui-monospace, SFMono-Regular, monospace;
 }
 
-.hljs-keyword { color: #7c3aed; font-weight: 600; }
-.hljs-string { color: #15803d; }
+.hljs-keyword { color: var(--syntax-keyword); font-weight: 600; }
+.hljs-string { color: var(--syntax-string); }
 .hljs-comment { color: var(--text-secondary); font-style: italic; }
-.hljs-number { color: #b45309; }
+.hljs-number { color: var(--syntax-number); }
 
 .diff-line--add .diff-line__row { background: var(--diff-add-bg); }
 .diff-line--remove .diff-line__row { background: var(--diff-remove-bg); }
@@ -393,11 +403,11 @@ textarea {
 }
 
 #status[data-kind="error"] {
-  color: #b91c1c;
+  color: var(--status-error);
 }
 
 #status[data-kind="success"] {
-  color: #15803d;
+  color: var(--status-success);
 }
 
 @media (max-width: 960px) {

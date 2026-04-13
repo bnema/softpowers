@@ -3,8 +3,10 @@ import assert from "node:assert/strict"
 import { execFileSync, spawn } from "node:child_process"
 import fs from "node:fs"
 import http from "node:http"
+import vm from "node:vm"
 import path from "node:path"
 import os from "node:os"
+import { createRequire } from "node:module"
 
 async function request(port, pathname, options = {}) {
   return new Promise((resolve, reject) => {
@@ -93,6 +95,62 @@ function reviewEnvWithSession(session = "ses_expected") {
     ...reviewEnv(),
     SUPERPOWERS_REVIEW_SESSION: session,
   }
+}
+
+function loadReadModule(tempRoot) {
+  const serverPath = path.join(process.cwd(), ".opencode/plugins/branch-review/server.cjs")
+  const source = fs.readFileSync(serverPath, "utf8")
+  const mockRequire = (specifier) => {
+    if (specifier === "node:http") {
+      return {
+        createServer: () => ({
+          listen(_port, _host, callback) {
+            if (typeof callback === "function") callback()
+          },
+          address: () => ({ port: 1234 }),
+        }),
+      }
+    }
+
+    if (specifier === "node:child_process") {
+      return { execFileSync: () => "" }
+    }
+
+    if (specifier === "node:crypto") {
+      return { randomBytes: () => ({ toString: () => "token" }) }
+    }
+
+    if (specifier === "node:fs") return fs
+    if (specifier === "node:path") return path
+
+    return createRequire(import.meta.url)(specifier)
+  }
+
+  const context = {
+    Buffer,
+    JSON,
+    URL,
+    clearTimeout,
+    module: { exports: {} },
+    process: {
+      env: {
+        SUPERPOWERS_REVIEW_REPO: tempRoot,
+        SUPERPOWERS_REVIEW_BASE: "main",
+        SUPERPOWERS_REVIEW_SESSION: "ses_expected",
+      },
+      exit(code) {
+        throw new Error(`unexpected exit ${code}`)
+      },
+      stdout: { write() {} },
+      stderr: { write() {} },
+    },
+    require: mockRequire,
+    setTimeout,
+    __dirname: path.join(tempRoot, ".opencode/plugins/branch-review"),
+  }
+
+  vm.runInNewContext(`${source}\nmodule.exports = { readModule }`, context)
+  return context.module.exports.readModule
 }
 
 test("server refuses to start without an attached session", () => {
@@ -275,6 +333,19 @@ test("server serves review module assets", async (t) => {
     const response = await request(startup.port, asset)
     assert.equal(response.status, 200)
   }
+})
+
+test("readModule rejects path-like module names", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-branch-review-readmodule-"))
+  const pluginDir = path.join(tempRoot, ".opencode/plugins/branch-review")
+  fs.mkdirSync(pluginDir, { recursive: true })
+  fs.writeFileSync(path.join(pluginDir, "review-file-tree.js"), "built-in asset")
+  fs.writeFileSync(path.join(tempRoot, ".opencode/plugins/outside.txt"), "outside asset")
+
+  const readModule = loadReadModule(tempRoot)
+
+  assert.equal(readModule("review-file-tree.js"), "built-in asset")
+  assert.throws(() => readModule("../outside.txt"), /invalid module name|not allowed|unsupported/i)
 })
 
 test("diff endpoint includes staged and unstaged changes from the checkout", async (t) => {

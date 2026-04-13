@@ -100,6 +100,7 @@ async function waitForFile(filePath, timeoutMs) {
 function startOpenCodeStub() {
   let resolveRequest
   let rejectRequest
+  let settled = false
   const request = new Promise((resolve, reject) => {
     resolveRequest = resolve
     rejectRequest = reject
@@ -134,17 +135,23 @@ function startOpenCodeStub() {
   })
 
   return new Promise((resolve, reject) => {
+    const finish = (fn, value) => {
+      if (settled) return
+      settled = true
+      fn(value)
+    }
+
     server.listen(0, "127.0.0.1", () => {
       const address = server.address()
-      resolve({
+      finish(resolve, {
         server,
         url: `http://127.0.0.1:${address.port}`,
         request,
         close: () => new Promise((closeResolve) => server.close(() => closeResolve())),
       })
     })
-    server.on("error", reject)
-    request.catch(reject)
+    server.on("error", (error) => finish(reject, error))
+    request.catch((error) => finish(reject, error))
   })
 }
 
@@ -165,6 +172,27 @@ process.exit(0)
 
   return {
     argvPath,
+    env: {
+      PATH: `${dir}${path.delimiter}${process.env.PATH || ""}`,
+    },
+  }
+}
+
+function startFailingOpencodeCli() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-opencode-cli-"))
+  const binPath = path.join(dir, "opencode")
+
+  fs.writeFileSync(
+    binPath,
+    `#!/usr/bin/env node
+process.stderr.write("opencode cli stderr: boom\\n")
+process.stdout.write("opencode cli stdout: boom\\n")
+process.exit(17)
+`,
+  )
+  fs.chmodSync(binPath, 0o755)
+
+  return {
     env: {
       PATH: `${dir}${path.delimiter}${process.env.PATH || ""}`,
     },
@@ -197,6 +225,92 @@ function startHangingOpenCodeStub() {
     server.on("error", reject)
   })
 }
+
+test("startOpenCodeStub does not reject after it has resolved", async () => {
+  const OriginalPromise = global.Promise
+  const rejectCalls = []
+  let promiseCount = 0
+
+  class TrackingPromise extends OriginalPromise {
+    constructor(executor) {
+      promiseCount += 1
+      super((resolve, reject) => {
+        if (promiseCount === 2) {
+          executor(resolve, (value) => {
+            rejectCalls.push(value)
+            reject(value)
+          })
+          return
+        }
+
+        executor(resolve, reject)
+      })
+    }
+  }
+
+  global.Promise = TrackingPromise
+
+  let opencode
+  try {
+    opencode = await startOpenCodeStub()
+  } finally {
+    global.Promise = OriginalPromise
+  }
+
+  try {
+    await new Promise((resolve) => {
+      const req = http.request(
+        opencode.url,
+        {
+          method: "POST",
+          path: "/session/ses_123/prompt_async",
+          headers: { "content-type": "application/json" },
+        },
+        (res) => {
+          res.resume()
+          res.on("end", resolve)
+        },
+      )
+
+      req.on("error", resolve)
+      req.end("{not-json")
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 25))
+
+    assert.equal(rejectCalls.length, 0)
+  } finally {
+    await opencode.close()
+  }
+})
+
+test("manual launcher includes opencode cli stderr when fallback execution fails", { timeout: 10000 }, async () => {
+  const reviewServerPath = createFakeReviewServerScript()
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const opencodeCli = startFailingOpencodeCli()
+  const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      launcher,
+      "--session",
+      "ses_offline",
+      "--review-server-path",
+      reviewServerPath,
+      "--repo",
+      repoDir,
+      "--base",
+      "main",
+    ],
+    { cwd: process.cwd(), encoding: "utf8", env: { ...process.env, ...opencodeCli.env } },
+  )
+
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr, /opencode exited with 17/)
+  assert.match(result.stderr, /opencode cli stderr: boom/)
+  assert.match(result.stderr, /opencode cli stdout: boom/)
+})
 
 test("manual launcher forwards the submitted review to OpenCode", { timeout: 10000 }, async (t) => {
   const reviewServerPath = createFakeReviewServerScript()

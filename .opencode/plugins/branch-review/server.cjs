@@ -6,6 +6,12 @@ const path = require("node:path")
 
 const token = crypto.randomBytes(16).toString("hex")
 const submitBodyLimit = 64 * 1024
+const allowedModuleNames = new Set([
+  "review-file-tree.js",
+  "review-draft-panel.js",
+  "review-selection.js",
+  "review-theme.js",
+])
 
 function requireConfiguredSession() {
   const session = process.env.SUPERPOWERS_REVIEW_SESSION
@@ -52,6 +58,10 @@ function readClient() {
 }
 
 function readModule(name) {
+  if (!allowedModuleNames.has(name)) {
+    throw new Error(`unsupported module name: ${name}`)
+  }
+
   return fs.readFileSync(path.join(__dirname, name), "utf8")
 }
 
