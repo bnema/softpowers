@@ -34,11 +34,161 @@ function saveState(state) {
   localStorage.setItem(state.key, JSON.stringify({ summary: state.summary, comments: state.comments }))
 }
 
+function isLayoutDebugEnabled(storage) {
+  try {
+    if (storage?.getItem?.("superpowers:review:debug-layout") === "1") return true
+  } catch {}
+
+  const search = String(globalThis.location?.search || "")
+  return /(?:^|[?&])debug-layout=1(?:&|$)/.test(search)
+}
+
+function elementWidthSnapshot(node) {
+  if (!node) return null
+
+  const rect = typeof node.getBoundingClientRect === "function" ? node.getBoundingClientRect() : null
+  const style = typeof globalThis.getComputedStyle === "function" ? globalThis.getComputedStyle(node) : null
+  const marginLeft = Number.parseFloat(style?.marginLeft || "0") || 0
+  const marginRight = Number.parseFloat(style?.marginRight || "0") || 0
+  const measuredWidth = Math.max(
+    Number(node.scrollWidth || 0),
+    Number(node.clientWidth || 0),
+    Number(node.offsetWidth || 0),
+    Number(rect?.width || 0),
+  )
+
+  return {
+    clientWidth: Number(node.clientWidth || 0),
+    scrollWidth: Number(node.scrollWidth || 0),
+    offsetWidth: Number(node.offsetWidth || 0),
+    rectWidth: Number(rect?.width || 0),
+    marginLeft,
+    marginRight,
+    totalWidth: measuredWidth + marginLeft + marginRight,
+    display: style?.display || "",
+    width: style?.width || "",
+    minWidth: style?.minWidth || "",
+    maxWidth: style?.maxWidth || "",
+    overflowX: style?.overflowX || "",
+    whiteSpace: style?.whiteSpace || "",
+  }
+}
+
+function reportReviewLayout({ document, diffView, reason = "manual" }) {
+  if (!document || !diffView) return null
+
+  const view = elementWidthSnapshot(diffView)
+  const lines = Array.from(document.querySelectorAll?.(".diff-line") || [])
+  const widest = lines
+    .map((wrapper, index) => {
+      const row = wrapper.querySelector?.(":scope > .diff-line__row") || wrapper.querySelector?.(".diff-line__row")
+      const text = row?.querySelector?.(".diff-line__text") || null
+      const comments = wrapper.querySelector?.(":scope > .diff-line__comments") || wrapper.querySelector?.(".diff-line__comments")
+      const composer = wrapper.querySelector?.(":scope > .diff-line__composer") || wrapper.querySelector?.(".diff-line__composer")
+      const wrapperMetrics = elementWidthSnapshot(wrapper)
+      const rowMetrics = elementWidthSnapshot(row)
+      const textMetrics = elementWidthSnapshot(text)
+      const commentsMetrics = elementWidthSnapshot(comments)
+      const composerMetrics = elementWidthSnapshot(composer)
+      const widestContribution = Math.max(
+        wrapperMetrics?.totalWidth || 0,
+        rowMetrics?.totalWidth || 0,
+        textMetrics?.totalWidth || 0,
+        commentsMetrics?.totalWidth || 0,
+        composerMetrics?.totalWidth || 0,
+      )
+
+      return {
+        index,
+        path: wrapper.dataset.path || "",
+        lineRef: wrapper.dataset.lineRef || "",
+        lineType: wrapper.dataset.lineType || "",
+        widestContribution,
+        wrapper: wrapperMetrics,
+        row: rowMetrics,
+        text: textMetrics,
+        comments: commentsMetrics,
+        composer: composerMetrics,
+      }
+    })
+    .sort((left, right) => right.widestContribution - left.widestContribution)
+    .slice(0, 12)
+
+  const summary = widest.map((entry) => ({
+    path: entry.path,
+    lineRef: entry.lineRef,
+    lineType: entry.lineType,
+    widestContribution: entry.widestContribution,
+    wrapperWidth: entry.wrapper?.totalWidth || 0,
+    rowWidth: entry.row?.totalWidth || 0,
+    textWidth: entry.text?.totalWidth || 0,
+    commentsWidth: entry.comments?.totalWidth || 0,
+    composerWidth: entry.composer?.totalWidth || 0,
+  }))
+
+  console.groupCollapsed(`[review-layout] ${reason}`)
+  console.log("diff-view", view)
+  console.table(summary)
+  if (widest[0]) console.log("widest-line-detail", widest[0])
+  console.groupEnd()
+
+  return { reason, diffView: view, widest }
+}
+
+const lucideSvgRoot = [
+  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"`,
+  ` fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`,
+].join("")
+const lucideSvgEnd = `</svg>`
+
+const moonIcon = [
+  lucideSvgRoot,
+  `<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />`,
+  lucideSvgEnd,
+].join("")
+
+const sunIcon = [
+  lucideSvgRoot,
+  `<circle cx="12" cy="12" r="4" />`,
+  `<path d="M12 2v2" />`,
+  `<path d="M12 20v2" />`,
+  `<path d="m4.93 4.93 1.41 1.41" />`,
+  `<path d="m17.66 17.66 1.41 1.41" />`,
+  `<path d="M2 12h2" />`,
+  `<path d="M20 12h2" />`,
+  `<path d="m6.34 17.66-1.41 1.41" />`,
+  `<path d="m19.07 4.93-1.41 1.41" />`,
+  lucideSvgEnd,
+].join("")
+
+const panelLeftOpenIcon = [
+  lucideSvgRoot,
+  `<rect width="18" height="18" x="3" y="3" rx="2" />`,
+  `<path d="M9 3v18" />`,
+  `<path d="m14 9 3 3-3 3" />`,
+  lucideSvgEnd,
+].join("")
+
+const panelLeftCloseIcon = [
+  lucideSvgRoot,
+  `<rect width="18" height="18" x="3" y="3" rx="2" />`,
+  `<path d="M9 3v18" />`,
+  `<path d="m16 15-3-3 3-3" />`,
+  lucideSvgEnd,
+].join("")
+
+function setIconButtonContent(button, icon, label) {
+  if (!button) return
+  button.innerHTML = `${icon}<span class="sr-only">${label}</span>`
+  button.setAttribute("aria-label", label)
+  button.setAttribute("title", label)
+}
+
 function syncThemeButton(button, theme) {
   if (!button) return
   const next = theme === "dark" ? "Light mode" : "Dark mode"
-  button.textContent = next
-  button.setAttribute("aria-label", `Switch to ${next.toLowerCase()}`)
+  const icon = theme === "dark" ? sunIcon : moonIcon
+  setIconButtonContent(button, icon, `Switch to ${next.toLowerCase()}`)
 }
 
 export function toggleTheme({ document, storage, button }) {
@@ -57,9 +207,10 @@ function setSidebarCollapsed(document, collapsed) {
 
 function syncSidebarToggle(button, collapsed) {
   if (!button) return
-  button.textContent = collapsed ? "Show sidebar" : "Hide sidebar"
+  const label = `${collapsed ? "Show" : "Hide"} sidebar`
+  const icon = collapsed ? panelLeftOpenIcon : panelLeftCloseIcon
+  setIconButtonContent(button, icon, label)
   button.setAttribute("aria-pressed", collapsed ? "true" : "false")
-  button.setAttribute("aria-label", `${collapsed ? "Show" : "Hide"} sidebar`)
 }
 
 function createId() {
@@ -584,21 +735,29 @@ function renderFileSection(state, file, refreshComments, refreshDraftOverview, s
   section.className = "file-section"
   section.id = `file-${file.path.replace(/[^a-z0-9]+/gi, "-")}`
 
+  const scroller = document.createElement("div")
+  scroller.className = "file-section__scroller"
+
+  const content = document.createElement("div")
+  content.className = "file-section__content"
+
   const heading = document.createElement("h3")
   heading.textContent = `${file.path} (${file.additions}+ / ${file.deletions}-)`
-  section.append(heading)
+  content.append(heading)
 
   for (const hunk of file.hunks) {
     const pre = document.createElement("pre")
     pre.className = "hunk-header"
     pre.textContent = hunk.header
-    section.append(pre)
+    content.append(pre)
 
     for (const line of hunk.lines) {
-      section.append(renderDiffLine(state, file, line, refreshComments, refreshDraftOverview, selectLine))
+      content.append(renderDiffLine(state, file, line, refreshComments, refreshDraftOverview, selectLine))
     }
   }
 
+  scroller.append(content)
+  section.append(scroller)
   return section
 }
 
@@ -651,6 +810,33 @@ function renderApp(bootstrap) {
   })()
   initTheme({ document, storage, matchMedia: globalThis.matchMedia?.bind(globalThis) })
   let sidebarCollapsed = setSidebarCollapsed(document, false)
+  const layoutDebugEnabled = isLayoutDebugEnabled(storage)
+  const runLayoutReport = (reason = "manual") => reportReviewLayout({ document, diffView, reason })
+  const scheduleLayoutReport = (reason) => {
+    if (!layoutDebugEnabled) return
+    globalThis.setTimeout?.(() => {
+      runLayoutReport(reason)
+    }, 0)
+  }
+
+  globalThis.__superpowersReviewLayout = runLayoutReport
+  globalThis.__superpowersEnableReviewLayoutDebug = () => {
+    try {
+      storage?.setItem?.("superpowers:review:debug-layout", "1")
+    } catch {}
+    console.info("[review-layout] debug flag saved — reload the page to enable automatic layout logging")
+  }
+  globalThis.__superpowersDisableReviewLayoutDebug = () => {
+    try {
+      storage?.removeItem?.("superpowers:review:debug-layout")
+    } catch {}
+    console.info("[review-layout] debug flag cleared")
+  }
+
+  if (layoutDebugEnabled) {
+    console.info("[review-layout] debug enabled — run __superpowersReviewLayout('after-repro') in devtools after reproducing the width issue")
+    globalThis.addEventListener?.("resize", () => scheduleLayoutReport("resize"), { signal: lineDragCleanup.signal })
+  }
 
   let activePath = ""
   let tree = buildFileTree([])
@@ -683,6 +869,7 @@ function renderApp(bootstrap) {
     draftBody.hidden = nextCollapsed
     draftToggle.textContent = nextCollapsed ? "Expand panel" : "Collapse panel"
     draftToggle.setAttribute("aria-expanded", String(!nextCollapsed))
+    scheduleLayoutReport(nextCollapsed ? "draft-collapse" : "draft-expand")
   })
 
   draftHeader.append(draftHeading, draftToggle)
@@ -892,7 +1079,7 @@ function renderApp(bootstrap) {
 
     const themeToggle = document.createElement("button")
     themeToggle.type = "button"
-    themeToggle.className = "sidebar-theme-toggle"
+    themeToggle.className = "sidebar-theme-toggle icon-button"
     syncThemeButton(themeToggle, document.documentElement.dataset.theme)
     themeToggle.addEventListener("click", () => {
       toggleTheme({ document, storage, button: themeToggle })
@@ -918,6 +1105,7 @@ function renderApp(bootstrap) {
     syncComposerUI()
     renderDraftOverview()
     renderDraftPreview(state)
+    scheduleLayoutReport("refresh-comments")
   }
 
   renderDraftPreview(state)
@@ -938,7 +1126,7 @@ function renderApp(bootstrap) {
 
       const sidebarToggle = document.createElement("button")
       sidebarToggle.type = "button"
-      sidebarToggle.className = "diff-view__sidebar-toggle"
+      sidebarToggle.className = "diff-view__sidebar-toggle icon-button"
       syncSidebarToggle(sidebarToggle, sidebarCollapsed)
       sidebarToggle.addEventListener("click", () => {
         sidebarCollapsed = setSidebarCollapsed(document, !sidebarCollapsed)
@@ -955,6 +1143,7 @@ function renderApp(bootstrap) {
       renderSidebar()
       refreshComments()
       syncComposerUI()
+      scheduleLayoutReport("after-render")
     })
     .catch((error) => {
       setStatus(error instanceof Error ? error.message : "Failed to load diff", "error")

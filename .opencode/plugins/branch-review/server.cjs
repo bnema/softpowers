@@ -7,6 +7,7 @@ const readline = require("node:readline")
 
 const token = crypto.randomBytes(16).toString("hex")
 const submitBodyLimit = 64 * 1024
+const idleTimeoutMs = Number.parseInt(process.env.SUPERPOWERS_REVIEW_IDLE_TIMEOUT_MS || "3600000", 10)
 const pendingSubmissions = new Map()
 const allowedModuleNames = new Set([
   "review-file-tree.js",
@@ -17,6 +18,11 @@ const allowedModuleNames = new Set([
 
 const submissionReader = readline.createInterface({ input: process.stdin })
 let submissionShutdownRequested = false
+let lastActivityAt = Date.now()
+
+function touchActivity() {
+  lastActivityAt = Date.now()
+}
 
 function closeSubmissionServer() {
   if (submissionShutdownRequested) return
@@ -181,6 +187,7 @@ function readBody(req, limit) {
 
 const server = http.createServer(async (req, res) => {
   try {
+    touchActivity()
     const url = parseRequestUrl(req)
 
     function sendSubmitResponse(statusCode, payload) {
@@ -320,6 +327,17 @@ const server = http.createServer(async (req, res) => {
     res.destroy(error)
   }
 })
+
+const idleCheckMs = Math.max(25, Math.min(Math.floor(idleTimeoutMs / 2) || 25, 1000))
+const idleTimer = setInterval(() => {
+  if (Date.now() - lastActivityAt < idleTimeoutMs) return
+
+  clearInterval(idleTimer)
+  closeSubmissionServer()
+  process.exit(0)
+}, idleCheckMs)
+
+idleTimer.unref?.()
 
 server.listen(0, "127.0.0.1", () => {
   const address = server.address()

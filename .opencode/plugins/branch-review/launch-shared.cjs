@@ -24,6 +24,22 @@ function defaultStateFile() {
   return path.join(cacheDir(), "review-bridge-state.json")
 }
 
+function sessionStateFile(session) {
+  const safeSession = String(session || "unknown").replace(/[^a-zA-Z0-9_-]/g, "_")
+  return path.join(cacheDir(), `review-bridge-${safeSession}.json`)
+}
+
+function listSessionStateFiles() {
+  try {
+    return fs
+      .readdirSync(cacheDir())
+      .filter((name) => name.startsWith("review-bridge-") && name.endsWith(".json") && name !== "review-bridge-state.json")
+      .map((name) => path.join(cacheDir(), name))
+  } catch {
+    return []
+  }
+}
+
 function readJson(filePath) {
   try {
     return JSON.parse(fs.readFileSync(filePath, "utf8"))
@@ -52,12 +68,43 @@ function removeIfExists(filePath) {
   } catch {}
 }
 
+function removeStateArtifacts(stateFile, state = readJson(stateFile)) {
+  if (state?.urlFile) removeIfExists(state.urlFile)
+  if (state?.stdoutLog) removeIfExists(state.stdoutLog)
+  if (state?.stderrLog) removeIfExists(state.stderrLog)
+  removeIfExists(stateFile)
+}
+
+function killProcessTree(pid, signal = "SIGTERM") {
+  if (!Number.isInteger(pid) || pid <= 0) return
+
+  try {
+    process.kill(-pid, signal)
+    return
+  } catch (error) {
+    if (error?.code !== "ESRCH") {
+      try {
+        process.kill(pid, signal)
+        return
+      } catch {}
+    }
+  }
+
+  try {
+    process.kill(pid, signal)
+  } catch {}
+}
+
 module.exports = {
   cacheDir,
   defaultStateFile,
   isProcessAlive,
+  killProcessTree,
+  listSessionStateFiles,
   parseArgs,
   readJson,
   removeIfExists,
+  removeStateArtifacts,
+  sessionStateFile,
   sleep,
 }

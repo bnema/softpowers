@@ -552,7 +552,7 @@ test("toggleTheme persists a theme choice to storage", () => {
   const next = reviewClient.toggleTheme({ document, storage, button })
 
   assert.equal(next, "dark")
-  assert.equal(button.textContent, "Light mode")
+  assert.match(button.innerHTML, /<svg[\s\S]*<span class="sr-only">Switch to light mode<\/span>/)
   assert.deepEqual(calls, [["superpowers:review:theme", "dark"]])
 })
 

@@ -1,4 +1,13 @@
-const { defaultStateFile, isProcessAlive, parseArgs, readJson, removeIfExists, sleep } = require("./launch-shared.cjs")
+const {
+  defaultStateFile,
+  isProcessAlive,
+  killProcessTree,
+  parseArgs,
+  readJson,
+  removeStateArtifacts,
+  sessionStateFile,
+  sleep,
+} = require("./launch-shared.cjs")
 
 async function waitForExit(pid, timeoutMs) {
   const deadline = Date.now() + timeoutMs
@@ -11,9 +20,32 @@ async function waitForExit(pid, timeoutMs) {
   throw new Error(`review bridge pid ${pid} did not exit after SIGTERM`)
 }
 
+function resolveStateFile(args) {
+  const explicitStateFile = args.get("state-file")
+  if (explicitStateFile) return explicitStateFile
+
+  const session = args.get("session")
+  if (session) return sessionStateFile(session)
+
+  return defaultStateFile()
+}
+
+function removeAliasIfMatches(state) {
+  const aliasStateFile = defaultStateFile()
+  const aliasState = readJson(aliasStateFile)
+  if (!aliasState) {
+    removeStateArtifacts(aliasStateFile)
+    return
+  }
+
+  if (aliasState.pid === state.pid && aliasState.session === state.session) {
+    removeStateArtifacts(aliasStateFile, aliasState)
+  }
+}
+
 async function main() {
   const args = parseArgs()
-  const stateFile = args.get("state-file") || defaultStateFile()
+  const stateFile = resolveStateFile(args)
   const state = readJson(stateFile)
 
   if (!state) {
@@ -22,15 +54,14 @@ async function main() {
   }
 
   const pid = Number.parseInt(String(state.pid), 10)
-  const urlFile = state.urlFile || `${stateFile}.url`
 
   if (isProcessAlive(pid)) {
-    process.kill(pid, "SIGTERM")
+    killProcessTree(pid, "SIGTERM")
     await waitForExit(pid, 5000)
   }
 
-  removeIfExists(stateFile)
-  removeIfExists(urlFile)
+  removeStateArtifacts(stateFile, state)
+  removeAliasIfMatches(state)
 
   process.stdout.write("stopped review bridge\n")
 }

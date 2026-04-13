@@ -31,7 +31,20 @@
   --syntax-builtin: #c026d3;
   --status-error: var(--error);
   --status-success: var(--success);
-  --font-code: "JetBrainsMono Nerd Font Mono", "JetBrainsMono Nerd Font", "JetBrains Mono", "FiraCode Nerd Font Mono", "FiraCode Nerd Font", "Fira Code", "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-code:
+    "JetBrainsMono Nerd Font Mono",
+    "JetBrainsMono Nerd Font",
+    "JetBrains Mono",
+    "FiraCode Nerd Font Mono",
+    "FiraCode Nerd Font",
+    "Fira Code",
+    "Fira Mono",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
   color-scheme: light;
 }
 
@@ -107,10 +120,11 @@ main {
   grid-column: 2;
   overflow: hidden;
   padding: 14px;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   min-width: 0;
+  min-height: 0;
   background: var(--bg-primary);
 }
 
@@ -129,6 +143,20 @@ button {
   background: var(--surface-primary);
   border-radius: 8px;
   padding: 6px 11px;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+.icon-button svg {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 button:hover {
@@ -155,6 +183,18 @@ textarea {
 
 ::selection {
   background: var(--selection-bg);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .file-tree {
@@ -258,6 +298,19 @@ textarea {
   padding-top: 10px;
 }
 
+.file-section__scroller {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.file-section__content {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
+}
+
 .hunk-header {
   margin: 0 0 8px;
   color: var(--text-secondary);
@@ -265,9 +318,17 @@ textarea {
   font-family: var(--font-code);
 }
 
+.diff-line {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
+}
+
 .diff-line__row {
   display: grid;
-  grid-template-columns: 1.5rem var(--old-line-width, 3rem) var(--new-line-width, 3rem) 1fr;
+  width: 100%;
+  grid-template-columns: 1.5rem var(--old-line-width, 3rem) var(--new-line-width, 3rem) max-content;
   gap: 8px;
   align-items: start;
   padding: 3px 0;
@@ -319,12 +380,15 @@ textarea {
 }
 
 .diff-line__text {
-  white-space: pre-wrap;
+  min-width: max-content;
+  white-space: pre;
   font-family: var(--font-code);
 }
 
 .diff-line__text.hljs {
-  display: inline;
+  display: block;
+  width: max-content;
+  min-width: max-content;
   background: transparent;
   color: inherit;
   overflow: visible;
@@ -466,8 +530,11 @@ textarea {
 }
 
 #diff-view {
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .diff-view__controls {
@@ -481,8 +548,12 @@ textarea {
 }
 
 #draft-editor {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  flex: 0 0 auto;
   min-height: 0;
-  max-height: 38vh;
+  overflow: hidden;
 }
 
 .draft-dock {
@@ -492,6 +563,11 @@ textarea {
   border-radius: 12px;
   overflow: hidden;
   background: var(--surface-primary);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.draft-dock:not([data-collapsed="true"]) {
+  max-height: 38vh;
 }
 
 .draft-dock__header {
@@ -520,6 +596,7 @@ textarea {
 }
 
 .draft-dock[data-collapsed="true"] {
+  grid-template-rows: auto;
   max-height: none;
 }
 
@@ -593,11 +670,11 @@ textarea {
   }
 
   main {
-    grid-template-rows: auto auto;
     padding: 12px;
   }
 
   #draft-editor {
+    position: static;
     max-height: none;
   }
 

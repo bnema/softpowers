@@ -1,7 +1,17 @@
 const { spawn } = require("node:child_process")
 const path = require("node:path")
 const fs = require("node:fs")
-const { defaultStateFile, isProcessAlive, parseArgs, readJson, removeIfExists, sleep } = require("./launch-shared.cjs")
+const {
+  defaultStateFile,
+  isProcessAlive,
+  killProcessTree,
+  listSessionStateFiles,
+  parseArgs,
+  readJson,
+  removeStateArtifacts,
+  sessionStateFile,
+  sleep,
+} = require("./launch-shared.cjs")
 
 async function waitForUrlFile(urlFile, child, timeoutMs) {
   const deadline = Date.now() + timeoutMs
@@ -22,6 +32,39 @@ async function waitForUrlFile(urlFile, child, timeoutMs) {
   throw new Error("timed out waiting for review url")
 }
 
+async function waitForExit(pid, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+
+  while (Date.now() < deadline) {
+    if (!isProcessAlive(pid)) return
+    await sleep(25)
+  }
+
+  throw new Error(`review bridge pid ${pid} did not exit after SIGTERM`)
+}
+
+async function replaceSameSessionBridge(session) {
+  for (const filePath of listSessionStateFiles()) {
+    const state = readJson(filePath)
+    if (!state) {
+      removeStateArtifacts(filePath)
+      continue
+    }
+
+    const pid = Number.parseInt(String(state.pid), 10)
+    if (!isProcessAlive(pid)) {
+      removeStateArtifacts(filePath, state)
+      continue
+    }
+
+    if (state.session !== session) continue
+
+    killProcessTree(pid, "SIGTERM")
+    await waitForExit(pid, 5000)
+    removeStateArtifacts(filePath, state)
+  }
+}
+
 async function main() {
   const args = parseArgs()
   const session = args.get("session")
@@ -33,13 +76,19 @@ async function main() {
 
   const base = args.get("base") || process.env.SUPERPOWERS_REVIEW_BASE || "main"
   const repo = args.get("repo") || process.env.SUPERPOWERS_REVIEW_REPO || process.cwd()
-  const stateFile = args.get("state-file") || defaultStateFile()
+  const explicitStateFile = args.get("state-file") || null
+  const stateFile = explicitStateFile || sessionStateFile(session)
+  const aliasStateFile = defaultStateFile()
   const launcherPath = args.get("launcher-path") || path.join(__dirname, "manual-launch.cjs")
   const urlFile = `${stateFile}.url`
   const stdoutLog = `${stateFile}.stdout.log`
   const stderrLog = `${stateFile}.stderr.log`
 
   fs.mkdirSync(path.dirname(stateFile), { recursive: true })
+
+  if (!explicitStateFile) {
+    await replaceSameSessionBridge(session)
+  }
 
   const currentState = readJson(stateFile)
   if (currentState) {
@@ -49,8 +98,7 @@ async function main() {
       process.exit(1)
     }
 
-    removeIfExists(currentState.urlFile || urlFile)
-    removeIfExists(stateFile)
+    removeStateArtifacts(stateFile, currentState)
   }
 
   const stdoutFd = fs.openSync(stdoutLog, "w")
@@ -85,16 +133,19 @@ async function main() {
     }
 
     fs.writeFileSync(stateFile, `${JSON.stringify(state, null, 2)}\n`)
+    if (!explicitStateFile) {
+      fs.writeFileSync(aliasStateFile, `${JSON.stringify(state, null, 2)}\n`)
+    }
     process.stdout.write(`${url}\n`)
   } catch (error) {
     if (child?.pid) {
       try {
-        process.kill(child.pid, "SIGTERM")
+        killProcessTree(child.pid, "SIGTERM")
       } catch {}
     }
 
-    removeIfExists(urlFile)
-    removeIfExists(stateFile)
+    removeStateArtifacts(stateFile)
+    if (!explicitStateFile) removeStateArtifacts(aliasStateFile)
     throw error
   } finally {
     fs.closeSync(stdoutFd)

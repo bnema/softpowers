@@ -191,6 +191,7 @@ function loadReadModule(tempRoot) {
     Buffer,
     JSON,
     URL,
+    clearInterval,
     clearTimeout,
     module: { exports: {} },
     process: {
@@ -206,12 +207,87 @@ function loadReadModule(tempRoot) {
       stderr: { write() {} },
     },
     require: mockRequire,
+    setInterval() {
+      return { unref() {} }
+    },
     setTimeout,
     __dirname: path.join(tempRoot, ".opencode/plugins/branch-review"),
   }
 
   vm.runInNewContext(`${source}\nmodule.exports = { readModule }`, context)
   return context.module.exports.readModule
+}
+
+function loadIdleTimeoutMs(env = {}) {
+  const serverPath = path.join(process.cwd(), ".opencode/plugins/branch-review/server.cjs")
+  const source = fs.readFileSync(serverPath, "utf8")
+
+  const mockRequire = (specifier) => {
+    if (specifier === "node:http") {
+      return {
+        createServer: () => ({
+          listen(_port, _host, callback) {
+            if (typeof callback === "function") callback()
+          },
+          address: () => ({ port: 1234 }),
+          close() {},
+        }),
+      }
+    }
+
+    if (specifier === "node:child_process") {
+      return { execFileSync: () => "" }
+    }
+
+    if (specifier === "node:readline") {
+      return {
+        createInterface: () => ({
+          close() {},
+          on() {},
+        }),
+      }
+    }
+
+    if (specifier === "node:crypto") {
+      return { randomBytes: () => ({ toString: () => "token" }) }
+    }
+
+    if (specifier === "node:fs") return fs
+    if (specifier === "node:path") return path
+
+    return createRequire(import.meta.url)(specifier)
+  }
+
+  const context = {
+    Buffer,
+    JSON,
+    URL,
+    clearInterval,
+    clearTimeout,
+    module: { exports: {} },
+    process: {
+      env: {
+        SUPERPOWERS_REVIEW_REPO: process.cwd(),
+        SUPERPOWERS_REVIEW_BASE: "main",
+        SUPERPOWERS_REVIEW_SESSION: "ses_expected",
+        ...env,
+      },
+      exit(code) {
+        throw new Error(`unexpected exit ${code}`)
+      },
+      stdout: { write() {} },
+      stderr: { write() {} },
+    },
+    require: mockRequire,
+    setInterval() {
+      return { unref() {} }
+    },
+    setTimeout,
+    __dirname: path.join(process.cwd(), ".opencode/plugins/branch-review"),
+  }
+
+  vm.runInNewContext(`${source}\nmodule.exports = { idleTimeoutMs }`, context)
+  return context.module.exports.idleTimeoutMs
 }
 
 test("server refuses to start without an attached session", () => {
@@ -401,6 +477,28 @@ test("server no longer serves a remote highlight asset", async (t) => {
 
   const asset = await request(startup.port, "/assets/highlight.js")
   assert.equal(asset.status, 404)
+})
+
+test("server defaults the idle timeout to one hour", () => {
+  assert.equal(loadIdleTimeoutMs(), 3_600_000)
+})
+
+test("server exits after the idle timeout elapses", async (t) => {
+  const { child, started } = startServer({
+    ...reviewEnvWithSession(),
+    SUPERPOWERS_REVIEW_IDLE_TIMEOUT_MS: "50",
+  })
+
+  t.after(() => child.kill())
+
+  await started
+
+  const exit = await Promise.race([
+    new Promise((resolve) => child.once("exit", resolve)),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timed out waiting for idle shutdown")), 1000)),
+  ])
+
+  assert.equal(exit, 0)
 })
 
 test("root page includes review bootstrap state", async (t) => {

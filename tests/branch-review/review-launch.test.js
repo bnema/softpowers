@@ -17,6 +17,19 @@ function reviewStopPath() {
   return path.join(process.cwd(), ".opencode/plugins/branch-review/review-stop.cjs")
 }
 
+function cacheStateDir(cacheHome) {
+  return path.join(cacheHome, "superpowers", "branch-review")
+}
+
+function sessionStateFile(cacheHome, session) {
+  const safeSession = String(session).replace(/[^a-zA-Z0-9_-]/g, "_")
+  return path.join(cacheStateDir(cacheHome), `review-bridge-${safeSession}.json`)
+}
+
+function defaultAliasStateFile(cacheHome) {
+  return path.join(cacheStateDir(cacheHome), "review-bridge-state.json")
+}
+
 async function waitForFile(filePath, timeoutMs = 5000) {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
@@ -251,4 +264,110 @@ test("review start replaces stale state", () => {
 
   const stop = spawnSync(process.execPath, [reviewStopPath(), "--state-file", stateFile], { cwd: process.cwd(), encoding: "utf8", timeout: 10000 })
   assert.equal(stop.status, 0)
+})
+
+test("review start writes a session-keyed default state file", () => {
+  const tempDir = makeTempDir("superpowers-review-launch-")
+  const cacheHome = path.join(tempDir, "cache")
+  const launcherPath = createFakeLauncherScript(tempDir)
+  const repoDir = path.join(tempDir, "repo")
+  fs.mkdirSync(repoDir)
+
+  const start = startReviewStart(["--session", "ses_default", "--base", "main", "--repo", repoDir, "--launcher-path", launcherPath], {
+    XDG_CACHE_HOME: cacheHome,
+  })
+  assert.equal(start.status, 0)
+
+  const stateFile = sessionStateFile(cacheHome, "ses_default")
+  const aliasFile = defaultAliasStateFile(cacheHome)
+  const state = readJson(stateFile)
+  assert.equal(state.session, "ses_default")
+  assert.equal(state.repo, repoDir)
+  assert.equal(typeof state.pid, "number")
+  assert.ok(fs.existsSync(aliasFile))
+
+  const stop = spawnSync(process.execPath, [reviewStopPath(), "--state-file", stateFile], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    timeout: 10000,
+  })
+  assert.equal(stop.status, 0)
+
+  fs.rmSync(tempDir, { recursive: true, force: true })
+})
+
+test("review start replaces a live bridge for the same session", async () => {
+  const tempDir = makeTempDir("superpowers-review-launch-")
+  const cacheHome = path.join(tempDir, "cache")
+  const launcherPath = createFakeLauncherScript(tempDir)
+  const repoDir = path.join(tempDir, "repo")
+  const stopMarkerFile = path.join(tempDir, "stop-marker.txt")
+  fs.mkdirSync(repoDir)
+
+  const env = {
+    XDG_CACHE_HOME: cacheHome,
+    FAKE_LAUNCHER_STOP_MARKER: stopMarkerFile,
+  }
+
+  const first = startReviewStart(["--session", "ses_replace", "--base", "main", "--repo", repoDir, "--launcher-path", launcherPath], env)
+  assert.equal(first.status, 0)
+
+  const stateFile = sessionStateFile(cacheHome, "ses_replace")
+  const firstState = readJson(stateFile)
+  assert.ok(isProcessAlive(firstState.pid))
+
+  const second = startReviewStart(["--session", "ses_replace", "--base", "main", "--repo", repoDir, "--launcher-path", launcherPath], env)
+  assert.equal(second.status, 0)
+
+  const secondState = readJson(stateFile)
+  assert.notEqual(secondState.pid, firstState.pid)
+  assert.equal(isProcessAlive(firstState.pid), false)
+  assert.ok(isProcessAlive(secondState.pid))
+  await waitForFile(stopMarkerFile)
+
+  const stop = spawnSync(process.execPath, [reviewStopPath(), "--state-file", stateFile], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    timeout: 10000,
+  })
+  assert.equal(stop.status, 0)
+
+  fs.rmSync(tempDir, { recursive: true, force: true })
+})
+
+test("review start allows different sessions to keep separate state", () => {
+  const tempDir = makeTempDir("superpowers-review-launch-")
+  const cacheHome = path.join(tempDir, "cache")
+  const launcherPath = createFakeLauncherScript(tempDir)
+  const repoDir = path.join(tempDir, "repo")
+  fs.mkdirSync(repoDir)
+
+  const env = { XDG_CACHE_HOME: cacheHome }
+  const first = startReviewStart(["--session", "ses_one", "--base", "main", "--repo", repoDir, "--launcher-path", launcherPath], env)
+  const second = startReviewStart(["--session", "ses_two", "--base", "main", "--repo", repoDir, "--launcher-path", launcherPath], env)
+  assert.equal(first.status, 0)
+  assert.equal(second.status, 0)
+
+  const firstStateFile = sessionStateFile(cacheHome, "ses_one")
+  const secondStateFile = sessionStateFile(cacheHome, "ses_two")
+  const firstState = readJson(firstStateFile)
+  const secondState = readJson(secondStateFile)
+  assert.notEqual(firstState.pid, secondState.pid)
+  assert.ok(isProcessAlive(firstState.pid))
+  assert.ok(isProcessAlive(secondState.pid))
+
+  const stopFirst = spawnSync(process.execPath, [reviewStopPath(), "--state-file", firstStateFile], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    timeout: 10000,
+  })
+  const stopSecond = spawnSync(process.execPath, [reviewStopPath(), "--state-file", secondStateFile], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    timeout: 10000,
+  })
+  assert.equal(stopFirst.status, 0)
+  assert.equal(stopSecond.status, 0)
+
+  fs.rmSync(tempDir, { recursive: true, force: true })
 })
