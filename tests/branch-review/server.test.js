@@ -212,6 +212,17 @@ test("root page loads review styles", async (t) => {
   assert.match(styles.body, /--surface-primary/)
 })
 
+test("server serves review module assets", async (t) => {
+  const { child, started } = startServer(reviewEnvWithSession())
+  const startup = await started
+  t.after(() => child.kill())
+
+  for (const asset of ["/review-file-tree.js", "/review-draft-panel.js", "/review-selection.js", "/review-theme.js"]) {
+    const response = await request(startup.port, asset)
+    assert.equal(response.status, 200)
+  }
+})
+
 test("diff endpoint includes staged and unstaged changes from the checkout", async (t) => {
   const repo = createRepo()
   const { child, started } = startServer({ ...reviewEnv(), SUPERPOWERS_REVIEW_REPO: repo, SUPERPOWERS_REVIEW_BASE: "main" })

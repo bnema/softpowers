@@ -30,6 +30,14 @@ if (!opencodeUrl) {
 const reviewServerPath = args.get("review-server-path") || path.join(__dirname, "server.cjs")
 const repo = args.get("repo") || process.env.SUPERPOWERS_REVIEW_REPO || process.cwd()
 const base = args.get("base") || process.env.SUPERPOWERS_REVIEW_BASE || "main"
+const promptTimeoutMs = Number.parseInt(
+  args.get("prompt-timeout-ms") || process.env.SUPERPOWERS_REVIEW_PROMPT_TIMEOUT_MS || "15000",
+  10,
+)
+
+function getPromptTimeoutMs() {
+  return Number.isFinite(promptTimeoutMs) && promptTimeoutMs > 0 ? promptTimeoutMs : 15000
+}
 
 async function loadReviewPrompt() {
   const source = fs.readFileSync(path.join(__dirname, "review-prompt.js"), "utf8")
@@ -76,6 +84,39 @@ async function main() {
     fn(value)
   }
 
+  async function submitPrompt(text) {
+    const timeoutMs = getPromptTimeoutMs()
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+      const response = await fetch(`${opencodeUrl.replace(/\/$/, "")}/session/${session}/prompt_async`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          directory: repo,
+          noReply: false,
+          parts: [{ type: "text", text }],
+        }),
+        signal: controller.signal,
+      })
+
+      if (!response.ok) {
+        throw new Error(`prompt_async failed with ${response.status}`)
+      }
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new Error(`prompt_async timed out after ${timeoutMs}ms`)
+      }
+
+      throw error
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
   const stopChild = async () => {
     if (child.exitCode !== null || child.signalCode !== null) return
     child.kill()
@@ -115,21 +156,7 @@ async function main() {
       void (async () => {
         try {
           const text = formatReviewPrompt(event.payload)
-          const response = await fetch(`${opencodeUrl.replace(/\/$/, "")}/session/${session}/prompt_async`, {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-            },
-            body: JSON.stringify({
-              directory: repo,
-              noReply: false,
-              parts: [{ type: "text", text }],
-            }),
-          })
-
-          if (!response.ok) {
-            throw new Error(`prompt_async failed with ${response.status}`)
-          }
+          await submitPrompt(text)
 
           await stopChild()
           finish(resolve)

@@ -38,6 +38,10 @@ function readClient() {
   return fs.readFileSync(path.join(__dirname, "review-client.js"), "utf8")
 }
 
+function readModule(name) {
+  return fs.readFileSync(path.join(__dirname, name), "utf8")
+}
+
 function readStyles() {
   return fs.readFileSync(path.join(__dirname, "review-styles.css"), "utf8")
 }
@@ -133,6 +137,30 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/review-client.js") {
       res.writeHead(200, { "content-type": "application/javascript" })
       res.end(readClient())
+      return
+    }
+
+    if (url.pathname === "/review-file-tree.js") {
+      res.writeHead(200, { "content-type": "application/javascript" })
+      res.end(readModule("review-file-tree.js"))
+      return
+    }
+
+    if (url.pathname === "/review-draft-panel.js") {
+      res.writeHead(200, { "content-type": "application/javascript" })
+      res.end(readModule("review-draft-panel.js"))
+      return
+    }
+
+    if (url.pathname === "/review-selection.js") {
+      res.writeHead(200, { "content-type": "application/javascript" })
+      res.end(readModule("review-selection.js"))
+      return
+    }
+
+    if (url.pathname === "/review-theme.js") {
+      res.writeHead(200, { "content-type": "application/javascript" })
+      res.end(readModule("review-theme.js"))
       return
     }
 

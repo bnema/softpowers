@@ -55,6 +55,48 @@ setInterval(() => {}, 1000)
   return scriptPath
 }
 
+function createHungReviewServerScript(markerPath, pidPath) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
+  const scriptPath = path.join(dir, "hung-review-server.cjs")
+  fs.writeFileSync(
+    scriptPath,
+    `const fs = require("node:fs")
+fs.writeFileSync(${JSON.stringify(pidPath)}, String(process.pid))
+const timer = setTimeout(() => {
+  process.stdout.write(JSON.stringify({ type: "review-submitted", payload: { summary: "Hung prompt" } }) + "\\n")
+}, 25)
+
+process.stdout.write(JSON.stringify({ type: "server-started", port: 4321 }) + "\\n")
+process.on("SIGTERM", () => {
+  clearTimeout(timer)
+  fs.writeFileSync(${JSON.stringify(markerPath)}, "stopped\\n")
+  process.exit(0)
+})
+setInterval(() => {}, 1000)
+`,
+  )
+  return scriptPath
+}
+
+function killPidFile(pidPath) {
+  if (!fs.existsSync(pidPath)) return
+
+  try {
+    const pid = Number.parseInt(fs.readFileSync(pidPath, "utf8"), 10)
+    if (Number.isFinite(pid)) process.kill(pid, "SIGTERM")
+  } catch {}
+}
+
+async function waitForFile(filePath, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (fs.existsSync(filePath)) return
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+
+  throw new Error(`timed out waiting for ${path.basename(filePath)}`)
+}
+
 function startOpenCodeStub() {
   let resolveRequest
   let rejectRequest
@@ -103,6 +145,33 @@ function startOpenCodeStub() {
     })
     server.on("error", reject)
     request.catch(reject)
+  })
+}
+
+function startHangingOpenCodeStub() {
+  let sawRequest = false
+
+  const server = http.createServer((req, res) => {
+    if (req.method !== "POST" || req.url !== "/session/ses_123/prompt_async") {
+      res.writeHead(404, { "content-type": "application/json" })
+      res.end(JSON.stringify({ error: "unexpected request" }))
+      return
+    }
+
+    sawRequest = true
+  })
+
+  return new Promise((resolve, reject) => {
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address()
+      resolve({
+        server,
+        url: `http://127.0.0.1:${address.port}`,
+        sawRequest: () => sawRequest,
+        close: () => new Promise((closeResolve) => server.close(() => closeResolve())),
+      })
+    })
+    server.on("error", reject)
   })
 }
 
@@ -174,4 +243,67 @@ test("manual launcher forwards the submitted review to OpenCode", { timeout: 100
   assert.match(received.body.parts[0].text, /- old line 7: Needs fix/)
   assert.match(stdout, /Open http:\/\/127\.0\.0\.1:4321\/\?session=ses_123&base=main/)
   assert.equal(stderr, "")
+})
+
+test("manual launcher times out a hung prompt_async request", { timeout: 10000 }, async (t) => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
+  const markerPath = path.join(tempDir, "stopped.txt")
+  const pidPath = path.join(tempDir, "review-server.pid")
+  const reviewServerPath = createHungReviewServerScript(markerPath, pidPath)
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const opencode = await startHangingOpenCodeStub()
+  const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
+
+  let stderr = ""
+  const child = spawn(
+    process.execPath,
+    [
+      launcher,
+      "--session",
+      "ses_123",
+      "--opencode-url",
+      opencode.url,
+      "--review-server-path",
+      reviewServerPath,
+      "--repo",
+      repoDir,
+      "--base",
+      "main",
+      "--prompt-timeout-ms",
+      "50",
+    ],
+    { cwd: process.cwd(), encoding: "utf8" },
+  )
+
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk.toString()
+  })
+
+  t.after(() => {
+    child.kill()
+  })
+  t.after(() => {
+    killPidFile(pidPath)
+  })
+  t.after(async () => {
+    await opencode.close()
+  })
+
+  const exit = new Promise((resolve, reject) => {
+    child.on("exit", (code, signal) => {
+      if (code !== 0) resolve()
+      else reject(new Error("launcher unexpectedly succeeded"))
+    })
+    child.on("error", reject)
+  })
+
+  await Promise.race([
+    exit,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timed out waiting for launcher exit")), 5000)),
+  ])
+
+  await waitForFile(markerPath, 5000)
+
+  assert.equal(opencode.sawRequest(), true)
+  assert.match(stderr, /prompt_async timed out after 50ms/)
 })
