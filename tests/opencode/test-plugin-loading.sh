@@ -77,6 +77,25 @@ else
   exit 1
 fi
 
+echo "Test 5c: Checking OpenCode update guidance..."
+if grep -q "updates automatically when you restart OpenCode" "$REPO_ROOT/docs/README.opencode.md" "$REPO_ROOT/.opencode/INSTALL.md"; then
+  echo "  [FAIL] OpenCode docs still claim restart auto-updates the plugin"
+  exit 1
+else
+  echo "  [PASS] OpenCode docs describe the real refresh flow"
+fi
+
+echo "Test 5d: Checking OpenCode helper command..."
+if [ -f "$REPO_ROOT/commands/opencode-install-update.md" ] \
+  && grep -q "docs/README.opencode.md" "$REPO_ROOT/commands/opencode-install-update.md" \
+  && grep -q "~/.cache/opencode/packages" "$REPO_ROOT/commands/opencode-install-update.md" \
+  && grep -q "bnema/superpowers" "$REPO_ROOT/commands/opencode-install-update.md"; then
+  echo "  [PASS] OpenCode helper command exists and points to fork docs"
+else
+  echo "  [FAIL] OpenCode helper command is missing or incomplete"
+  exit 1
+fi
+
 echo "Test 6: Checking TUI plugin surface..."
 if grep -q '"./tui"' "$REPO_ROOT/package.json"; then
   echo "  [PASS] package exports a TUI entrypoint"
