@@ -134,7 +134,8 @@ test("server responds to valid submit requests with ok response", async (t) => {
 })
 
 test("diff endpoint returns files and hunks", async (t) => {
-  const { child, started } = startServer(reviewEnv())
+  const repo = createRepo()
+  const { child, started } = startServer({ ...reviewEnv(), SUPERPOWERS_REVIEW_REPO: repo, SUPERPOWERS_REVIEW_BASE: "main" })
   const startup = await started
   t.after(() => child.kill())
 
