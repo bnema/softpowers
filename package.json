@@ -2,5 +2,10 @@
   "name": "superpowers",
   "version": "5.0.7",
   "type": "module",
-  "main": ".opencode/plugins/superpowers.js"
+  "main": ".opencode/plugins/superpowers.js",
+  "exports": {
+    ".": "./.opencode/plugins/superpowers.js",
+    "./server": "./.opencode/plugins/superpowers.js",
+    "./tui": "./.opencode/plugins/superpowers-tui.tsx"
+  }
 }

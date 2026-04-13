@@ -53,9 +53,9 @@ Present exactly these 4 options:
 ```
 Implementation complete. What would you like to do?
 
-1. Merge back to <base-branch> locally
-2. Push and create a Pull Request
-3. Keep the branch as-is (I'll handle it later)
+1. Review branch locally
+2. Merge back to <base-branch> locally
+3. Push and create a Pull Request
 4. Discard this work
 
 Which option?

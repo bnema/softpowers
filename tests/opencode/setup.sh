@@ -22,6 +22,7 @@ export OPENCODE_CONFIG_DIR="$TEST_HOME/.config/opencode"
 SUPERPOWERS_DIR="$OPENCODE_CONFIG_DIR/superpowers"
 SUPERPOWERS_SKILLS_DIR="$SUPERPOWERS_DIR/skills"
 SUPERPOWERS_PLUGIN_FILE="$SUPERPOWERS_DIR/.opencode/plugins/superpowers.js"
+SUPERPOWERS_TUI_PLUGIN_FILE="$SUPERPOWERS_DIR/.opencode/plugins/superpowers-tui.tsx"
 
 # Install skills
 mkdir -p "$SUPERPOWERS_DIR"
@@ -30,10 +31,18 @@ cp -r "$REPO_ROOT/skills" "$SUPERPOWERS_DIR/"
 # Install plugin
 mkdir -p "$(dirname "$SUPERPOWERS_PLUGIN_FILE")"
 cp "$REPO_ROOT/.opencode/plugins/superpowers.js" "$SUPERPOWERS_PLUGIN_FILE"
+cp "$REPO_ROOT/.opencode/plugins/superpowers-tui.tsx" "$SUPERPOWERS_TUI_PLUGIN_FILE"
 
 # Register plugin via symlink (what OpenCode actually reads)
 mkdir -p "$OPENCODE_CONFIG_DIR/plugins"
 ln -sf "$SUPERPOWERS_PLUGIN_FILE" "$OPENCODE_CONFIG_DIR/plugins/superpowers.js"
+
+cat > "$OPENCODE_CONFIG_DIR/tui.json" <<'EOF'
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": [["./plugins/superpowers-tui.tsx", {}]]
+}
+EOF
 
 # Create test skills in different locations for testing
 
