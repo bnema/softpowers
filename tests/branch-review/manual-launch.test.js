@@ -14,7 +14,7 @@ test("manual launcher requires a session", () => {
   assert.match(result.stderr, /session is required/)
 })
 
-function createAckableFakeReviewServerScript(ackPath, requestId, summary = "Check the retry path") {
+function createAckableFakeReviewServerScript(ackPath, requestId, summary = "Check the retry path", cwdPath = null) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
   const scriptPath = path.join(dir, "fake-review-server.cjs")
   fs.writeFileSync(
@@ -24,6 +24,11 @@ const readline = require("node:readline")
 const ackPath = ${JSON.stringify(ackPath)}
 const requestId = ${JSON.stringify(requestId)}
 const ackReader = readline.createInterface({ input: process.stdin })
+const cwdPath = ${JSON.stringify(cwdPath)}
+
+if (cwdPath) {
+  fs.writeFileSync(cwdPath, process.cwd())
+}
 
 ackReader.on("line", (line) => {
   fs.appendFileSync(ackPath, line + "\\n")
@@ -411,6 +416,51 @@ test("manual launcher forwards the submitted review to OpenCode", { timeout: 100
     ok: true,
     message: "Review delivered to OpenCode session",
   })
+})
+
+test("manual launcher starts the review server in the repo cwd", { timeout: 10000 }, async (t) => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
+  const ackPath = path.join(tempDir, "ack.json")
+  const cwdPath = path.join(tempDir, "cwd.txt")
+  const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-cwd", "Check cwd", cwdPath)
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const opencodeCli = startFakeOpencodeCli()
+  const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
+
+  const child = spawn(
+    process.execPath,
+    [
+      launcher,
+      "--session",
+      "ses_offline",
+      "--review-server-path",
+      reviewServerPath,
+      "--repo",
+      repoDir,
+      "--base",
+      "main",
+    ],
+    { cwd: process.cwd(), encoding: "utf8", env: { ...process.env, ...opencodeCli.env } },
+  )
+
+  t.after(() => {
+    child.kill()
+  })
+
+  const exit = new Promise((resolve, reject) => {
+    child.on("exit", (code, signal) => {
+      if (code === 0) resolve()
+      else reject(new Error(`launcher exited with ${code ?? signal}`))
+    })
+    child.on("error", reject)
+  })
+
+  await Promise.race([
+    exit,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timed out waiting for launcher exit")), 5000)),
+  ])
+
+  assert.equal(fs.readFileSync(cwdPath, "utf8"), repoDir)
 })
 
 test("manual launcher hands review to the opencode cli without opencode-url", { timeout: 10000 }, async (t) => {

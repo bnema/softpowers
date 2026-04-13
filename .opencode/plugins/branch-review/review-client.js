@@ -208,6 +208,7 @@ const highlightLanguageByExtension = new Map([
   [".zsh", "bash"],
 ])
 
+// Keep this pinned to match the highlight.js stylesheet/core version in review-template.html.
 const highlightLanguageBundleBase = "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/languages"
 const highlightLanguageLoads = new Map()
 

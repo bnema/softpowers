@@ -17,11 +17,11 @@ function reviewStopPath() {
   return path.join(process.cwd(), ".opencode/plugins/branch-review/review-stop.cjs")
 }
 
-function waitForFile(filePath, timeoutMs = 5000) {
+async function waitForFile(filePath, timeoutMs = 5000) {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     if (fs.existsSync(filePath)) return
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20)
+    await new Promise((resolve) => setTimeout(resolve, 20))
   }
   throw new Error(`timed out waiting for ${path.basename(filePath)}`)
 }
@@ -161,7 +161,7 @@ test("review start prints the url and writes state", (t) => {
   assert.equal(fs.existsSync(stopMarkerFile), false)
 })
 
-test("review stop kills the process and removes state", (t) => {
+test("review stop kills the process and removes state", async (t) => {
   const tempDir = makeTempDir("superpowers-review-launch-")
   const launcherPath = createFakeLauncherScript(tempDir)
   const stateFile = path.join(tempDir, "state.json")
@@ -196,7 +196,7 @@ test("review stop kills the process and removes state", (t) => {
   assert.equal(fs.existsSync(stateFile), false)
   assert.equal(fs.existsSync(stateBeforeStop.urlFile), false)
   assert.equal(isProcessAlive(stateBeforeStop.pid), false)
-  waitForFile(stopMarkerFile)
+  await waitForFile(stopMarkerFile)
 })
 
 test("review start refuses to replace a live process", () => {

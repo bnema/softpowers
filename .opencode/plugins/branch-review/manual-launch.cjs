@@ -70,7 +70,7 @@ async function shutdownChild(child) {
 async function main() {
   const formatReviewPrompt = await loadReviewPrompt()
   const child = spawn(process.execPath, [reviewServerPath], {
-    cwd: process.cwd(),
+    cwd: repo,
     env: {
       ...process.env,
       SUPERPOWERS_REVIEW_REPO: repo,

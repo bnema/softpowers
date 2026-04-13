@@ -26,7 +26,11 @@ function closeSubmissionServer() {
     submissionReader.close()
   } catch {}
 
-  server.close()
+  if (!server || typeof server.close !== "function") return
+
+  try {
+    server.close()
+  } catch {}
 }
 
 function registerSubmissionAck(requestId) {
