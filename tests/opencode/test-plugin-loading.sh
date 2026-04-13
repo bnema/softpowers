@@ -69,6 +69,7 @@ else
   echo "  [PASS] Plugin does not advertise a misleading skills path"
 fi
 
+echo "Test 5b: Checking OpenCode docs..."
 if grep -q "Review branch locally" "$REPO_ROOT/docs/README.opencode.md"; then
   echo "  [PASS] OpenCode docs mention branch review"
 else
