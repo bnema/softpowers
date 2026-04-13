@@ -23,6 +23,7 @@ SUPERPOWERS_DIR="$OPENCODE_CONFIG_DIR/superpowers"
 SUPERPOWERS_SKILLS_DIR="$SUPERPOWERS_DIR/skills"
 SUPERPOWERS_PLUGIN_FILE="$SUPERPOWERS_DIR/.opencode/plugins/superpowers.js"
 SUPERPOWERS_TUI_PLUGIN_FILE="$SUPERPOWERS_DIR/.opencode/plugins/superpowers-tui.tsx"
+SUPERPOWERS_BRANCH_REVIEW_DIR="$SUPERPOWERS_DIR/.opencode/plugins/branch-review"
 
 # Install skills
 mkdir -p "$SUPERPOWERS_DIR"
@@ -32,11 +33,13 @@ cp -r "$REPO_ROOT/skills" "$SUPERPOWERS_DIR/"
 mkdir -p "$(dirname "$SUPERPOWERS_PLUGIN_FILE")"
 cp "$REPO_ROOT/.opencode/plugins/superpowers.js" "$SUPERPOWERS_PLUGIN_FILE"
 cp "$REPO_ROOT/.opencode/plugins/superpowers-tui.tsx" "$SUPERPOWERS_TUI_PLUGIN_FILE"
+cp "$REPO_ROOT/.opencode/plugins/review-shared.js" "$SUPERPOWERS_DIR/.opencode/plugins/review-shared.js"
+cp -R "$REPO_ROOT/.opencode/plugins/branch-review" "$SUPERPOWERS_DIR/.opencode/plugins/"
 
 # Register plugin via symlink (what OpenCode actually reads)
 mkdir -p "$OPENCODE_CONFIG_DIR/plugins"
 ln -sf "$SUPERPOWERS_PLUGIN_FILE" "$OPENCODE_CONFIG_DIR/plugins/superpowers.js"
-cp "$REPO_ROOT/.opencode/plugins/superpowers-tui.tsx" "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx"
+ln -sf "$SUPERPOWERS_TUI_PLUGIN_FILE" "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx"
 
 cat > "$OPENCODE_CONFIG_DIR/tui.json" <<'EOF'
 {
@@ -80,7 +83,10 @@ echo "OPENCODE_CONFIG_DIR:  $OPENCODE_CONFIG_DIR"
 echo "Superpowers dir:      $SUPERPOWERS_DIR"
 echo "Skills dir:           $SUPERPOWERS_SKILLS_DIR"
 echo "Plugin file:          $SUPERPOWERS_PLUGIN_FILE"
+echo "TUI plugin file:      $SUPERPOWERS_TUI_PLUGIN_FILE"
+echo "Branch review dir:    $SUPERPOWERS_BRANCH_REVIEW_DIR"
 echo "Plugin registered at: $OPENCODE_CONFIG_DIR/plugins/superpowers.js"
+echo "TUI symlink at:       $OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx"
 echo "Test project at:      $TEST_HOME/test-project"
 
 # Helper function for cleanup (call from tests or trap)
@@ -96,3 +102,4 @@ export REPO_ROOT
 export SUPERPOWERS_DIR
 export SUPERPOWERS_SKILLS_DIR
 export SUPERPOWERS_PLUGIN_FILE
+export SUPERPOWERS_TUI_PLUGIN_FILE

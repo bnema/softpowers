@@ -4,13 +4,26 @@
     <meta charset="utf-8">
     <title>Superpowers Branch Review</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 0; display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
-      aside { border-right: 1px solid #ddd; overflow: auto; padding: 12px; }
-      main { overflow: auto; padding: 16px; }
-      .line.add { background: #ecfdf3; }
-      .line.remove { background: #fff1f2; }
-      .line.context { background: #f8fafc; }
-      .comment-form { margin: 8px 0 16px 48px; }
+      body { font-family: system-ui, sans-serif; margin: 0; display: grid; grid-template-columns: 280px 1fr; height: 100vh; background: #fff; color: #111827; }
+      aside { border-right: 1px solid #e5e7eb; overflow: auto; padding: 12px; background: #f9fafb; }
+      main { overflow: auto; padding: 16px; display: grid; gap: 16px; }
+      .file-list__item, button { font: inherit; }
+      .file-list__item { width: 100%; margin: 4px 0; text-align: left; }
+      .file-section { border-top: 1px solid #e5e7eb; padding-top: 12px; }
+      .diff-line__row { display: grid; grid-template-columns: 3rem 3rem 1fr auto; gap: 8px; align-items: start; padding: 2px 0; }
+      .diff-line__number { color: #6b7280; text-align: right; font-variant-numeric: tabular-nums; }
+      .diff-line__text { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, monospace; }
+      .diff-line--add .diff-line__row { background: #ecfdf3; }
+      .diff-line--remove .diff-line__row { background: #fff1f2; }
+      .diff-line--context .diff-line__row { background: #f8fafc; }
+      .diff-line__comments { margin: 4px 0 12px 6rem; display: grid; gap: 8px; }
+      .comment-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px; background: #fff; display: grid; gap: 8px; }
+      .comment-card__title { font-size: 0.875rem; color: #374151; }
+      .comment-card textarea, #summary textarea { width: 100%; box-sizing: border-box; }
+      .comment-card__controls, .actions { display: flex; gap: 8px; }
+      #draft-preview { white-space: pre-wrap; background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; }
+      #status[data-kind="error"] { color: #b91c1c; }
+      #status[data-kind="success"] { color: #15803d; }
     </style>
   </head>
   <body>
@@ -20,7 +33,7 @@
       <section id="diff-view"></section>
       <section id="draft-editor"></section>
     </main>
-    <script>window.__REVIEW_BOOTSTRAP__ = {{BOOTSTRAP_JSON}}</script>
+    <script id="review-bootstrap" type="application/json">{{BOOTSTRAP_JSON}}</script>
     <script src="/assets/highlight.js"></script>
     <script type="module" src="/review-client.js"></script>
   </body>

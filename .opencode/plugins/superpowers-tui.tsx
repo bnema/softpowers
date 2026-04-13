@@ -3,6 +3,9 @@ type TuiPluginModule = { id: string; tui: TuiPlugin }
 
 import { formatReviewPrompt, resolveBaseRef, spawnReviewServer, waitForServerStarted } from "./review-shared.js"
 
+// @ts-expect-error OpenCode loads this plugin as an ES module.
+const bundledServerPath = decodeURIComponent(new URL("./branch-review/server.cjs", import.meta.url).pathname)
+
 const tui: TuiPlugin = (api) => {
   let child: ReturnType<typeof spawnReviewServer> | null = null
 
@@ -30,7 +33,7 @@ const tui: TuiPlugin = (api) => {
         const sessionID = api.route.current.params.sessionID as string
         const baseRef = resolveBaseRef({ cwd: api.state.path.directory, explicitBase: null, currentBranch: api.state.vcs?.branch || null, upstreamBranch: null })
         child = spawnReviewServer({
-          serverPath: `${api.state.path.directory}/.opencode/plugins/branch-review/server.cjs`,
+          serverPath: bundledServerPath,
           cwd: api.state.path.directory,
           sessionID,
           baseRef,
@@ -50,7 +53,9 @@ const tui: TuiPlugin = (api) => {
         }
 
         spawnedChild.once("exit", (code, signal) => {
-          if (child !== spawnedChild || code === 0) return
+          const wasCurrentChild = child === spawnedChild
+          if (wasCurrentChild) child = null
+          if (!wasCurrentChild || code === 0) return
           const lastLine = stderrBuffer.trim().split("\n")
           const details = stderrBuffer ? `: ${lastLine[lastLine.length - 1]}` : signal ? ` (${signal})` : ""
           api.ui.toast({ variant: "error", message: `Review server exited unexpectedly${details}` })
@@ -65,6 +70,8 @@ const tui: TuiPlugin = (api) => {
             directory: api.state.path.directory,
             parts: [{ type: "text", text }],
           }).then(() => {
+            if (child === spawnedChild && !spawnedChild.killed) spawnedChild.kill()
+            child = null
             api.route.navigate("session", { sessionID })
             api.ui.toast({ variant: "success", message: "Review sent to the active session" })
           })

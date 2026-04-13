@@ -2,27 +2,10 @@ import os from "os"
 import path from "path"
 import { execFileSync } from "node:child_process"
 import { spawn } from "node:child_process"
+export { formatReviewPrompt } from "./branch-review/review-prompt.js"
 
 export function xdgCacheDir() {
   return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "superpowers", "branch-review")
-}
-
-export function formatReviewPrompt(review) {
-  const lines = ["Local branch review", ""]
-  if (review.summary) {
-    lines.push("Summary", review.summary, "")
-  }
-  let currentPath = null
-  for (const comment of review.comments) {
-    if (comment.path !== currentPath) {
-      currentPath = comment.path
-      lines.push(`File: ${comment.path}`)
-    }
-    const lineRef = comment.newLine ?? comment.oldLine ?? "unknown"
-    lines.push(`- ${comment.side} line ${lineRef}: ${comment.body}`)
-    lines.push(`  Snippet: ${comment.snippet}`)
-  }
-  return lines.join("\n")
 }
 
 export function resolveBaseRef(input) {

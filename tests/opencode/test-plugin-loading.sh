@@ -85,14 +85,22 @@ else
   exit 1
 fi
 
-if [ -f "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx" ]; then
-  echo "  [PASS] TUI plugin file exists in OpenCode config"
+if [ -L "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx" ] && [ "$(readlink -f "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx")" = "$SUPERPOWERS_TUI_PLUGIN_FILE" ]; then
+  echo "  [PASS] TUI plugin symlink points at installed package copy"
 else
-  echo "  [FAIL] TUI plugin file missing from OpenCode config"
+  echo "  [FAIL] TUI plugin symlink missing or incorrect"
   exit 1
 fi
 
-echo "Test 7: Checking TUI plugin config..."
+echo "Test 7: Checking installed TUI runtime dependencies..."
+if [ -f "$SUPERPOWERS_DIR/.opencode/plugins/review-shared.js" ] && [ -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/server.cjs" ]; then
+  echo "  [PASS] Installed package includes branch-review runtime files"
+else
+  echo "  [FAIL] Installed package is missing branch-review runtime files"
+  exit 1
+fi
+
+echo "Test 8: Checking TUI plugin config..."
 if [ -f "$OPENCODE_CONFIG_DIR/tui.json" ] && grep -q "superpowers-tui.tsx" "$OPENCODE_CONFIG_DIR/tui.json"; then
   echo "  [PASS] TUI plugin config exists"
 else
@@ -100,13 +108,13 @@ else
   exit 1
 fi
 
-# Test 8: Verify personal test skill was created
-echo "Test 8: Checking test fixtures..."
+# Test 9: Verify personal test skill was created
+echo "Test 9: Checking test fixtures..."
 if [ -f "$OPENCODE_CONFIG_DIR/skills/personal-test/SKILL.md" ]; then
     echo "  [PASS] Personal test skill fixture created"
 else
-    echo "  [FAIL] Personal test skill fixture not found"
-    exit 1
+  echo "  [FAIL] Personal test skill fixture not found"
+  exit 1
 fi
 
 echo ""

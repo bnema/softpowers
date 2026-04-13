@@ -2,16 +2,12 @@ const http = require("node:http")
 const crypto = require("node:crypto")
 const { execFileSync } = require("node:child_process")
 const fs = require("node:fs")
-const path = require("node:path")
 const os = require("node:os")
+const path = require("node:path")
 const https = require("node:https")
 
 const token = crypto.randomBytes(16).toString("hex")
 const submitBodyLimit = 64 * 1024
-
-function cacheRoot() {
-  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "superpowers", "branch-review", "highlightjs", "11.11.1")
-}
 
 function git(args) {
   return execFileSync("git", args, { cwd: process.env.SUPERPOWERS_REVIEW_REPO, encoding: "utf8" })
@@ -30,17 +26,28 @@ function loadBootstrap() {
     repo: process.env.SUPERPOWERS_REVIEW_REPO,
     base: process.env.SUPERPOWERS_REVIEW_BASE,
     head: head === "HEAD" ? git(["rev-parse", "--short", "HEAD"]).trim() : head,
+    token,
   }
+}
+
+function cacheRoot() {
+  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "superpowers", "branch-review", "highlightjs", "11.11.1")
 }
 
 async function ensureHighlightAsset(filename, url) {
   const target = path.join(cacheRoot(), filename)
   fs.mkdirSync(path.dirname(target), { recursive: true })
   if (fs.existsSync(target)) return target
+
   await new Promise((resolve, reject) => {
     https
       .get(url, (res) => {
-        if (res.statusCode !== 200) return reject(new Error(`unexpected status ${res.statusCode}`))
+        if (res.statusCode !== 200) {
+          res.resume()
+          reject(new Error(`unexpected status ${res.statusCode}`))
+          return
+        }
+
         const out = fs.createWriteStream(target)
         res.pipe(out)
         out.on("finish", () => out.close(resolve))
@@ -48,6 +55,7 @@ async function ensureHighlightAsset(filename, url) {
       })
       .on("error", reject)
   })
+
   return target
 }
 
@@ -57,6 +65,14 @@ function readTemplate() {
 
 function readClient() {
   return fs.readFileSync(path.join(__dirname, "review-client.js"), "utf8")
+}
+
+function readPromptHelpers() {
+  return fs.readFileSync(path.join(__dirname, "review-prompt.js"), "utf8")
+}
+
+function escapeBootstrapJson(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c")
 }
 
 function readBody(req, limit) {
@@ -136,8 +152,14 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (req.url === "/review-prompt.js") {
+      res.writeHead(200, { "content-type": "application/javascript" })
+      res.end(readPromptHelpers())
+      return
+    }
+
     if (req.url === "/") {
-      const html = readTemplate().replace("{{BOOTSTRAP_JSON}}", JSON.stringify(loadBootstrap()))
+      const html = readTemplate().replace("{{BOOTSTRAP_JSON}}", escapeBootstrapJson(loadBootstrap()))
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
       res.end(html)
       return

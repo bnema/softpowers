@@ -134,7 +134,7 @@ test("server exposes cached highlight assets under /assets", async (t) => {
   assert.match(asset.body, /highlight|hljs/)
 
   const cachedAsset = path.join(env.XDG_CACHE_HOME, "superpowers", "branch-review", "highlightjs", "11.11.1", "highlight.min.js")
-  assert.ok(fs.existsSync(cachedAsset))
+  assert.equal(fs.existsSync(cachedAsset), true)
 })
 
 test("root page includes review bootstrap state", async (t) => {
@@ -144,13 +144,15 @@ test("root page includes review bootstrap state", async (t) => {
 
   const root = await request(startup.port, "/")
   assert.equal(root.status, 200)
-  assert.match(root.body, /window\.__REVIEW_BOOTSTRAP__/)
+  assert.match(root.body, /<script id="review-bootstrap" type="application\/json">/)
   assert.match(root.body, /review-client\.js/)
+  assert.match(root.body, /assets\/highlight\.js/)
 
-  const match = root.body.match(/window\.__REVIEW_BOOTSTRAP__ = (.*?)<\/script>/s)
+  const match = root.body.match(/<script id="review-bootstrap" type="application\/json">(.*?)<\/script>/s)
   assert.ok(match)
   const bootstrap = JSON.parse(match[1])
   assert.equal(bootstrap.repo, process.cwd())
   assert.equal(bootstrap.base, "main")
   assert.equal(typeof bootstrap.head, "string")
+  assert.equal(typeof bootstrap.token, "string")
 })
