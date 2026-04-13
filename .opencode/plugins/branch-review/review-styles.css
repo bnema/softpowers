@@ -172,10 +172,18 @@ textarea {
 
 .diff-line__row {
   display: grid;
-  grid-template-columns: 1.5rem 3rem 3rem 1fr;
+  grid-template-columns: 1.5rem var(--old-line-width, 3rem) var(--new-line-width, 3rem) 1fr;
   gap: 8px;
   align-items: start;
   padding: 2px 0;
+}
+
+.diff-line--add .diff-line__row {
+  --old-line-width: 0;
+}
+
+.diff-line--remove .diff-line__row {
+  --new-line-width: 0;
 }
 
 .diff-line__gutter {
@@ -243,6 +251,11 @@ textarea {
   margin: 4px 0 12px 7.5rem;
   display: grid;
   gap: 8px;
+}
+
+.diff-line__comments:empty,
+.diff-line__composer:empty {
+  display: none;
 }
 
 .comment-card {

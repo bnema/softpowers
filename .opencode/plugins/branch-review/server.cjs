@@ -7,6 +7,19 @@ const path = require("node:path")
 const token = crypto.randomBytes(16).toString("hex")
 const submitBodyLimit = 64 * 1024
 
+function requireConfiguredSession() {
+  const session = process.env.SUPERPOWERS_REVIEW_SESSION
+  if (session) return session
+
+  // Hard product constraint: this review server only exists to send review
+  // feedback back into a live OpenCode session. Do not relax this into a
+  // standalone local diff viewer without an explicit product decision.
+  process.stderr.write("SUPERPOWERS_REVIEW_SESSION is required\n")
+  process.exit(1)
+}
+
+const session = requireConfiguredSession()
+
 function git(args) {
   return execFileSync("git", args, { cwd: process.env.SUPERPOWERS_REVIEW_REPO, encoding: "utf8" })
 }
@@ -26,7 +39,7 @@ function loadBootstrap() {
     base: process.env.SUPERPOWERS_REVIEW_BASE,
     head: head === "HEAD" ? git(["rev-parse", "--short", "HEAD"]).trim() : head,
     token,
-    session: process.env.SUPERPOWERS_REVIEW_SESSION,
+    session,
   }
 }
 
@@ -59,11 +72,8 @@ function parseRequestUrl(req) {
 }
 
 function requireReviewSession(url) {
-  const expected = process.env.SUPERPOWERS_REVIEW_SESSION
-  if (!expected) return null
-
   const session = url.searchParams.get("session")
-  if (session === expected) return null
+  if (session === process.env.SUPERPOWERS_REVIEW_SESSION) return null
 
   return { statusCode: 400, body: JSON.stringify({ error: "session is required" }) }
 }
@@ -217,7 +227,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(0, "127.0.0.1", () => {
   const address = server.address()
-  const session = process.env.SUPERPOWERS_REVIEW_SESSION
   const base = process.env.SUPERPOWERS_REVIEW_BASE
   const url = new URL(`http://127.0.0.1:${address.port}/`)
 

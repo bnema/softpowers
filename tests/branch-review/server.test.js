@@ -83,6 +83,7 @@ function reviewEnv() {
   return {
     SUPERPOWERS_REVIEW_REPO: process.cwd(),
     SUPERPOWERS_REVIEW_BASE: "main",
+    SUPERPOWERS_REVIEW_SESSION: "ses_expected",
     XDG_CACHE_HOME: cacheHome,
   }
 }
@@ -94,8 +95,33 @@ function reviewEnvWithSession(session = "ses_expected") {
   }
 }
 
+test("server refuses to start without an attached session", () => {
+  const serverPath = path.join(process.cwd(), ".opencode/plugins/branch-review/server.cjs")
+  const result = spawn(process.execPath, [serverPath], {
+    stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, SUPERPOWERS_REVIEW_REPO: process.cwd(), SUPERPOWERS_REVIEW_BASE: "main" },
+  })
+
+  return new Promise((resolve, reject) => {
+    let stderr = ""
+    result.stderr.on("data", (chunk) => {
+      stderr += chunk.toString()
+    })
+    result.on("exit", (code) => {
+      try {
+        assert.notEqual(code, 0)
+        assert.match(stderr, /SUPERPOWERS_REVIEW_SESSION is required/)
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
+    result.on("error", reject)
+  })
+})
+
 test("server prints startup json with random port", async (t) => {
-  const { child, started } = startServer()
+  const { child, started } = startServer(reviewEnv())
   const startup = await started
   t.after(() => child.kill())
   assert.equal(startup.type, "server-started")

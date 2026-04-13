@@ -107,6 +107,13 @@ ${toolMapping}
       if (firstUser.parts.some(p => p.type === 'text' && p.text.includes('EXTREMELY_IMPORTANT'))) return;
       const ref = firstUser.parts[0];
       firstUser.parts.unshift({ ...ref, type: 'text', text: bootstrap });
+    },
+
+    // Session-bound features sometimes need the live OpenCode session ID on
+    // every turn. Keep this tiny and separate from the large one-time bootstrap.
+    'experimental.chat.system.transform': async (input, output) => {
+      if (!input.sessionID) return;
+      output.system.push(`<opencode_session>\nCurrent OpenCode session ID: ${input.sessionID}\n</opencode_session>`);
     }
   };
 };

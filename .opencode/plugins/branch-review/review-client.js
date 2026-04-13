@@ -67,6 +67,10 @@ function commentLineLabel(comment) {
   return `${startLine}-${endLine}`
 }
 
+function composerAnchorLine(composer) {
+  return Number(composer?.endLine ?? composer?.startLine ?? NaN)
+}
+
 function lineSide(line) {
   return line.type === "remove" ? "old" : "new"
 }
@@ -469,7 +473,7 @@ function renderComposerForLine(slot, composer, saveComposer, cancelComposer) {
   const side = slot.dataset.side || ""
   const lineRef = Number(slot.dataset.lineRef || "")
 
-  if (composer.path !== path || composer.side !== side || Number(composer.startLine) !== lineRef) return
+  if (composer.path !== path || composer.side !== side || composerAnchorLine(composer) !== lineRef) return
 
   slot.append(buildComposerCard(composer, saveComposer, cancelComposer))
 }
@@ -493,7 +497,12 @@ function renderDiffLine(state, file, line, refreshComments, refreshDraftOverview
     gutter.type = "button"
     gutter.textContent = "+"
     gutter.setAttribute("aria-label", "Add review comment")
-    gutter.addEventListener("click", (event) => selectLine(file, line, event))
+    gutter.addEventListener("mousedown", (event) => selectLine(file, line, event))
+    gutter.addEventListener("mouseenter", (event) => selectLine(file, line, event))
+    gutter.addEventListener("click", (event) => {
+      if (event.detail !== 0) return
+      selectLine(file, line, event)
+    })
   }
 
   const oldLine = document.createElement("span")
@@ -609,6 +618,7 @@ function renderApp(bootstrap) {
   let activePath = ""
   let tree = buildFileTree([])
   let composer = null
+  let dragSelection = null
 
   draftEditor.replaceChildren()
   draftEditor.className = "draft-dock"
@@ -706,6 +716,27 @@ function renderApp(bootstrap) {
     refreshComments()
   }
 
+  function applyComposerSelection(file, nextSelection, keepBody, focusComposer = true) {
+    if (!nextSelection) return
+
+    composer = {
+      ...nextSelection,
+      path: file.path,
+      body: keepBody && composer ? composer.body : "",
+    }
+
+    syncComposerUI()
+    if (!focusComposer) return
+
+    queueMicrotask(() => {
+      document.querySelector(".diff-line__composer textarea")?.focus()
+    })
+  }
+
+  function stopLineDrag() {
+    dragSelection = null
+  }
+
   function renderDraftOverview() {
     draftComments.replaceChildren()
 
@@ -774,25 +805,39 @@ function renderApp(bootstrap) {
     const lineRef = lineRefForSide(line, side)
     if (lineRef === null || lineRef === undefined) return
 
+    if (event.type === "mouseenter") {
+      if (!dragSelection || !(event.buttons & 1)) return
+      if (dragSelection.path !== file.path || dragSelection.side !== side) return
+
+      applyComposerSelection(
+        file,
+        selectionForRange(file, side, dragSelection.startLine, Number(lineRef)),
+        true,
+        false,
+      )
+      return
+    }
+
+    if (event.type === "mousedown") {
+      if (event.button !== 0) return
+      event.preventDefault()
+      dragSelection = {
+        path: file.path,
+        side,
+        startLine: Number(lineRef),
+      }
+    }
+
     const nextSelection =
       event.shiftKey && composer && composer.path === file.path && composer.side === side
         ? selectionForRange(file, side, composer.startLine, Number(lineRef))
         : normalizeSelection([{ lineRef, text: line.text }], side)
 
-    if (!nextSelection) return
-
     const keepBody = Boolean(event.shiftKey && composer && composer.path === file.path && composer.side === side)
-    composer = {
-      ...nextSelection,
-      path: file.path,
-      body: keepBody ? composer.body : "",
-    }
-
-    syncComposerUI()
-    queueMicrotask(() => {
-      document.querySelector(".diff-line__composer textarea")?.focus()
-    })
+    applyComposerSelection(file, nextSelection, keepBody)
   }
+
+  document.addEventListener("mouseup", stopLineDrag)
 
   const renderSidebar = () => {
     fileList.replaceChildren()

@@ -1,17 +1,10 @@
-const { spawn } = require("node:child_process")
+const { spawn, spawnSync } = require("node:child_process")
 const fs = require("node:fs")
 const path = require("node:path")
 const readline = require("node:readline")
+const { parseArgs } = require("./launch-shared.cjs")
 
-const args = new Map()
-
-for (let i = 2; i < process.argv.length; i += 2) {
-  const flag = process.argv[i]
-  const value = process.argv[i + 1]
-  if (flag && flag.startsWith("--") && value !== undefined) {
-    args.set(flag.slice(2), value)
-  }
-}
+const args = parseArgs()
 
 const session = args.get("session")
 
@@ -20,12 +13,8 @@ if (!session) {
   process.exit(1)
 }
 
-const opencodeUrl = args.get("opencode-url")
-
-if (!opencodeUrl) {
-  process.stderr.write("opencode-url is required\n")
-  process.exit(1)
-}
+const opencodeUrl = args.get("opencode-url") || process.env.OPENCODE_API_URL || null
+const urlFile = args.get("url-file") || null
 
 const reviewServerPath = args.get("review-server-path") || path.join(__dirname, "server.cjs")
 const repo = args.get("repo") || process.env.SUPERPOWERS_REVIEW_REPO || process.cwd()
@@ -146,6 +135,10 @@ async function main() {
         const sessionUrl = new URL(`http://127.0.0.1:${event.port}/`)
         sessionUrl.searchParams.set("session", session)
         sessionUrl.searchParams.set("base", base)
+        if (urlFile) {
+          fs.mkdirSync(path.dirname(urlFile), { recursive: true })
+          fs.writeFileSync(urlFile, sessionUrl.toString())
+        }
         process.stdout.write(`Open ${sessionUrl.toString()}\n`)
         return
       }
@@ -156,7 +149,18 @@ async function main() {
       void (async () => {
         try {
           const text = formatReviewPrompt(event.payload)
-          await submitPrompt(text)
+
+          if (opencodeUrl) {
+            await submitPrompt(text)
+          } else {
+            const result = spawnSync("opencode", ["run", "-s", session, "--dir", repo, text], {
+              cwd: process.cwd(),
+              stdio: "ignore",
+            })
+
+            if (result.error) throw result.error
+            if (result.status !== 0) throw new Error(`opencode exited with ${result.status ?? result.signal}`)
+          }
 
           await stopChild()
           finish(resolve)

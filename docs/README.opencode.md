@@ -115,7 +115,9 @@ The browser draft stays local until you submit it. The TUI then refocuses the ac
 
 For manual reviews, the launcher prints a URL like `http://127.0.0.1:<port>/?session=<sessionID>&base=<baseRef>`.
 
-That `session=<sessionID>` query parameter is required. If the review page opens without a session, it fails fast instead of accepting a review that cannot return to OpenCode.
+This is a hard product constraint: the review server will not start at all without an attached OpenCode session.
+
+That `session=<sessionID>` query parameter is still required at page load. If the review page opens without the matching session, it fails fast instead of accepting a review that cannot return to OpenCode.
 
 ### Tool Mapping
 
