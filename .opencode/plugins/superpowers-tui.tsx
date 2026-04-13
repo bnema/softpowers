@@ -22,6 +22,11 @@ const tui: TuiPlugin = (api) => {
           return
         }
 
+        if (child && !child.killed) {
+          api.ui.toast({ variant: "error", message: "A review server is already running" })
+          return
+        }
+
         const sessionID = api.route.current.params.sessionID as string
         const baseRef = resolveBaseRef({ cwd: api.state.path.directory, explicitBase: null, currentBranch: api.state.vcs?.branch || null, upstreamBranch: null })
         child = spawnReviewServer({
@@ -31,8 +36,25 @@ const tui: TuiPlugin = (api) => {
           baseRef,
         })
 
+        const spawnedChild = child
         const stdout = child.stdout
         if (!stdout) throw new Error("review server missing stdout")
+        const stderr = child.stderr
+        let stderrBuffer = ""
+
+        if (stderr) {
+          stderr.on("data", (chunk) => {
+            stderrBuffer += chunk.toString()
+            if (stderrBuffer.length > 2048) stderrBuffer = stderrBuffer.slice(-2048)
+          })
+        }
+
+        spawnedChild.once("exit", (code, signal) => {
+          if (child !== spawnedChild || code === 0) return
+          const lastLine = stderrBuffer.trim().split("\n")
+          const details = stderrBuffer ? `: ${lastLine[lastLine.length - 1]}` : signal ? ` (${signal})` : ""
+          api.ui.toast({ variant: "error", message: `Review server exited unexpectedly${details}` })
+        })
 
         let buffer = ""
         const handleSubmitted = (line: string) => {
@@ -65,6 +87,9 @@ const tui: TuiPlugin = (api) => {
 
         waitForServerStarted(child).then((started) => {
           api.ui.toast({ variant: "info", message: `Open ${started.url} in your browser` })
+        }).catch((error) => {
+          api.ui.toast({ variant: "error", message: error instanceof Error ? error.message : "Review server failed to start" })
+          child = null
         })
       },
     },

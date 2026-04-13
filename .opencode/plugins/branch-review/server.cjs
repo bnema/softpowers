@@ -7,6 +7,7 @@ const os = require("node:os")
 const https = require("node:https")
 
 const token = crypto.randomBytes(16).toString("hex")
+const submitBodyLimit = 64 * 1024
 
 function cacheRoot() {
   return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "superpowers", "branch-review", "highlightjs", "11.11.1")
@@ -58,14 +59,32 @@ function readClient() {
   return fs.readFileSync(path.join(__dirname, "review-client.js"), "utf8")
 }
 
-function readBody(req) {
+function readBody(req, limit) {
   return new Promise((resolve, reject) => {
     let body = ""
+    let settled = false
+    let bytes = 0
+
+    function finish(fn, value) {
+      if (settled) return
+      settled = true
+      fn(value)
+    }
+
     req.on("data", (chunk) => {
+      bytes += chunk.length
+      if (bytes > limit) {
+        const error = new Error("request body too large")
+        error.statusCode = 413
+        finish(reject, error)
+        req.destroy()
+        return
+      }
+
       body += chunk
     })
-    req.on("end", () => resolve(body))
-    req.on("error", reject)
+    req.on("end", () => finish(resolve, body))
+    req.on("error", (error) => finish(reject, error))
   })
 }
 
@@ -78,7 +97,7 @@ const server = http.createServer(async (req, res) => {
         return
       }
 
-      const raw = await readBody(req)
+      const raw = await readBody(req, submitBodyLimit)
       let body = raw
       try {
         body = JSON.parse(raw)
@@ -127,6 +146,12 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(404)
     res.end()
   } catch (error) {
+    if (error && error.statusCode === 413 && !res.headersSent) {
+      res.writeHead(413, { "content-type": "application/json" })
+      res.end(JSON.stringify({ error: "request body too large" }))
+      return
+    }
+
     if (!res.headersSent) {
       res.writeHead(500, { "content-type": "application/json" })
       res.end(JSON.stringify({ error: "internal server error" }))
