@@ -53,10 +53,10 @@ test("renderHighlightedCode falls back without hljs", () => {
 
   try {
     const node = { textContent: "", innerHTML: "" }
-    const result = renderHighlightedCode(node, "const answer = 42")
+    const result = renderHighlightedCode(node, "plain text only")
 
     assert.equal(result, false)
-    assert.equal(node.textContent, "const answer = 42")
+    assert.equal(node.textContent, "plain text only")
     assert.equal(node.innerHTML, "")
   } finally {
     if (previous === undefined) delete globalThis.hljs
@@ -64,20 +64,17 @@ test("renderHighlightedCode falls back without hljs", () => {
   }
 })
 
-test("renderHighlightedCode uses hljs when available", () => {
+test("renderHighlightedCode highlights code locally without hljs", () => {
   const previous = globalThis.hljs
-  globalThis.hljs = {
-    highlightAuto(text) {
-      return { value: `<span class=\"hljs-keyword\">${text}</span>`, language: "javascript" }
-    },
-  }
+  delete globalThis.hljs
 
   try {
     const node = { textContent: "", innerHTML: "" }
-    const result = renderHighlightedCode(node, "const answer = 42")
+    const result = renderHighlightedCode(node, "const answer = 42 // comment")
 
     assert.equal(result, true)
-    assert.equal(node.innerHTML, '<span class="hljs-keyword">const answer = 42</span>')
+    assert.match(node.innerHTML, /hljs-keyword/)
+    assert.match(node.innerHTML, /hljs-comment/)
   } finally {
     if (previous === undefined) delete globalThis.hljs
     else globalThis.hljs = previous

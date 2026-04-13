@@ -13,6 +13,10 @@
       .diff-line__row { display: grid; grid-template-columns: 3rem 3rem 1fr auto; gap: 8px; align-items: start; padding: 2px 0; }
       .diff-line__number { color: #6b7280; text-align: right; font-variant-numeric: tabular-nums; }
       .diff-line__text { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, monospace; }
+      .hljs-keyword { color: #7c3aed; font-weight: 600; }
+      .hljs-string { color: #15803d; }
+      .hljs-comment { color: #6b7280; font-style: italic; }
+      .hljs-number { color: #b45309; }
       .diff-line--add .diff-line__row { background: #ecfdf3; }
       .diff-line--remove .diff-line__row { background: #fff1f2; }
       .diff-line--context .diff-line__row { background: #f8fafc; }
@@ -34,7 +38,6 @@
       <section id="draft-editor"></section>
     </main>
     <script id="review-bootstrap" type="application/json">{{BOOTSTRAP_JSON}}</script>
-    <script src="/assets/highlight.js"></script>
     <script type="module" src="/review-client.js"></script>
   </body>
 </html>

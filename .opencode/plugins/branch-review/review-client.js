@@ -59,8 +59,145 @@ function setStatus(message, kind = "") {
   status.dataset.kind = kind
 }
 
+const localKeywordSet = new Set([
+  "await",
+  "break",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "export",
+  "extends",
+  "false",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "import",
+  "in",
+  "instanceof",
+  "let",
+  "new",
+  "null",
+  "return",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "true",
+  "try",
+  "typeof",
+  "undefined",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+])
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+function isWordChar(char) {
+  return /[\w$]/.test(char || "")
+}
+
+function highlightLocalSource(source) {
+  const text = String(source || "")
+  let highlighted = false
+  let html = ""
+
+  for (let index = 0; index < text.length; ) {
+    const char = text[index]
+    const next = text[index + 1]
+
+    if (char === "/" && next === "/") {
+      const end = text.indexOf("\n", index + 2)
+      const slice = end === -1 ? text.slice(index) : text.slice(index, end)
+      html += `<span class="hljs-comment">${escapeHtml(slice)}</span>`
+      highlighted = true
+      index = end === -1 ? text.length : end
+      continue
+    }
+
+    if (char === "/" && next === "*") {
+      const end = text.indexOf("*/", index + 2)
+      const slice = end === -1 ? text.slice(index) : text.slice(index, end + 2)
+      html += `<span class="hljs-comment">${escapeHtml(slice)}</span>`
+      highlighted = true
+      index = end === -1 ? text.length : end + 2
+      continue
+    }
+
+    if (char === '"' || char === "'" || char === "`") {
+      let end = index + 1
+      let escaped = false
+      while (end < text.length) {
+        const current = text[end]
+        if (!escaped && current === char) {
+          end += 1
+          break
+        }
+        escaped = !escaped && current === "\\"
+        end += 1
+      }
+      const slice = text.slice(index, end)
+      html += `<span class="hljs-string">${escapeHtml(slice)}</span>`
+      highlighted = true
+      index = end
+      continue
+    }
+
+    if (/\d/.test(char) && !isWordChar(text[index - 1])) {
+      let end = index + 1
+      while (end < text.length && /[0-9_.eExX+-]/.test(text[end])) end += 1
+      const slice = text.slice(index, end)
+      html += `<span class="hljs-number">${escapeHtml(slice)}</span>`
+      highlighted = true
+      index = end
+      continue
+    }
+
+    if (/[A-Za-z_$]/.test(char)) {
+      let end = index + 1
+      while (end < text.length && isWordChar(text[end])) end += 1
+      const word = text.slice(index, end)
+      if (localKeywordSet.has(word)) {
+        html += `<span class="hljs-keyword">${escapeHtml(word)}</span>`
+        highlighted = true
+      } else {
+        html += escapeHtml(word)
+      }
+      index = end
+      continue
+    }
+
+    html += escapeHtml(char)
+    index += 1
+  }
+
+  return highlighted ? html : null
+}
+
 export function renderHighlightedCode(node, text) {
   node.textContent = text
+
+  const local = highlightLocalSource(text)
+  if (local) {
+    node.innerHTML = local
+    return true
+  }
 
   const hljs = globalThis.hljs
   if (!hljs || typeof hljs.highlightAuto !== "function") return false

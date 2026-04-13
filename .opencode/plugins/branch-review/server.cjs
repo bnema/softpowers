@@ -2,9 +2,7 @@ const http = require("node:http")
 const crypto = require("node:crypto")
 const { execFileSync } = require("node:child_process")
 const fs = require("node:fs")
-const os = require("node:os")
 const path = require("node:path")
-const https = require("node:https")
 
 const token = crypto.randomBytes(16).toString("hex")
 const submitBodyLimit = 64 * 1024
@@ -15,8 +13,9 @@ function git(args) {
 
 function loadDiff() {
   const base = process.env.SUPERPOWERS_REVIEW_BASE
-  const names = git(["diff", "--name-only", `${base}...HEAD`]).trim().split("\n").filter(Boolean)
-  const patch = git(["diff", "--unified=3", `${base}...HEAD`])
+  const mergeBase = git(["merge-base", base, "HEAD"]).trim()
+  const names = git(["diff", "--name-only", mergeBase]).trim().split("\n").filter(Boolean)
+  const patch = git(["diff", "--unified=3", mergeBase])
   return { files: names, patch }
 }
 
@@ -28,35 +27,6 @@ function loadBootstrap() {
     head: head === "HEAD" ? git(["rev-parse", "--short", "HEAD"]).trim() : head,
     token,
   }
-}
-
-function cacheRoot() {
-  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "superpowers", "branch-review", "highlightjs", "11.11.1")
-}
-
-async function ensureHighlightAsset(filename, url) {
-  const target = path.join(cacheRoot(), filename)
-  fs.mkdirSync(path.dirname(target), { recursive: true })
-  if (fs.existsSync(target)) return target
-
-  await new Promise((resolve, reject) => {
-    https
-      .get(url, (res) => {
-        if (res.statusCode !== 200) {
-          res.resume()
-          reject(new Error(`unexpected status ${res.statusCode}`))
-          return
-        }
-
-        const out = fs.createWriteStream(target)
-        res.pipe(out)
-        out.on("finish", () => out.close(resolve))
-        out.on("error", reject)
-      })
-      .on("error", reject)
-  })
-
-  return target
 }
 
 function readTemplate() {
@@ -77,7 +47,7 @@ function escapeBootstrapJson(value) {
 
 function readBody(req, limit) {
   return new Promise((resolve, reject) => {
-    let body = ""
+    const chunks = []
     let settled = false
     let bytes = 0
 
@@ -97,9 +67,9 @@ function readBody(req, limit) {
         return
       }
 
-      body += chunk
+      chunks.push(chunk)
     })
-    req.on("end", () => finish(resolve, body))
+    req.on("end", () => finish(resolve, Buffer.concat(chunks).toString("utf8")))
     req.on("error", (error) => finish(reject, error))
   })
 }
@@ -136,13 +106,6 @@ const server = http.createServer(async (req, res) => {
       const diff = loadDiff()
       res.writeHead(200, { "content-type": "application/json" })
       res.end(JSON.stringify(diff))
-      return
-    }
-
-    if (req.url === "/assets/highlight.js") {
-      const asset = await ensureHighlightAsset("highlight.min.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js")
-      res.writeHead(200, { "content-type": "application/javascript" })
-      res.end(fs.readFileSync(asset))
       return
     }
 
