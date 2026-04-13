@@ -106,6 +106,14 @@ else
   exit 1
 fi
 
+echo "Test 5f: Checking manual review session handoff docs..."
+if grep -q "session=<sessionID>" "$REPO_ROOT/docs/README.opencode.md"; then
+  echo "  [PASS] OpenCode docs mention the manual review session parameter"
+else
+  echo "  [FAIL] OpenCode docs do not mention session=<sessionID> for manual review"
+  exit 1
+fi
+
 echo "Test 6: Checking TUI plugin surface..."
 if grep -q '"./tui"' "$REPO_ROOT/package.json"; then
   echo "  [PASS] package exports a TUI entrypoint"

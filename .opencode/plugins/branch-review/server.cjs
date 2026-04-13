@@ -26,6 +26,7 @@ function loadBootstrap() {
     base: process.env.SUPERPOWERS_REVIEW_BASE,
     head: head === "HEAD" ? git(["rev-parse", "--short", "HEAD"]).trim() : head,
     token,
+    session: process.env.SUPERPOWERS_REVIEW_SESSION,
   }
 }
 
@@ -37,12 +38,30 @@ function readClient() {
   return fs.readFileSync(path.join(__dirname, "review-client.js"), "utf8")
 }
 
+function readStyles() {
+  return fs.readFileSync(path.join(__dirname, "review-styles.css"), "utf8")
+}
+
 function readPromptHelpers() {
   return fs.readFileSync(path.join(__dirname, "review-prompt.js"), "utf8")
 }
 
 function escapeBootstrapJson(value) {
   return JSON.stringify(value).replace(/</g, "\\u003c")
+}
+
+function parseRequestUrl(req) {
+  return new URL(req.url, "http://127.0.0.1")
+}
+
+function requireReviewSession(url) {
+  const expected = process.env.SUPERPOWERS_REVIEW_SESSION
+  if (!expected) return null
+
+  const session = url.searchParams.get("session")
+  if (session === expected) return null
+
+  return { statusCode: 400, body: JSON.stringify({ error: "session is required" }) }
 }
 
 function readBody(req, limit) {
@@ -76,6 +95,8 @@ function readBody(req, limit) {
 
 const server = http.createServer(async (req, res) => {
   try {
+    const url = parseRequestUrl(req)
+
     if (req.url === "/api/submit" && req.method === "POST") {
       if (req.headers["x-review-token"] !== token) {
         res.writeHead(403, { "content-type": "application/json" })
@@ -96,32 +117,45 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
-    if (req.url === "/health") {
+    if (url.pathname === "/health") {
       res.writeHead(200, { "content-type": "application/json" })
       res.end(JSON.stringify({ ok: true }))
       return
     }
 
-    if (req.url === "/api/diff") {
+    if (url.pathname === "/api/diff") {
       const diff = loadDiff()
       res.writeHead(200, { "content-type": "application/json" })
       res.end(JSON.stringify(diff))
       return
     }
 
-    if (req.url === "/review-client.js") {
+    if (url.pathname === "/review-client.js") {
       res.writeHead(200, { "content-type": "application/javascript" })
       res.end(readClient())
       return
     }
 
-    if (req.url === "/review-prompt.js") {
+    if (url.pathname === "/review-styles.css") {
+      res.writeHead(200, { "content-type": "text/css; charset=utf-8" })
+      res.end(readStyles())
+      return
+    }
+
+    if (url.pathname === "/review-prompt.js") {
       res.writeHead(200, { "content-type": "application/javascript" })
       res.end(readPromptHelpers())
       return
     }
 
-    if (req.url === "/") {
+    if (url.pathname === "/") {
+      const sessionError = requireReviewSession(url)
+      if (sessionError) {
+        res.writeHead(sessionError.statusCode, { "content-type": "application/json" })
+        res.end(sessionError.body)
+        return
+      }
+
       const html = readTemplate().replace("{{BOOTSTRAP_JSON}}", escapeBootstrapJson(loadBootstrap()))
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
       res.end(html)

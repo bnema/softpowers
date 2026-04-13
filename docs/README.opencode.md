@@ -111,6 +111,12 @@ In OpenCode TUI sessions, Superpowers adds a `Review branch locally` command and
 
 The browser draft stays local until you submit it. The TUI then refocuses the active session so you can watch the response stream immediately.
 
+### Manual branch review session handoff
+
+For manual reviews, the launcher prints a URL like `http://127.0.0.1:<port>/?session=<sessionID>&base=<baseRef>`.
+
+That `session=<sessionID>` query parameter is required. If the review page opens without a session, it fails fast instead of accepting a review that cannot return to OpenCode.
+
 ### Tool Mapping
 
 Skills written for Claude Code are automatically adapted for OpenCode:

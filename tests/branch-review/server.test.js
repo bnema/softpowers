@@ -87,6 +87,13 @@ function reviewEnv() {
   }
 }
 
+function reviewEnvWithSession(session = "ses_expected") {
+  return {
+    ...reviewEnv(),
+    SUPERPOWERS_REVIEW_SESSION: session,
+  }
+}
+
 test("server prints startup json with random port", async (t) => {
   const { child, started } = startServer()
   const startup = await started
@@ -133,6 +140,16 @@ test("server responds to valid submit requests with ok response", async (t) => {
   assert.deepEqual(JSON.parse(submit.body), { ok: true })
 })
 
+test("server rejects root requests without a matching session", async (t) => {
+  const { child, started } = startServer(reviewEnvWithSession())
+  const startup = await started
+  t.after(() => child.kill())
+
+  const root = await request(startup.port, "/")
+  assert.equal(root.status, 400)
+  assert.match(root.body, /session is required/)
+})
+
 test("diff endpoint returns files and hunks", async (t) => {
   const repo = createRepo()
   const { child, started } = startServer({ ...reviewEnv(), SUPERPOWERS_REVIEW_REPO: repo, SUPERPOWERS_REVIEW_BASE: "main" })
@@ -161,11 +178,11 @@ test("server no longer serves a remote highlight asset", async (t) => {
 })
 
 test("root page includes review bootstrap state", async (t) => {
-  const { child, started } = startServer(reviewEnv())
+  const { child, started } = startServer(reviewEnvWithSession())
   const startup = await started
   t.after(() => child.kill())
 
-  const root = await request(startup.port, "/")
+  const root = await request(startup.port, "/?session=ses_expected")
   assert.equal(root.status, 200)
   assert.match(root.body, /<script id="review-bootstrap" type="application\/json">/)
   assert.match(root.body, /review-client\.js/)
@@ -178,6 +195,21 @@ test("root page includes review bootstrap state", async (t) => {
   assert.equal(bootstrap.base, "main")
   assert.equal(typeof bootstrap.head, "string")
   assert.equal(typeof bootstrap.token, "string")
+  assert.equal(bootstrap.session, "ses_expected")
+})
+
+test("root page loads review styles", async (t) => {
+  const { child, started } = startServer(reviewEnvWithSession())
+  const startup = await started
+  t.after(() => child.kill())
+
+  const root = await request(startup.port, "/?session=ses_expected")
+  assert.equal(root.status, 200)
+  assert.match(root.body, /href="\/review-styles\.css"/)
+
+  const styles = await request(startup.port, "/review-styles.css")
+  assert.equal(styles.status, 200)
+  assert.match(styles.body, /--surface-primary/)
 })
 
 test("diff endpoint includes staged and unstaged changes from the checkout", async (t) => {

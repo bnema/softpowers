@@ -62,6 +62,7 @@ tests=(
     "test-plugin-loading.sh"
     "../branch-review/test-review-shared.sh"
     "../branch-review/test-server.sh"
+    "../branch-review/test-manual-launch.sh"
 )
 
 # Integration tests (require OpenCode)
