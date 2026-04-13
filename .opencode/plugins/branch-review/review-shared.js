@@ -2,7 +2,7 @@ import os from "os"
 import path from "path"
 import { execFileSync } from "node:child_process"
 import { spawn } from "node:child_process"
-export { formatReviewPrompt } from "./branch-review/review-prompt.js"
+export { formatReviewPrompt } from "./review-prompt.js"
 
 export function xdgCacheDir() {
   return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "superpowers", "branch-review")

@@ -121,15 +121,23 @@ else
   exit 1
 fi
 
-echo "Test 7: Checking installed TUI runtime dependencies..."
-if [ -f "$SUPERPOWERS_DIR/.opencode/plugins/review-shared.js" ] && [ -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/server.cjs" ]; then
+echo "Test 7: Checking root plugin helper is absent..."
+if [ -e "$REPO_ROOT/.opencode/plugins/review-shared.js" ]; then
+  echo "  [FAIL] Root plugin helper still exists at .opencode/plugins/review-shared.js"
+  exit 1
+else
+  echo "  [PASS] Root plugin helper has been moved out of the plugin scan path"
+fi
+
+echo "Test 8: Checking installed TUI runtime dependencies..."
+if [ -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/review-shared.js" ] && [ -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/server.cjs" ]; then
   echo "  [PASS] Installed package includes branch-review runtime files"
 else
   echo "  [FAIL] Installed package is missing branch-review runtime files"
   exit 1
 fi
 
-echo "Test 8: Checking TUI plugin config..."
+echo "Test 9: Checking TUI plugin config..."
 if [ -f "$OPENCODE_CONFIG_DIR/tui.json" ] && grep -q "superpowers-tui.tsx" "$OPENCODE_CONFIG_DIR/tui.json"; then
   echo "  [PASS] TUI plugin config exists"
 else
@@ -137,8 +145,8 @@ else
   exit 1
 fi
 
-# Test 9: Verify personal test skill was created
-echo "Test 9: Checking test fixtures..."
+# Test 10: Verify personal test skill was created
+echo "Test 10: Checking test fixtures..."
 if [ -f "$OPENCODE_CONFIG_DIR/skills/personal-test/SKILL.md" ]; then
     echo "  [PASS] Personal test skill fixture created"
 else

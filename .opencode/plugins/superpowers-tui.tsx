@@ -1,7 +1,7 @@
 type TuiPlugin = (api: any) => void
 type TuiPluginModule = { id: string; tui: TuiPlugin }
 
-import { formatReviewPrompt, resolveBaseRef, spawnReviewServer, waitForServerStarted } from "./review-shared.js"
+import { formatReviewPrompt, resolveBaseRef, spawnReviewServer, waitForServerStarted } from "./branch-review/review-shared.js"
 
 // @ts-expect-error OpenCode loads this plugin as an ES module.
 const bundledServerPath = decodeURIComponent(new URL("./branch-review/server.cjs", import.meta.url).pathname)

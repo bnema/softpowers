@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { formatReviewPrompt, resolveBaseRef, waitForServerStarted } from "../../.opencode/plugins/review-shared.js"
+import { formatReviewPrompt, resolveBaseRef, waitForServerStarted } from "../../.opencode/plugins/branch-review/review-shared.js"
 
 function git(cwd, args) {
   execFileSync("git", args, { cwd, stdio: "ignore" })

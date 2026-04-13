@@ -33,7 +33,6 @@ cp -r "$REPO_ROOT/skills" "$SUPERPOWERS_DIR/"
 mkdir -p "$(dirname "$SUPERPOWERS_PLUGIN_FILE")"
 cp "$REPO_ROOT/.opencode/plugins/superpowers.js" "$SUPERPOWERS_PLUGIN_FILE"
 cp "$REPO_ROOT/.opencode/plugins/superpowers-tui.tsx" "$SUPERPOWERS_TUI_PLUGIN_FILE"
-cp "$REPO_ROOT/.opencode/plugins/review-shared.js" "$SUPERPOWERS_DIR/.opencode/plugins/review-shared.js"
 cp -R "$REPO_ROOT/.opencode/plugins/branch-review" "$SUPERPOWERS_DIR/.opencode/plugins/"
 
 # Register plugin via symlink (what OpenCode actually reads)
