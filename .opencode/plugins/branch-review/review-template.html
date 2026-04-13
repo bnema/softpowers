@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Superpowers Branch Review</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
+      aside { border-right: 1px solid #ddd; overflow: auto; padding: 12px; }
+      main { overflow: auto; padding: 16px; }
+      .line.add { background: #ecfdf3; }
+      .line.remove { background: #fff1f2; }
+      .line.context { background: #f8fafc; }
+      .comment-form { margin: 8px 0 16px 48px; }
+    </style>
+  </head>
+  <body>
+    <aside id="file-list"></aside>
+    <main>
+      <section id="summary"></section>
+      <section id="diff-view"></section>
+      <section id="draft-editor"></section>
+    </main>
+    <script>window.__REVIEW_BOOTSTRAP__ = {{BOOTSTRAP_JSON}}</script>
+    <script src="/assets/highlight.js"></script>
+    <script type="module" src="/review-client.js"></script>
+  </body>
+</html>
