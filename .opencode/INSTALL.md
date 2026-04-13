@@ -48,6 +48,8 @@ use skill tool to load superpowers/brainstorming
 
 OpenCode caches git plugins under `~/.cache/opencode/packages/`. Restarting OpenCode does not force a fresh pull for the same git plugin spec.
 
+On Unix, the cached path mirrors the plugin spec. That means git URL slashes become nested directories under `~/.cache/opencode/packages/`, so the example below is correct even though it looks like `https:/github.com/...` at first glance.
+
 To refresh this forked plugin, remove the cached package directory for the configured spec, then restart OpenCode:
 
 ```bash

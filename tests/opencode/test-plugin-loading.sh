@@ -96,6 +96,16 @@ else
   exit 1
 fi
 
+echo "Test 5e: Checking OpenCode refresh path explanation..."
+if grep -q "git URL slashes become nested directories" "$REPO_ROOT/docs/README.opencode.md" \
+  && grep -q "git URL slashes become nested directories" "$REPO_ROOT/.opencode/INSTALL.md" \
+  && grep -q "git URL slashes become nested directories" "$REPO_ROOT/commands/opencode-install-update.md"; then
+  echo "  [PASS] OpenCode docs explain the cache path shape"
+else
+  echo "  [FAIL] OpenCode docs do not explain why the cache path looks truncated"
+  exit 1
+fi
+
 echo "Test 6: Checking TUI plugin surface..."
 if grep -q '"./tui"' "$REPO_ROOT/package.json"; then
   echo "  [PASS] package exports a TUI entrypoint"

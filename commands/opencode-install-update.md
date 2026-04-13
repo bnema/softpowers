@@ -17,9 +17,11 @@ When the user already has OpenCode configured:
 
 1. Read `~/.config/opencode/opencode.json` and project `opencode.json` files if relevant.
 2. Find the configured Superpowers plugin spec.
-3. Explain that OpenCode caches git plugins under `~/.cache/opencode/packages/<sanitized-spec>` and does not re-pull the same git spec just because OpenCode restarted.
+3. Explain that OpenCode caches git plugins under `~/.cache/opencode/packages/<plugin-spec>` on Unix and does not re-pull the same git spec just because OpenCode restarted.
 4. Print the exact cache directory for that spec.
 5. Tell the user to remove that cached directory, then restart OpenCode.
+
+Because the cache path mirrors the plugin spec on Unix, git URL slashes become nested directories under `~/.cache/opencode/packages/`. The example path below is correct even though it looks like `https:/github.com/...` at first glance.
 
 For the default fork spec, the refresh command is:
 
