@@ -88,9 +88,11 @@ export function formatReviewPrompt(review) {
       lines.push(`File: ${path}`)
     }
 
-    const lineRef = comment.startLine ?? comment.newLine ?? comment.oldLine ?? comment.line ?? "unknown"
     const body = String(comment.body || "").trim()
-    lines.push(`- ${comment.side} line ${lineRef}: ${body}`)
+    const startLine = comment.startLine ?? comment.newLine ?? comment.oldLine ?? comment.line ?? "unknown"
+    const endLine = comment.endLine ?? startLine
+    const label = String(startLine) === "unknown" ? "line unknown" : Number(startLine) === Number(endLine) ? `line ${startLine}` : `lines ${startLine}-${endLine}`
+    lines.push(`- ${comment.side} ${label}: ${body}`)
 
     if (Array.isArray(comment.snippetLines) && comment.snippetLines.length > 0) {
       lines.push("  Snippet:")

@@ -89,7 +89,7 @@ test("formatReviewPrompt matches the review output format", () => {
   assert.match(text, /File: src\/app\.js/)
   assert.match(text, /- new line 14: This branch can be nil/)
   assert.match(text, /Snippet: const branch = maybeBranch\(\)/)
-  assert.match(text, /- new line 20: This path needs a guard/)
+  assert.match(text, /- new lines 20-21: This path needs a guard/)
   assert.match(text, /  Snippet:\n  ```\n  const branch = maybeBranch\(\)\n  if \(branch\) return branch\n  ```/)
 })
 
@@ -123,6 +123,75 @@ test("normalizeSelection creates a range selection", () => {
     endLine: 14,
     snippetLines: ["const first = true", "const second = true", "const third = true"],
   })
+})
+
+test("normalizedComments drops blank saved comments", () => {
+  assert.equal(typeof reviewClient.normalizedComments, "function")
+
+  const comments = reviewClient.normalizedComments({
+    comments: [
+      { path: "src/app.js", body: "   " },
+      { path: "src/app.js", body: "Keep this", startLine: 1 },
+    ],
+  })
+
+  assert.deepEqual(comments, [{ path: "src/app.js", body: "Keep this", startLine: 1 }])
+})
+
+test("currentReview omits blank comments from submission content", () => {
+  assert.equal(typeof reviewClient.currentReview, "function")
+
+  const review = reviewClient.currentReview({
+    summary: "  Check this  ",
+    comments: [
+      { path: "src/app.js", body: "   ", startLine: 1 },
+      { path: "src/app.js", body: "Keep this", startLine: 2 },
+    ],
+  })
+
+  assert.deepEqual(review, {
+    summary: "Check this",
+    comments: [{ path: "src/app.js", body: "Keep this", startLine: 2 }],
+  })
+})
+
+test("loadDiff sends the review token header", async () => {
+  assert.equal(typeof reviewClient.loadDiff, "function")
+
+  const calls = []
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push([url, options])
+    return {
+      ok: true,
+      json: async () => ({ files: [], patch: "" }),
+    }
+  }
+
+  try {
+    await reviewClient.loadDiff({ token: "review-token" })
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+
+  assert.deepEqual(calls, [["/api/diff", { headers: { "x-review-token": "review-token" } }]])
+})
+
+test("buildCommentCounts ignores blank saved comments", () => {
+  assert.equal(typeof reviewClient.buildCommentCounts, "function")
+
+  const counts = reviewClient.buildCommentCounts({
+    comments: [
+      { path: "src/app.js", body: "   " },
+      { path: "src/app.js", body: "Keep this" },
+      { path: "src/other.js", body: "Also keep" },
+    ],
+  })
+
+  assert.deepEqual([...counts.entries()], [
+    ["src/app.js", 1],
+    ["src/other.js", 1],
+  ])
 })
 
 test("renderHighlightedCode falls back without hljs", () => {

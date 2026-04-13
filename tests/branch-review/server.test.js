@@ -116,6 +116,16 @@ test("server responds to health and rejects a missing token", async (t) => {
   assert.match(submit.body, /invalid token/)
 })
 
+test("server rejects diff requests without a matching token", async (t) => {
+  const { child, started } = startServer(reviewEnv())
+  const startup = await started
+  t.after(() => child.kill())
+
+  const diff = await request(startup.port, "/api/diff")
+  assert.equal(diff.status, 403)
+  assert.match(diff.body, /invalid token/)
+})
+
 test("server returns 500 when diff loading fails", async (t) => {
   const env = reviewEnv()
   env.SUPERPOWERS_REVIEW_REPO = "/definitely/missing"
@@ -123,7 +133,10 @@ test("server returns 500 when diff loading fails", async (t) => {
   const startup = await started
   t.after(() => child.kill())
 
-  const diff = await request(startup.port, "/api/diff", { timeout: 2000 })
+  const diff = await request(startup.port, "/api/diff", {
+    timeout: 2000,
+    headers: { "x-review-token": startup.token },
+  })
   assert.equal(diff.status, 500)
 
   const health = await request(startup.port, "/health")
@@ -156,7 +169,7 @@ test("diff endpoint returns files and hunks", async (t) => {
   const startup = await started
   t.after(() => child.kill())
 
-  const diff = await request(startup.port, "/api/diff")
+  const diff = await request(startup.port, "/api/diff", { headers: { "x-review-token": startup.token } })
   assert.equal(diff.status, 200)
 
   const body = JSON.parse(diff.body)
@@ -229,7 +242,7 @@ test("diff endpoint includes staged and unstaged changes from the checkout", asy
   const startup = await started
   t.after(() => child.kill())
 
-  const diff = await request(startup.port, "/api/diff")
+  const diff = await request(startup.port, "/api/diff", { headers: { "x-review-token": startup.token } })
   assert.equal(diff.status, 200)
 
   const body = JSON.parse(diff.body)

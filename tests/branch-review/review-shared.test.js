@@ -36,6 +36,22 @@ test("formatReviewPrompt groups comments by file", () => {
   assert.match(text, /Check the retry path/)
 })
 
+test("formatReviewPrompt renders range comments with both lines", () => {
+  const text = formatReviewPrompt({
+    comments: [
+      {
+        path: "src/app.js",
+        side: "new",
+        startLine: 20,
+        endLine: 21,
+        body: "This path needs a guard",
+      },
+    ],
+  })
+
+  assert.match(text, /- new lines 20-21: This path needs a guard/)
+})
+
 test("resolveBaseRef prefers an explicit base", () => {
   const base = resolveBaseRef({ explicitBase: "main", currentBranch: "feature/x", upstreamBranch: "origin/feature/x" })
 

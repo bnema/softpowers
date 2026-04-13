@@ -128,6 +128,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/diff") {
+      if (req.headers["x-review-token"] !== token) {
+        res.writeHead(403, { "content-type": "application/json" })
+        res.end(JSON.stringify({ error: "invalid token" }))
+        return
+      }
+
       const diff = loadDiff()
       res.writeHead(200, { "content-type": "application/json" })
       res.end(JSON.stringify(diff))

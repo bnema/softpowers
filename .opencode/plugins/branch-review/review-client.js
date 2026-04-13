@@ -120,7 +120,7 @@ function fileSectionId(path) {
   return `file-${path.replace(/[^a-z0-9]+/gi, "-")}`
 }
 
-function normalizedComments(state) {
+export function normalizedComments(state) {
   return state.comments
     .filter((comment) => String(comment.body || "").trim())
     .map((comment) => ({
@@ -129,7 +129,7 @@ function normalizedComments(state) {
     }))
 }
 
-function currentReview(state) {
+export function currentReview(state) {
   const comments = groupDraftComments(normalizedComments(state)).flatMap((group) => group.comments)
 
   return {
@@ -304,9 +304,9 @@ function renderDraftPreview(state) {
   draft.textContent = formatReviewPrompt(currentReview(state))
 }
 
-function buildCommentCounts(comments) {
+export function buildCommentCounts(state) {
   const counts = new Map()
-  for (const comment of comments) {
+  for (const comment of normalizedComments(state)) {
     const path = String(comment.path || "")
     counts.set(path, (counts.get(path) || 0) + 1)
   }
@@ -560,8 +560,12 @@ function renderFileSection(state, file, refreshComments, refreshDraftOverview, s
   return section
 }
 
-async function loadDiff() {
-  const response = await fetch("/api/diff")
+export async function loadDiff(bootstrap) {
+  const response = await fetch("/api/diff", {
+    headers: {
+      "x-review-token": bootstrap.token,
+    },
+  })
   if (!response.ok) throw new Error(`failed to load diff (${response.status})`)
   return response.json()
 }
@@ -694,6 +698,7 @@ function renderApp(bootstrap) {
 
   function saveComposer() {
     if (!composer) return
+    if (!String(composer.body || "").trim()) return
 
     state.comments.push(createComposerComment(composer))
     composer = null
@@ -798,7 +803,7 @@ function renderApp(bootstrap) {
     const treeContainer = document.createElement("div")
     treeContainer.className = "file-tree"
 
-    const counts = buildCommentCounts(state.comments)
+    const counts = buildCommentCounts(state)
     for (const child of tree.children) {
       treeContainer.append(renderTreeNode(child, counts, activePath, (path) => {
         activePath = path
@@ -832,7 +837,7 @@ function renderApp(bootstrap) {
   renderDraftPreview(state)
   renderDraftOverview()
 
-  return loadDiff()
+  return loadDiff(bootstrap)
     .then((payload) => {
       const parsedFiles = parseUnifiedDiff(payload.patch)
       const renderedFiles = payload.files.map(
