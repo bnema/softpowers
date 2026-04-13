@@ -157,6 +157,40 @@ test("currentReview omits blank comments from submission content", () => {
   })
 })
 
+test("createDraftPreviewDisclosure starts collapsed", () => {
+  assert.equal(typeof reviewClient.createDraftPreviewDisclosure, "function")
+
+  const elements = []
+  const document = {
+    createElement(tagName) {
+      const element = {
+        tagName: tagName.toUpperCase(),
+        className: "",
+        textContent: "",
+        id: "",
+        open: true,
+        children: [],
+        append(...nodes) {
+          this.children.push(...nodes)
+        },
+      }
+      elements.push(element)
+      return element
+    },
+  }
+
+  const { draftPreviewSection, draftPreviewHeading, draftPreview } = reviewClient.createDraftPreviewDisclosure(document)
+
+  assert.equal(draftPreviewSection.tagName, "DETAILS")
+  assert.equal(draftPreviewSection.className, "draft-preview")
+  assert.equal(draftPreviewSection.open, false)
+  assert.equal(draftPreviewHeading.tagName, "SUMMARY")
+  assert.equal(draftPreviewHeading.textContent, "Prompt preview")
+  assert.equal(draftPreview.id, "draft-preview")
+  assert.deepEqual(draftPreviewSection.children, [draftPreviewHeading, draftPreview])
+  assert.equal(elements.length, 3)
+})
+
 test("loadDiff sends the review token header", async () => {
   assert.equal(typeof reviewClient.loadDiff, "function")
 
@@ -179,6 +213,64 @@ test("loadDiff sends the review token header", async () => {
   assert.deepEqual(calls, [["/api/diff", { headers: { "x-review-token": "review-token" } }]])
 })
 
+test("submitReview returns the verified delivery message", async () => {
+  assert.equal(typeof reviewClient.submitReview, "function")
+
+  const calls = []
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push([url, options])
+    return {
+      ok: true,
+      json: async () => ({ ok: true, message: "Review delivered to OpenCode session" }),
+    }
+  }
+
+  try {
+    const result = await reviewClient.submitReview(
+      { summary: "Verify the handoff", comments: [{ path: "src/app.js", body: "Looks good" }] },
+      { token: "review-token" },
+    )
+
+    assert.deepEqual(result, { ok: true, message: "Review delivered to OpenCode session" })
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+
+  assert.deepEqual(calls, [[
+    "/api/submit",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-review-token": "review-token",
+      },
+      body: JSON.stringify({
+        summary: "Verify the handoff",
+        comments: [{ path: "src/app.js", body: "Looks good" }],
+      }),
+    },
+  ]])
+})
+
+test("submitReview surfaces launcher errors", async () => {
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 502,
+    json: async () => ({ ok: false, error: "prompt_async timed out after 50ms" }),
+  })
+
+  try {
+    await assert.rejects(
+      () => reviewClient.submitReview({ summary: "Fail the handoff", comments: [] }, { token: "review-token" }),
+      /prompt_async timed out after 50ms/,
+    )
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
 test("buildCommentCounts ignores blank saved comments", () => {
   assert.equal(typeof reviewClient.buildCommentCounts, "function")
 
@@ -196,34 +288,192 @@ test("buildCommentCounts ignores blank saved comments", () => {
   ])
 })
 
-test("renderHighlightedCode falls back without hljs", () => {
-  const previous = globalThis.hljs
-  delete globalThis.hljs
+test("detectHighlightLanguage maps common repo paths", () => {
+  assert.equal(reviewClient.detectHighlightLanguage("src/app.js"), "javascript")
+  assert.equal(reviewClient.detectHighlightLanguage("src/app.tsx"), "typescript")
+  assert.equal(reviewClient.detectHighlightLanguage("src/app.jsx"), "javascript")
+  assert.equal(reviewClient.detectHighlightLanguage("src/app.json"), "json")
+  assert.equal(reviewClient.detectHighlightLanguage("docs/readme.md"), "markdown")
+  assert.equal(reviewClient.detectHighlightLanguage("scripts/deploy.sh"), "bash")
+  assert.equal(reviewClient.detectHighlightLanguage("Dockerfile"), "dockerfile")
+  assert.equal(reviewClient.detectHighlightLanguage("Makefile"), "makefile")
+  assert.equal(reviewClient.detectHighlightLanguage("app/models/user.rb"), "ruby")
+  assert.equal(reviewClient.detectHighlightLanguage("Gemfile"), "ruby")
+  assert.equal(reviewClient.detectHighlightLanguage("notes/plain.txt"), null)
+})
+
+test("formatSidebarFileLabel preserves file extension on long names", () => {
+  assert.equal(
+    reviewClient.formatSidebarFileLabel("hcfbiuiedfvfncheiuorvbnuef.js"),
+    "hcfbiuiedfvfnche...js",
+  )
+  assert.equal(reviewClient.formatSidebarFileLabel("review-client.js"), "review-client.js")
+})
+
+test("highlightLanguageAssetUrl builds unpkg language bundle urls", () => {
+  assert.equal(
+    reviewClient.highlightLanguageAssetUrl("typescript"),
+    "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/languages/typescript.min.js",
+  )
+})
+
+test("loadHighlightLanguage caches in-flight requests", async () => {
+  const previousDocument = globalThis.document
+  const previousHljs = globalThis.hljs
+  const requests = []
+  const available = new Set(["javascript"])
+  let lastScript = null
+
+  function createScriptNode() {
+    const listeners = new Map()
+    return {
+      async: false,
+      src: "",
+      addEventListener(type, handler) {
+        listeners.set(type, handler)
+      },
+      emit(type) {
+        listeners.get(type)?.()
+      },
+    }
+  }
+
+  globalThis.hljs = {
+    getLanguage(language) {
+      return available.has(language) ? {} : null
+    },
+  }
+
+  globalThis.document = {
+    createElement(tagName) {
+      assert.equal(tagName, "script")
+      return createScriptNode()
+    },
+    head: {
+      append(script) {
+        requests.push(script.src)
+        lastScript = script
+      },
+    },
+    documentElement: {},
+  }
 
   try {
-    const node = { textContent: "", innerHTML: "" }
-    const result = renderHighlightedCode(node, "plain text only")
+    const first = reviewClient.loadHighlightLanguage("typescript")
+    const second = reviewClient.loadHighlightLanguage("typescript")
 
-    assert.equal(result, false)
-    assert.equal(node.textContent, "plain text only")
-    assert.equal(node.innerHTML, "")
+    assert.equal(requests.length, 1)
+    assert.equal(requests[0], "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/languages/typescript.min.js")
+
+    available.add("typescript")
+    lastScript?.emit("load")
+
+    assert.ok(first && second)
+    await Promise.all([first, second])
   } finally {
-    if (previous === undefined) delete globalThis.hljs
-    else globalThis.hljs = previous
+    if (previousDocument === undefined) delete globalThis.document
+    else globalThis.document = previousDocument
+
+    if (previousHljs === undefined) delete globalThis.hljs
+    else globalThis.hljs = previousHljs
   }
 })
 
-test("renderHighlightedCode highlights code locally without hljs", () => {
-  const previous = globalThis.hljs
-  delete globalThis.hljs
+test("loadHighlightLanguages loads only unique detected file languages", async () => {
+  const previousDocument = globalThis.document
+  const previousHljs = globalThis.hljs
+  const requests = []
+  const available = new Set(["javascript"])
+
+  function createScriptNode() {
+    const listeners = new Map()
+    return {
+      async: false,
+      src: "",
+      addEventListener(type, handler) {
+        listeners.set(type, handler)
+      },
+      emit(type) {
+        listeners.get(type)?.()
+      },
+    }
+  }
+
+  globalThis.hljs = {
+    getLanguage(language) {
+      return available.has(language) ? {} : null
+    },
+  }
+
+  globalThis.document = {
+    createElement(tagName) {
+      assert.equal(tagName, "script")
+      return createScriptNode()
+    },
+    head: {
+      append(script) {
+        requests.push(script.src)
+        const language = script.src.match(/\/languages\/([^/]+)\.min\.js$/)?.[1]
+        if (language) available.add(language)
+        queueMicrotask(() => script.emit("load"))
+      },
+    },
+    documentElement: {},
+  }
 
   try {
-    const node = { textContent: "", innerHTML: "" }
-    const result = renderHighlightedCode(node, "const answer = 42 // comment")
+    await reviewClient.loadHighlightLanguages([
+      "src/app.js",
+      "src/other.rs",
+      "src/nested/app.rs",
+      "Dockerfile",
+      "notes.css",
+    ])
+
+    assert.deepEqual(requests, [
+      "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/languages/rust.min.js",
+      "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/languages/dockerfile.min.js",
+      "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/languages/css.min.js",
+    ])
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document
+    else globalThis.document = previousDocument
+
+    if (previousHljs === undefined) delete globalThis.hljs
+    else globalThis.hljs = previousHljs
+  }
+})
+
+test("renderHighlightedCode prefers explicit highlight.js languages", () => {
+  const previous = globalThis.hljs
+  const calls = []
+  globalThis.hljs = {
+    getLanguage(language) {
+      return language === "typescript" ? {} : null
+    },
+    highlight(text, options) {
+      calls.push(["highlight", text, options])
+      return { value: `<span class="hljs-keyword">${text}</span>` }
+    },
+    highlightAuto(text) {
+      calls.push(["auto", text])
+      return { value: `<span>${text}</span>`, language: "plaintext" }
+    },
+  }
+
+  try {
+    const node = {
+      textContent: "",
+      innerHTML: "",
+      classList: { add() {} },
+    }
+
+    const result = renderHighlightedCode(node, "const answer = 42", "src/app.ts")
 
     assert.equal(result, true)
+    assert.equal(node.textContent, "const answer = 42")
     assert.match(node.innerHTML, /hljs-keyword/)
-    assert.match(node.innerHTML, /hljs-comment/)
+    assert.deepEqual(calls, [["highlight", "const answer = 42", { language: "typescript", ignoreIllegals: true }]])
   } finally {
     if (previous === undefined) delete globalThis.hljs
     else globalThis.hljs = previous
@@ -296,13 +546,13 @@ test("toggleTheme persists a theme choice to storage", () => {
   }
   const button = {
     textContent: "",
-    dataset: {},
     setAttribute() {},
   }
 
   const next = reviewClient.toggleTheme({ document, storage, button })
 
   assert.equal(next, "dark")
+  assert.equal(button.textContent, "Light mode")
   assert.deepEqual(calls, [["superpowers:review:theme", "dark"]])
 })
 
@@ -348,7 +598,6 @@ test("renderApp registers the mouseup listener", async () => {
     ["file-list", createNode("div")],
     ["diff-view", createNode("div")],
     ["draft-editor", createNode("div")],
-    ["review-toolbar", createNode("div")],
     ["status", createNode("p")],
   ])
 

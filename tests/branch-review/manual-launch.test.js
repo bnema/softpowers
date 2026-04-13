@@ -14,16 +14,27 @@ test("manual launcher requires a session", () => {
   assert.match(result.stderr, /session is required/)
 })
 
-function createFakeReviewServerScript() {
+function createAckableFakeReviewServerScript(ackPath, requestId, summary = "Check the retry path") {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
   const scriptPath = path.join(dir, "fake-review-server.cjs")
   fs.writeFileSync(
     scriptPath,
-    `const timer = setTimeout(() => {
+    `const fs = require("node:fs")
+const readline = require("node:readline")
+const ackPath = ${JSON.stringify(ackPath)}
+const requestId = ${JSON.stringify(requestId)}
+const ackReader = readline.createInterface({ input: process.stdin })
+
+ackReader.on("line", (line) => {
+  fs.appendFileSync(ackPath, line + "\\n")
+})
+
+const timer = setTimeout(() => {
   process.stdout.write(JSON.stringify({
     type: "review-submitted",
+    requestId,
     payload: {
-      summary: "Check the retry path",
+      summary: ${JSON.stringify(summary)},
       comments: [
         {
           path: "src/app.js",
@@ -47,6 +58,7 @@ function createFakeReviewServerScript() {
 process.stdout.write(JSON.stringify({ type: "server-started", port: 4321 }) + "\\n")
 process.on("SIGTERM", () => {
   clearTimeout(timer)
+  ackReader.close()
   process.exit(0)
 })
 setInterval(() => {}, 1000)
@@ -55,7 +67,7 @@ setInterval(() => {}, 1000)
   return scriptPath
 }
 
-function createHungReviewServerScript(markerPath, pidPath) {
+function createAckableHungReviewServerScript(markerPath, pidPath, requestId) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
   const scriptPath = path.join(dir, "hung-review-server.cjs")
   fs.writeFileSync(
@@ -63,7 +75,7 @@ function createHungReviewServerScript(markerPath, pidPath) {
     `const fs = require("node:fs")
 fs.writeFileSync(${JSON.stringify(pidPath)}, String(process.pid))
 const timer = setTimeout(() => {
-  process.stdout.write(JSON.stringify({ type: "review-submitted", payload: { summary: "Hung prompt" } }) + "\\n")
+  process.stdout.write(JSON.stringify({ type: "review-submitted", requestId: ${JSON.stringify(requestId)}, payload: { summary: "Hung prompt" } }) + "\\n")
 }, 25)
 
 process.stdout.write(JSON.stringify({ type: "server-started", port: 4321 }) + "\\n")
@@ -285,7 +297,8 @@ test("startOpenCodeStub does not reject after it has resolved", async () => {
 })
 
 test("manual launcher includes opencode cli stderr when fallback execution fails", { timeout: 10000 }, async () => {
-  const reviewServerPath = createFakeReviewServerScript()
+  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
+  const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-failure")
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
   const opencodeCli = startFailingOpencodeCli()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
@@ -310,10 +323,18 @@ test("manual launcher includes opencode cli stderr when fallback execution fails
   assert.match(result.stderr, /opencode exited with 17/)
   assert.match(result.stderr, /opencode cli stderr: boom/)
   assert.match(result.stderr, /opencode cli stdout: boom/)
+  assert.ok(fs.existsSync(ackPath))
+  assert.deepEqual(JSON.parse(fs.readFileSync(ackPath, "utf8")), {
+    type: "review-ack",
+    requestId: "review-request-failure",
+    ok: false,
+    error: "opencode exited with 17\nstderr:\nopencode cli stderr: boom\nstdout:\nopencode cli stdout: boom",
+  })
 })
 
 test("manual launcher forwards the submitted review to OpenCode", { timeout: 10000 }, async (t) => {
-  const reviewServerPath = createFakeReviewServerScript()
+  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
+  const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-open-code")
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
   const urlFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "url.txt")
   const opencode = await startOpenCodeStub()
@@ -384,10 +405,17 @@ test("manual launcher forwards the submitted review to OpenCode", { timeout: 100
   assert.match(stdout, /Open http:\/\/127\.0\.0\.1:4321\/\?session=ses_123&base=main/)
   assert.equal(fs.readFileSync(urlFile, "utf8"), "http://127.0.0.1:4321/?session=ses_123&base=main")
   assert.equal(stderr, "")
+  assert.deepEqual(JSON.parse(fs.readFileSync(ackPath, "utf8")), {
+    type: "review-ack",
+    requestId: "review-request-open-code",
+    ok: true,
+    message: "Review delivered to OpenCode session",
+  })
 })
 
 test("manual launcher hands review to the opencode cli without opencode-url", { timeout: 10000 }, async (t) => {
-  const reviewServerPath = createFakeReviewServerScript()
+  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
+  const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-cli")
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
   const opencodeCli = startFakeOpencodeCli()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
@@ -445,13 +473,19 @@ test("manual launcher hands review to the opencode cli without opencode-url", { 
   assert.match(argv[5], /- new line 14: Looks good/)
   assert.match(argv[5], /Snippet: const branch = maybeBranch\(\)/)
   assert.equal(stderr, "")
+  assert.deepEqual(JSON.parse(fs.readFileSync(ackPath, "utf8")), {
+    type: "review-ack",
+    requestId: "review-request-cli",
+    ok: true,
+    message: "Review delivered via opencode CLI",
+  })
 })
 
 test("manual launcher times out a hung prompt_async request", { timeout: 10000 }, async (t) => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
   const markerPath = path.join(tempDir, "stopped.txt")
   const pidPath = path.join(tempDir, "review-server.pid")
-  const reviewServerPath = createHungReviewServerScript(markerPath, pidPath)
+  const reviewServerPath = createAckableHungReviewServerScript(markerPath, pidPath, "review-request-hung")
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
   const opencode = await startHangingOpenCodeStub()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")

@@ -3,15 +3,73 @@ const crypto = require("node:crypto")
 const { execFileSync } = require("node:child_process")
 const fs = require("node:fs")
 const path = require("node:path")
+const readline = require("node:readline")
 
 const token = crypto.randomBytes(16).toString("hex")
 const submitBodyLimit = 64 * 1024
+const pendingSubmissions = new Map()
 const allowedModuleNames = new Set([
   "review-file-tree.js",
   "review-draft-panel.js",
   "review-selection.js",
   "review-theme.js",
 ])
+
+const submissionReader = readline.createInterface({ input: process.stdin })
+let submissionShutdownRequested = false
+
+function closeSubmissionServer() {
+  if (submissionShutdownRequested) return
+  submissionShutdownRequested = true
+
+  try {
+    submissionReader.close()
+  } catch {}
+
+  server.close()
+}
+
+function registerSubmissionAck(requestId) {
+  return new Promise((resolve, reject) => {
+    pendingSubmissions.set(requestId, { resolve, reject })
+  })
+}
+
+function settleSubmissionAck(event) {
+  const pending = pendingSubmissions.get(event.requestId)
+  if (!pending) return false
+
+  pendingSubmissions.delete(event.requestId)
+  pending.resolve(event)
+  return true
+}
+
+function rejectPendingSubmissions(message) {
+  if (pendingSubmissions.size === 0) return
+
+  const error = new Error(message)
+  for (const pending of pendingSubmissions.values()) {
+    pending.reject(error)
+  }
+  pendingSubmissions.clear()
+}
+
+submissionReader.on("line", (line) => {
+  let event
+
+  try {
+    event = JSON.parse(line)
+  } catch {
+    return
+  }
+
+  if (event?.type !== "review-ack" || !event.requestId) return
+  settleSubmissionAck(event)
+})
+
+submissionReader.on("close", () => {
+  rejectPendingSubmissions("review launcher closed before acknowledging submission")
+})
 
 function requireConfiguredSession() {
   const session = process.env.SUPERPOWERS_REVIEW_SESSION
@@ -121,6 +179,13 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = parseRequestUrl(req)
 
+    function sendSubmitResponse(statusCode, payload) {
+      res.once("finish", closeSubmissionServer)
+      res.once("close", closeSubmissionServer)
+      res.writeHead(statusCode, { "content-type": "application/json" })
+      res.end(JSON.stringify(payload))
+    }
+
     if (req.url === "/api/submit" && req.method === "POST") {
       if (req.headers["x-review-token"] !== token) {
         res.writeHead(403, { "content-type": "application/json" })
@@ -134,11 +199,28 @@ const server = http.createServer(async (req, res) => {
         body = JSON.parse(raw)
       } catch {}
 
-      process.stdout.write(JSON.stringify({ type: "review-submitted", payload: body }) + "\n")
+      const requestId = crypto.randomUUID()
+      const ack = registerSubmissionAck(requestId)
 
-      res.writeHead(200, { "content-type": "application/json" })
-      res.end(JSON.stringify({ ok: true }))
-      return
+      process.stdout.write(JSON.stringify({ type: "review-submitted", requestId, payload: body }) + "\n")
+
+      try {
+        const result = await ack
+
+        if (result?.ok === false) {
+          sendSubmitResponse(502, { ok: false, error: result.error || result.message || "review handoff failed" })
+          return
+        }
+
+        sendSubmitResponse(200, { ok: true, message: result?.message || "Review delivered to OpenCode" })
+        return
+      } catch (error) {
+        sendSubmitResponse(502, {
+          ok: false,
+          error: error instanceof Error ? error.message : "review launcher closed before acknowledging submission",
+        })
+        return
+      }
     }
 
     if (url.pathname === "/health") {

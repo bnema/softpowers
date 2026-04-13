@@ -23,9 +23,17 @@ const promptTimeoutMs = Number.parseInt(
   args.get("prompt-timeout-ms") || process.env.SUPERPOWERS_REVIEW_PROMPT_TIMEOUT_MS || "15000",
   10,
 )
+const shutdownTimeoutMs = Number.parseInt(
+  args.get("shutdown-timeout-ms") || process.env.SUPERPOWERS_REVIEW_SHUTDOWN_TIMEOUT_MS || "250",
+  10,
+)
 
 function getPromptTimeoutMs() {
   return Number.isFinite(promptTimeoutMs) && promptTimeoutMs > 0 ? promptTimeoutMs : 15000
+}
+
+function getShutdownTimeoutMs() {
+  return Number.isFinite(shutdownTimeoutMs) && shutdownTimeoutMs > 0 ? shutdownTimeoutMs : 250
 }
 
 async function loadReviewPrompt() {
@@ -45,6 +53,20 @@ async function waitForExit(child) {
   })
 }
 
+async function shutdownChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return
+
+  const exited = await Promise.race([
+    waitForExit(child).then(() => true),
+    new Promise((resolve) => setTimeout(() => resolve(false), getShutdownTimeoutMs())),
+  ])
+
+  if (exited) return
+
+  child.kill("SIGTERM")
+  await waitForExit(child)
+}
+
 async function main() {
   const formatReviewPrompt = await loadReviewPrompt()
   const child = spawn(process.execPath, [reviewServerPath], {
@@ -55,7 +77,7 @@ async function main() {
       SUPERPOWERS_REVIEW_BASE: base,
       SUPERPOWERS_REVIEW_SESSION: session,
     },
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: ["pipe", "pipe", "pipe"],
   })
 
   child.stderr.on("data", (chunk) => {
@@ -71,6 +93,21 @@ async function main() {
     settled = true
     rl.close()
     fn(value)
+  }
+
+  function sendSubmissionAck(requestId, ack) {
+    if (!child.stdin || child.stdin.destroyed) {
+      throw new Error("review server stdin is closed")
+    }
+
+    const submissionAck = { type: "review-ack", requestId, ok: ack.ok }
+    if (ack.ok) {
+      submissionAck.message = ack.message
+    } else {
+      submissionAck.error = ack.error
+    }
+
+    child.stdin.write(JSON.stringify(submissionAck) + "\n")
   }
 
   async function submitPrompt(text) {
@@ -144,14 +181,22 @@ async function main() {
       }
 
       if (event.type !== "review-submitted" || shuttingDown) return
+      if (!event.requestId) {
+        shuttingDown = true
+        finish(reject, new Error("review submission is missing a request id"))
+        return
+      }
 
       shuttingDown = true
       void (async () => {
+        let ack = { ok: true, message: "Review delivered to OpenCode" }
+
         try {
           const text = formatReviewPrompt(event.payload)
 
           if (opencodeUrl) {
             await submitPrompt(text)
+            ack = { ok: true, message: "Review delivered to OpenCode session" }
           } else {
             const result = spawnSync("opencode", ["run", "-s", session, "--dir", repo, text], {
               cwd: process.cwd(),
@@ -171,16 +216,33 @@ async function main() {
             if (result.status !== 0) {
               throw new Error(`opencode exited with ${result.status ?? result.signal}${output ? `\n${output}` : ""}`)
             }
-          }
 
-          await stopChild()
-          finish(resolve)
+            ack = { ok: true, message: "Review delivered via opencode CLI" }
+          }
         } catch (error) {
-          try {
-            await stopChild()
-          } catch {}
-          finish(reject, error)
+          ack = { ok: false, error: error instanceof Error ? error.message : String(error) }
         }
+
+        try {
+          sendSubmissionAck(event.requestId, ack)
+        } catch (error) {
+          ack = { ok: false, error: error instanceof Error ? error.message : String(error) }
+        }
+
+        try {
+          if (child.stdin && !child.stdin.destroyed) child.stdin.end()
+        } catch {}
+
+        try {
+          await shutdownChild(child)
+        } catch {}
+
+        if (ack.ok) {
+          finish(resolve)
+          return
+        }
+
+        finish(reject, new Error(ack.error || "failed to submit review"))
       })()
     })
   })

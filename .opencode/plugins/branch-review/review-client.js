@@ -36,10 +36,9 @@ function saveState(state) {
 
 function syncThemeButton(button, theme) {
   if (!button) return
-  button.textContent = theme === "dark" ? "Light" : "Dark"
-  button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false")
-  button.setAttribute("aria-label", `Switch to ${theme === "dark" ? "light" : "dark"} theme`)
-  button.dataset.theme = theme
+  const next = theme === "dark" ? "Light mode" : "Dark mode"
+  button.textContent = next
+  button.setAttribute("aria-label", `Switch to ${next.toLowerCase()}`)
 }
 
 export function toggleTheme({ document, storage, button }) {
@@ -50,8 +49,39 @@ export function toggleTheme({ document, storage, button }) {
   return applied
 }
 
+function setSidebarCollapsed(document, collapsed) {
+  if (!document?.body?.dataset) return collapsed
+  document.body.dataset.sidebar = collapsed ? "collapsed" : "expanded"
+  return collapsed
+}
+
+function syncSidebarToggle(button, collapsed) {
+  if (!button) return
+  button.textContent = collapsed ? "Show sidebar" : "Hide sidebar"
+  button.setAttribute("aria-pressed", collapsed ? "true" : "false")
+  button.setAttribute("aria-label", `${collapsed ? "Show" : "Hide"} sidebar`)
+}
+
 function createId() {
   return globalThis.crypto?.randomUUID?.() || `comment-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+export function formatSidebarFileLabel(name, maxLength = 21) {
+  const text = String(name || "")
+  if (text.length <= maxLength) return text
+
+  const dot = text.lastIndexOf(".")
+  if (dot <= 0 || dot === text.length - 1) {
+    return `${text.slice(0, Math.max(1, maxLength - 3))}...`
+  }
+
+  const suffix = text.slice(dot + 1)
+  const prefixLength = maxLength - suffix.length - 3
+  if (prefixLength < 4) {
+    return `${text.slice(0, Math.max(1, maxLength - 3))}...`
+  }
+
+  return `${text.slice(0, prefixLength)}...${suffix}`
 }
 
 function commentLineRef(comment) {
@@ -149,151 +179,135 @@ function setStatus(message, kind = "") {
   status.dataset.kind = kind
 }
 
-const localKeywordSet = new Set([
-  "await",
-  "break",
-  "catch",
-  "class",
-  "const",
-  "continue",
-  "debugger",
-  "default",
-  "delete",
-  "do",
-  "else",
-  "export",
-  "extends",
-  "false",
-  "finally",
-  "for",
-  "function",
-  "if",
-  "import",
-  "in",
-  "instanceof",
-  "let",
-  "new",
-  "null",
-  "return",
-  "super",
-  "switch",
-  "this",
-  "throw",
-  "true",
-  "try",
-  "typeof",
-  "undefined",
-  "var",
-  "void",
-  "while",
-  "with",
-  "yield",
+const highlightLanguageByName = new Map([
+  ["Dockerfile", "dockerfile"],
+  ["Gemfile", "ruby"],
+  ["Makefile", "makefile"],
+  ["Rakefile", "ruby"],
 ])
 
-function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-}
+const highlightLanguageByExtension = new Map([
+  [".bash", "bash"],
+  [".cjs", "javascript"],
+  [".css", "css"],
+  [".go", "go"],
+  [".html", "xml"],
+  [".jsx", "javascript"],
+  [".js", "javascript"],
+  [".json", "json"],
+  [".md", "markdown"],
+  [".mjs", "javascript"],
+  [".rb", "ruby"],
+  [".rs", "rust"],
+  [".sh", "bash"],
+  [".toml", "toml"],
+  [".ts", "typescript"],
+  [".tsx", "typescript"],
+  [".yaml", "yaml"],
+  [".yml", "yaml"],
+  [".zsh", "bash"],
+])
 
-function isWordChar(char) {
-  return /[\w$]/.test(char || "")
-}
+const highlightLanguageBundleBase = "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/languages"
+const highlightLanguageLoads = new Map()
 
-function highlightLocalSource(source) {
-  const text = String(source || "")
-  let highlighted = false
-  let html = ""
+export function detectHighlightLanguage(filePath) {
+  const rawPath = String(filePath || "")
+  const basename = rawPath.split("/").pop() || ""
 
-  for (let index = 0; index < text.length; ) {
-    const char = text[index]
-    const next = text[index + 1]
-
-    if (char === "/" && next === "/") {
-      const end = text.indexOf("\n", index + 2)
-      const slice = end === -1 ? text.slice(index) : text.slice(index, end)
-      html += `<span class="hljs-comment">${escapeHtml(slice)}</span>`
-      highlighted = true
-      index = end === -1 ? text.length : end
-      continue
-    }
-
-    if (char === "/" && next === "*") {
-      const end = text.indexOf("*/", index + 2)
-      const slice = end === -1 ? text.slice(index) : text.slice(index, end + 2)
-      html += `<span class="hljs-comment">${escapeHtml(slice)}</span>`
-      highlighted = true
-      index = end === -1 ? text.length : end + 2
-      continue
-    }
-
-    if (char === '"' || char === "'" || char === "`") {
-      let end = index + 1
-      let escaped = false
-      while (end < text.length) {
-        const current = text[end]
-        if (!escaped && current === char) {
-          end += 1
-          break
-        }
-        escaped = !escaped && current === "\\"
-        end += 1
-      }
-      const slice = text.slice(index, end)
-      html += `<span class="hljs-string">${escapeHtml(slice)}</span>`
-      highlighted = true
-      index = end
-      continue
-    }
-
-    if (/\d/.test(char) && !isWordChar(text[index - 1])) {
-      let end = index + 1
-      while (end < text.length && /[0-9_.eExX+-]/.test(text[end])) end += 1
-      const slice = text.slice(index, end)
-      html += `<span class="hljs-number">${escapeHtml(slice)}</span>`
-      highlighted = true
-      index = end
-      continue
-    }
-
-    if (/[A-Za-z_$]/.test(char)) {
-      let end = index + 1
-      while (end < text.length && isWordChar(text[end])) end += 1
-      const word = text.slice(index, end)
-      if (localKeywordSet.has(word)) {
-        html += `<span class="hljs-keyword">${escapeHtml(word)}</span>`
-        highlighted = true
-      } else {
-        html += escapeHtml(word)
-      }
-      index = end
-      continue
-    }
-
-    html += escapeHtml(char)
-    index += 1
+  if (highlightLanguageByName.has(basename)) {
+    return highlightLanguageByName.get(basename)
   }
 
-  return highlighted ? html : null
+  const dot = basename.lastIndexOf(".")
+  if (dot === -1) return null
+
+  const extension = basename.slice(dot).toLowerCase()
+  return highlightLanguageByExtension.get(extension) || null
 }
 
-export function renderHighlightedCode(node, text) {
-  node.textContent = text
+export function highlightLanguageAssetUrl(language) {
+  return `${highlightLanguageBundleBase}/${language}.min.js`
+}
 
-  const local = highlightLocalSource(text)
-  if (local) {
-    node.innerHTML = local
+function collectHighlightLanguages(filePaths) {
+  const languages = new Set()
+
+  for (const filePath of filePaths) {
+    const language = detectHighlightLanguage(filePath)
+    if (language) languages.add(language)
+  }
+
+  return [...languages]
+}
+
+export async function loadHighlightLanguage(language) {
+  if (!language) return false
+
+  const hljs = globalThis.hljs
+  if (typeof hljs?.getLanguage === "function" && hljs.getLanguage(language)) {
     return true
   }
 
+  if (highlightLanguageLoads.has(language)) {
+    return highlightLanguageLoads.get(language)
+  }
+
+  const promise = new Promise((resolve) => {
+    const doc = globalThis.document
+    const head = doc?.head || doc?.documentElement
+    if (!doc || !head || typeof doc.createElement !== "function" || typeof head.append !== "function") {
+      resolve(false)
+      return
+    }
+
+    const script = doc.createElement("script")
+    script.async = true
+    script.src = highlightLanguageAssetUrl(language)
+    script.addEventListener("load", () => {
+      resolve(typeof globalThis.hljs?.getLanguage === "function" ? Boolean(globalThis.hljs.getLanguage(language)) : true)
+    }, { once: true })
+    script.addEventListener("error", () => resolve(false), { once: true })
+
+    try {
+      head.append(script)
+    } catch {
+      resolve(false)
+    }
+  }).catch(() => false)
+
+  highlightLanguageLoads.set(language, promise)
+  return promise
+}
+
+export async function loadHighlightLanguages(filePaths) {
+  const languages = collectHighlightLanguages(filePaths)
+  return Promise.all(languages.map((language) => loadHighlightLanguage(language)))
+}
+
+export function renderHighlightedCode(node, text, filePath = "") {
+  node.textContent = text
+  node.classList?.add?.("hljs")
+
   const hljs = globalThis.hljs
-  if (!hljs || typeof hljs.highlightAuto !== "function") return false
+  if (!hljs) return false
+
+  const language = detectHighlightLanguage(filePath)
+
+  if (language && typeof hljs.highlight === "function" && (!hljs.getLanguage || hljs.getLanguage(language))) {
+    try {
+      const result = hljs.highlight(String(text || ""), { language, ignoreIllegals: true })
+      if (result?.value) {
+        node.innerHTML = result.value
+        return true
+      }
+    } catch {}
+  }
+
+  if (typeof hljs.highlightAuto !== "function") return false
 
   try {
-    const result = hljs.highlightAuto(text)
+    const result = hljs.highlightAuto(String(text || ""))
     if (!result?.value || !result.language || result.language === "plaintext") return false
     node.innerHTML = result.value
     return true
@@ -308,6 +322,21 @@ function renderDraftPreview(state) {
   const draft = document.getElementById("draft-preview")
   if (!draft) return
   draft.textContent = formatReviewPrompt(currentReview(state))
+}
+
+export function createDraftPreviewDisclosure(document) {
+  const draftPreviewSection = document.createElement("details")
+  draftPreviewSection.className = "draft-preview"
+  draftPreviewSection.open = false
+
+  const draftPreviewHeading = document.createElement("summary")
+  draftPreviewHeading.textContent = "Prompt preview"
+
+  const draftPreview = document.createElement("pre")
+  draftPreview.id = "draft-preview"
+
+  draftPreviewSection.append(draftPreviewHeading, draftPreview)
+  return { draftPreviewSection, draftPreviewHeading, draftPreview }
 }
 
 export function buildCommentCounts(state) {
@@ -352,9 +381,8 @@ function renderTreeNode(node, counts, activePath, selectFile) {
 
   const label = document.createElement("span")
   label.className = "file-tree__file-label"
-  label.textContent = node.name
-
-  button.append(label)
+  label.textContent = formatSidebarFileLabel(node.name)
+  label.title = node.name
 
   const count = counts.get(node.path) || 0
   if (count > 0) {
@@ -363,6 +391,8 @@ function renderTreeNode(node, counts, activePath, selectFile) {
     badge.textContent = String(count)
     button.append(badge)
   }
+
+  button.append(label)
 
   button.addEventListener("click", () => selectFile(node.path))
   return button
@@ -516,8 +546,8 @@ function renderDiffLine(state, file, line, refreshComments, refreshDraftOverview
   newLine.textContent = line.newLine ?? ""
 
   const text = document.createElement("span")
-  text.className = "diff-line__text"
-  renderHighlightedCode(text, line.text)
+  text.className = "diff-line__text hljs"
+  renderHighlightedCode(text, line.text, file.path)
 
   row.append(gutter, oldLine, newLine, text)
 
@@ -581,7 +611,7 @@ export async function loadDiff(bootstrap) {
   return response.json()
 }
 
-async function submitReview(state, bootstrap) {
+export async function submitReview(state, bootstrap) {
   const response = await fetch("/api/submit", {
     method: "POST",
     headers: {
@@ -591,7 +621,16 @@ async function submitReview(state, bootstrap) {
     body: JSON.stringify(currentReview(state)),
   })
 
-  if (!response.ok) throw new Error(`submit failed (${response.status})`)
+  let payload = null
+  try {
+    payload = await response.json()
+  } catch {}
+
+  if (!response.ok) {
+    throw new Error(payload?.error || payload?.message || `submit failed (${response.status})`)
+  }
+
+  return payload
 }
 
 function renderApp(bootstrap) {
@@ -602,7 +641,6 @@ function renderApp(bootstrap) {
   const fileList = document.getElementById("file-list")
   const diffView = document.getElementById("diff-view")
   const draftEditor = document.getElementById("draft-editor")
-  const toolbar = document.getElementById("review-toolbar")
   const storage = (() => {
     try {
       return globalThis.localStorage
@@ -610,15 +648,8 @@ function renderApp(bootstrap) {
       return undefined
     }
   })()
-  const currentTheme = initTheme({ document, storage, matchMedia: globalThis.matchMedia?.bind(globalThis) })
-  const themeToggle = document.createElement("button")
-  themeToggle.type = "button"
-  themeToggle.className = "theme-toggle"
-  syncThemeButton(themeToggle, currentTheme)
-  themeToggle.addEventListener("click", () => {
-    toggleTheme({ document, storage, button: themeToggle })
-  })
-  toolbar?.replaceChildren(themeToggle)
+  initTheme({ document, storage, matchMedia: globalThis.matchMedia?.bind(globalThis) })
+  let sidebarCollapsed = setSidebarCollapsed(document, false)
 
   let activePath = ""
   let tree = buildFileTree([])
@@ -675,12 +706,6 @@ function renderApp(bootstrap) {
   draftComments.id = "draft-comments"
   draftComments.className = "draft-group-list"
 
-  const draftPreviewHeading = document.createElement("h4")
-  draftPreviewHeading.textContent = "Prompt preview"
-
-  const draftPreview = document.createElement("pre")
-  draftPreview.id = "draft-preview"
-
   const actions = document.createElement("div")
   actions.className = "actions"
 
@@ -691,8 +716,8 @@ function renderApp(bootstrap) {
     submit.disabled = true
     setStatus("Submitting review…")
     try {
-      await submitReview(state, bootstrap)
-      setStatus("Review submitted", "success")
+      const result = await submitReview(state, bootstrap)
+      setStatus(result?.message || "Review delivered to OpenCode", "success")
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to submit review", "error")
       submit.disabled = false
@@ -702,8 +727,10 @@ function renderApp(bootstrap) {
   const status = document.createElement("p")
   status.id = "status"
 
+  const { draftPreviewSection } = createDraftPreviewDisclosure(document)
+
   actions.append(submit)
-  draftBody.append(summaryLabel, draftCommentsHeading, draftComments, draftPreviewHeading, draftPreview, actions, status)
+  draftBody.append(summaryLabel, draftCommentsHeading, draftComments, actions, status, draftPreviewSection)
   draftEditor.append(draftHeader, draftBody)
 
   function cancelComposer() {
@@ -862,7 +889,15 @@ function renderApp(bootstrap) {
       }))
     }
 
-    fileList.append(listHeading, treeContainer)
+    const themeToggle = document.createElement("button")
+    themeToggle.type = "button"
+    themeToggle.className = "sidebar-theme-toggle"
+    syncThemeButton(themeToggle, document.documentElement.dataset.theme)
+    themeToggle.addEventListener("click", () => {
+      toggleTheme({ document, storage, button: themeToggle })
+    })
+
+    fileList.append(listHeading, treeContainer, themeToggle)
   }
 
   const refreshComments = () => {
@@ -888,12 +923,29 @@ function renderApp(bootstrap) {
   renderDraftOverview()
 
   return loadDiff(bootstrap)
-    .then((payload) => {
+    .then(async (payload) => {
+      diffView.replaceChildren()
       const parsedFiles = parseUnifiedDiff(payload.patch)
       const renderedFiles = payload.files.map(
         (filePath) => parsedFiles.find((file) => file.path === filePath) || { path: filePath, additions: 0, deletions: 0, hunks: [] },
       )
+      await loadHighlightLanguages(renderedFiles.map((file) => file.path))
       tree = buildFileTree(renderedFiles)
+
+      const diffControls = document.createElement("div")
+      diffControls.className = "diff-view__controls"
+
+      const sidebarToggle = document.createElement("button")
+      sidebarToggle.type = "button"
+      sidebarToggle.className = "diff-view__sidebar-toggle"
+      syncSidebarToggle(sidebarToggle, sidebarCollapsed)
+      sidebarToggle.addEventListener("click", () => {
+        sidebarCollapsed = setSidebarCollapsed(document, !sidebarCollapsed)
+        syncSidebarToggle(sidebarToggle, sidebarCollapsed)
+      })
+
+      diffControls.append(sidebarToggle)
+      diffView.append(diffControls)
 
       for (const file of renderedFiles) {
         diffView.append(renderFileSection(state, file, refreshComments, renderDraftOverview, handleLineSelection))

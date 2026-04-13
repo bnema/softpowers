@@ -29,6 +29,58 @@ async function request(port, pathname, options = {}) {
   })
 }
 
+function waitForJsonEvent(child, predicate) {
+  return new Promise((resolve, reject) => {
+    let buffer = ""
+
+    const cleanup = () => {
+      child.stdout.off("data", onData)
+      child.off("error", onError)
+      child.off("exit", onExit)
+    }
+
+    const onData = (chunk) => {
+      buffer += chunk.toString()
+
+      let newlineIndex = buffer.indexOf("\n")
+      while (newlineIndex !== -1) {
+        const line = buffer.slice(0, newlineIndex).trim()
+        buffer = buffer.slice(newlineIndex + 1)
+        newlineIndex = buffer.indexOf("\n")
+
+        if (!line) continue
+
+        let event
+        try {
+          event = JSON.parse(line)
+        } catch {
+          continue
+        }
+
+        if (predicate(event)) {
+          cleanup()
+          resolve(event)
+          return
+        }
+      }
+    }
+
+    const onError = (error) => {
+      cleanup()
+      reject(error)
+    }
+
+    const onExit = (code, signal) => {
+      cleanup()
+      reject(new Error(`server exited with ${code ?? signal}`))
+    }
+
+    child.stdout.on("data", onData)
+    child.once("error", onError)
+    child.once("exit", onExit)
+  })
+}
+
 function git(cwd, args) {
   execFileSync("git", args, { cwd, stdio: "ignore" })
 }
@@ -54,7 +106,7 @@ function createRepo() {
 function startServer(env = {}) {
   const serverPath = path.join(process.cwd(), ".opencode/plugins/branch-review/server.cjs")
   const child = spawn(process.execPath, [serverPath], {
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: ["pipe", "pipe", "pipe"],
     env: { ...process.env, ...env },
   })
 
@@ -114,6 +166,15 @@ function loadReadModule(tempRoot) {
 
     if (specifier === "node:child_process") {
       return { execFileSync: () => "" }
+    }
+
+    if (specifier === "node:readline") {
+      return {
+        createInterface: () => ({
+          close() {},
+          on() {},
+        }),
+      }
     }
 
     if (specifier === "node:crypto") {
@@ -241,14 +302,68 @@ test("server returns 500 when diff loading fails", async (t) => {
   assert.equal(health.status, 200)
 })
 
-test("server responds to valid submit requests with ok response", async (t) => {
+test("server responds to valid submit requests after the launcher acks delivery", async (t) => {
   const { child, started } = startServer(reviewEnv())
   const startup = await started
   t.after(() => child.kill())
 
-  const submit = await request(startup.port, "/api/submit", { method: "POST", headers: { "x-review-token": startup.token } })
-  assert.equal(submit.status, 200)
-  assert.deepEqual(JSON.parse(submit.body), { ok: true })
+  const submit = request(startup.port, "/api/submit", {
+    method: "POST",
+    headers: { "x-review-token": startup.token },
+    body: JSON.stringify({ summary: "Verify the handoff", comments: [] }),
+  })
+  const event = await waitForJsonEvent(child, (entry) => entry.type === "review-submitted")
+
+  const beforeAck = await Promise.race([
+    submit.then(() => "resolved"),
+    new Promise((resolve) => setTimeout(() => resolve("pending"), 50)),
+  ])
+  assert.equal(beforeAck, "pending")
+
+  child.stdin.write(
+    JSON.stringify({
+      type: "review-ack",
+      requestId: event.requestId,
+      ok: true,
+      message: "Review delivered to OpenCode session",
+    }) + "\n",
+  )
+
+  const response = await submit
+  assert.equal(response.status, 200)
+  assert.deepEqual(JSON.parse(response.body), {
+    ok: true,
+    message: "Review delivered to OpenCode session",
+  })
+})
+
+test("server returns an error when the launcher reports a failed handoff", async (t) => {
+  const { child, started } = startServer(reviewEnv())
+  const startup = await started
+  t.after(() => child.kill())
+
+  const submit = request(startup.port, "/api/submit", {
+    method: "POST",
+    headers: { "x-review-token": startup.token },
+    body: JSON.stringify({ summary: "Fail the handoff", comments: [] }),
+  })
+  const event = await waitForJsonEvent(child, (entry) => entry.type === "review-submitted")
+
+  child.stdin.write(
+    JSON.stringify({
+      type: "review-ack",
+      requestId: event.requestId,
+      ok: false,
+      error: "prompt_async timed out after 50ms",
+    }) + "\n",
+  )
+
+  const response = await submit
+  assert.equal(response.status, 502)
+  assert.deepEqual(JSON.parse(response.body), {
+    ok: false,
+    error: "prompt_async timed out after 50ms",
+  })
 })
 
 test("server rejects root requests without a matching session", async (t) => {
@@ -297,6 +412,8 @@ test("root page includes review bootstrap state", async (t) => {
   assert.equal(root.status, 200)
   assert.match(root.body, /<meta name="viewport" content="width=device-width, initial-scale=1">/)
   assert.match(root.body, /<script id="review-bootstrap" type="application\/json">/)
+  assert.match(root.body, /@highlightjs\/cdn-assets@11\.11\.1\/styles\/github\.min\.css/)
+  assert.match(root.body, /@highlightjs\/cdn-assets@11\.11\.1\/highlight\.min\.js/)
   assert.match(root.body, /review-client\.js/)
   assert.doesNotMatch(root.body, /assets\/highlight\.js/)
 
@@ -322,6 +439,7 @@ test("root page loads review styles", async (t) => {
   const styles = await request(startup.port, "/review-styles.css")
   assert.equal(styles.status, 200)
   assert.match(styles.body, /--surface-primary/)
+  assert.match(styles.body, /JetBrains Mono/)
 })
 
 test("server serves review module assets", async (t) => {
@@ -379,7 +497,7 @@ test("submit preserves multibyte request bodies across split chunks", async (t) 
   const bytes = Buffer.from(payload)
   const split = Buffer.from('{"summary":"').length + 1
 
-  const submit = await request(startup.port, "/api/submit", {
+  const submit = request(startup.port, "/api/submit", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -388,7 +506,18 @@ test("submit preserves multibyte request bodies across split chunks", async (t) 
     bodyChunks: [bytes.slice(0, split), bytes.slice(split)],
   })
 
-  assert.equal(submit.status, 200)
+  const reviewEvent = await waitForJsonEvent(child, (entry) => entry.type === "review-submitted")
+  child.stdin.write(
+    JSON.stringify({
+      type: "review-ack",
+      requestId: reviewEvent.requestId,
+      ok: true,
+      message: "Review delivered to OpenCode",
+    }) + "\n",
+  )
+
+  const response = await submit
+  assert.equal(response.status, 200)
 
   const line = stdout
     .split("\n")
