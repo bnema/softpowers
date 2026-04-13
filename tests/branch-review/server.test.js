@@ -103,6 +103,20 @@ test("server prints startup json with random port", async (t) => {
   assert.match(startup.url, /^http:\/\/127\.0\.0\.1:/)
 })
 
+test("server prints a session-qualified startup url when session mode is enabled", async (t) => {
+  const { child, started } = startServer(reviewEnvWithSession())
+  const startup = await started
+  t.after(() => child.kill())
+
+  const startupUrl = new URL(startup.url)
+  assert.equal(startup.type, "server-started")
+  assert.equal(startupUrl.searchParams.get("session"), "ses_expected")
+  assert.equal(startupUrl.searchParams.get("base"), "main")
+
+  const root = await request(startup.port, `${startupUrl.pathname}${startupUrl.search}`)
+  assert.equal(root.status, 200)
+})
+
 test("server responds to health and rejects a missing token", async (t) => {
   const { child, started } = startServer(reviewEnv())
   const startup = await started

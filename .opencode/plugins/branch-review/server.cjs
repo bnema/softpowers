@@ -217,11 +217,18 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(0, "127.0.0.1", () => {
   const address = server.address()
+  const session = process.env.SUPERPOWERS_REVIEW_SESSION
+  const base = process.env.SUPERPOWERS_REVIEW_BASE
+  const url = new URL(`http://127.0.0.1:${address.port}/`)
+
+  if (session) url.searchParams.set("session", session)
+  if (base) url.searchParams.set("base", base)
+
   process.stdout.write(
     JSON.stringify({
       type: "server-started",
       port: address.port,
-      url: `http://127.0.0.1:${address.port}`,
+      url: url.toString(),
       token,
     }) + "\n",
   )
