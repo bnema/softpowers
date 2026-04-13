@@ -17,6 +17,7 @@ async function request(port, pathname, options = {}) {
       },
     )
     req.on("error", reject)
+    if (options.timeout) req.setTimeout(options.timeout, () => req.destroy(new Error(`request timed out after ${options.timeout}ms`)))
     if (options.body) req.write(options.body)
     req.end()
   })
@@ -79,6 +80,32 @@ test("server responds to health and rejects a missing token", async () => {
   const submit = await request(startup.port, "/api/submit", { method: "POST" })
   assert.equal(submit.status, 403)
   assert.match(submit.body, /invalid token/)
+
+  child.kill()
+})
+
+test("server returns 500 when diff loading fails", async () => {
+  const env = reviewEnv()
+  env.SUPERPOWERS_REVIEW_REPO = "/definitely/missing"
+  const { child, started } = startServer(env)
+  const startup = await started
+
+  const diff = await request(startup.port, "/api/diff", { timeout: 2000 })
+  assert.equal(diff.status, 500)
+
+  const health = await request(startup.port, "/health")
+  assert.equal(health.status, 200)
+
+  child.kill()
+})
+
+test("server responds to valid submit requests with not implemented", async () => {
+  const { child, started } = startServer(reviewEnv())
+  const startup = await started
+
+  const submit = await request(startup.port, "/api/submit", { method: "POST", headers: { "x-review-token": startup.token } })
+  assert.equal(submit.status, 501)
+  assert.match(submit.body, /not implemented/)
 
   child.kill()
 })

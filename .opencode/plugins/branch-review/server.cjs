@@ -55,53 +55,67 @@ function readTemplate() {
 }
 
 function readClient() {
-  return fs.readFileSync(path.join(__dirname, "review-client.js"))
+  return fs.readFileSync(path.join(__dirname, "review-client.js"), "utf8")
 }
 
 const server = http.createServer(async (req, res) => {
-  if (req.url === "/api/submit" && req.method === "POST") {
-    if (req.headers["x-review-token"] !== token) {
-      res.writeHead(403, { "content-type": "application/json" })
-      res.end(JSON.stringify({ error: "invalid token" }))
+  try {
+    if (req.url === "/api/submit" && req.method === "POST") {
+      if (req.headers["x-review-token"] !== token) {
+        res.writeHead(403, { "content-type": "application/json" })
+        res.end(JSON.stringify({ error: "invalid token" }))
+        return
+      }
+
+      res.writeHead(501, { "content-type": "application/json" })
+      res.end(JSON.stringify({ error: "not implemented" }))
       return
     }
-  }
 
-  if (req.url === "/health") {
-    res.writeHead(200, { "content-type": "application/json" })
-    res.end(JSON.stringify({ ok: true }))
-    return
-  }
+    if (req.url === "/health") {
+      res.writeHead(200, { "content-type": "application/json" })
+      res.end(JSON.stringify({ ok: true }))
+      return
+    }
 
-  if (req.url === "/api/diff") {
-    const diff = loadDiff()
-    res.writeHead(200, { "content-type": "application/json" })
-    res.end(JSON.stringify(diff))
-    return
-  }
+    if (req.url === "/api/diff") {
+      const diff = loadDiff()
+      res.writeHead(200, { "content-type": "application/json" })
+      res.end(JSON.stringify(diff))
+      return
+    }
 
-  if (req.url === "/assets/highlight.js") {
-    const asset = await ensureHighlightAsset("highlight.min.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js")
-    res.writeHead(200, { "content-type": "application/javascript" })
-    res.end(fs.readFileSync(asset))
-    return
-  }
+    if (req.url === "/assets/highlight.js") {
+      const asset = await ensureHighlightAsset("highlight.min.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js")
+      res.writeHead(200, { "content-type": "application/javascript" })
+      res.end(fs.readFileSync(asset))
+      return
+    }
 
-  if (req.url === "/review-client.js") {
-    res.writeHead(200, { "content-type": "application/javascript" })
-    res.end(readClient())
-    return
-  }
+    if (req.url === "/review-client.js") {
+      res.writeHead(200, { "content-type": "application/javascript" })
+      res.end(readClient())
+      return
+    }
 
-  if (req.url === "/") {
-    const html = readTemplate().replace("{{BOOTSTRAP_JSON}}", JSON.stringify(loadBootstrap()))
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
-    res.end(html)
-    return
-  }
+    if (req.url === "/") {
+      const html = readTemplate().replace("{{BOOTSTRAP_JSON}}", JSON.stringify(loadBootstrap()))
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+      res.end(html)
+      return
+    }
 
-  res.writeHead(404)
-  res.end()
+    res.writeHead(404)
+    res.end()
+  } catch (error) {
+    if (!res.headersSent) {
+      res.writeHead(500, { "content-type": "application/json" })
+      res.end(JSON.stringify({ error: "internal server error" }))
+      return
+    }
+
+    res.destroy(error)
+  }
 })
 
 server.listen(0, "127.0.0.1", () => {
