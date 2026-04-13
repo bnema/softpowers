@@ -58,6 +58,17 @@ function readClient() {
   return fs.readFileSync(path.join(__dirname, "review-client.js"), "utf8")
 }
 
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = ""
+    req.on("data", (chunk) => {
+      body += chunk
+    })
+    req.on("end", () => resolve(body))
+    req.on("error", reject)
+  })
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     if (req.url === "/api/submit" && req.method === "POST") {
@@ -67,8 +78,16 @@ const server = http.createServer(async (req, res) => {
         return
       }
 
-      res.writeHead(501, { "content-type": "application/json" })
-      res.end(JSON.stringify({ error: "not implemented" }))
+      const raw = await readBody(req)
+      let body = raw
+      try {
+        body = JSON.parse(raw)
+      } catch {}
+
+      process.stdout.write(JSON.stringify({ type: "review-submitted", payload: body }) + "\n")
+
+      res.writeHead(200, { "content-type": "application/json" })
+      res.end(JSON.stringify({ ok: true }))
       return
     }
 

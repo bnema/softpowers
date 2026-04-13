@@ -1,5 +1,6 @@
 import os from "os"
 import path from "path"
+import { execFileSync } from "node:child_process"
 import { spawn } from "node:child_process"
 
 export function xdgCacheDir() {
@@ -22,6 +23,29 @@ export function formatReviewPrompt(review) {
     lines.push(`  Snippet: ${comment.snippet}`)
   }
   return lines.join("\n")
+}
+
+export function resolveBaseRef(input) {
+  if (input.explicitBase) return input.explicitBase
+  if (input.upstreamBranch && input.upstreamBranch.startsWith("origin/")) return "main"
+  try {
+    execFileSync("git", ["merge-base", "HEAD", "main"], { cwd: input.cwd, stdio: "ignore" })
+    return "main"
+  } catch {}
+  return "master"
+}
+
+export async function waitForServerStarted(child) {
+  return await new Promise((resolve, reject) => {
+    let stdout = ""
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString()
+      const line = stdout.trim().split("\n").at(-1)
+      if (line && line.includes("server-started")) resolve(JSON.parse(line))
+    })
+    child.once("error", reject)
+    child.once("exit", (code) => reject(new Error(`review server exited early: ${code}`)))
+  })
 }
 
 export function spawnReviewServer(args) {

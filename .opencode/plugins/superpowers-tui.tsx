@@ -1,6 +1,15 @@
-import type { TuiPlugin, TuiPluginModule } from "@opencode-ai/plugin/tui"
+type TuiPlugin = (api: any) => void
+type TuiPluginModule = { id: string; tui: TuiPlugin }
 
-const tui: TuiPlugin = async (api) => {
+import { formatReviewPrompt, resolveBaseRef, spawnReviewServer, waitForServerStarted } from "./review-shared.js"
+
+const tui: TuiPlugin = (api) => {
+  let child: ReturnType<typeof spawnReviewServer> | null = null
+
+  api.lifecycle.onDispose(() => {
+    if (child && !child.killed) child.kill()
+  })
+
   api.command.register(() => [
     {
       title: "Review branch locally",
@@ -8,7 +17,55 @@ const tui: TuiPlugin = async (api) => {
       category: "Superpowers",
       slash: { name: "review-branch-locally", aliases: ["review-branch"] },
       onSelect: () => {
-        api.ui.toast({ variant: "info", message: "Branch review wiring is not implemented yet" })
+        if (api.route.current.name !== "session") {
+          api.ui.toast({ variant: "error", message: "Open a session before starting branch review" })
+          return
+        }
+
+        const sessionID = api.route.current.params.sessionID as string
+        const baseRef = resolveBaseRef({ cwd: api.state.path.directory, explicitBase: null, currentBranch: api.state.vcs?.branch || null, upstreamBranch: null })
+        child = spawnReviewServer({
+          serverPath: `${api.state.path.directory}/.opencode/plugins/branch-review/server.cjs`,
+          cwd: api.state.path.directory,
+          sessionID,
+          baseRef,
+        })
+
+        const stdout = child.stdout
+        if (!stdout) throw new Error("review server missing stdout")
+
+        let buffer = ""
+        const handleSubmitted = (line: string) => {
+          const event = JSON.parse(line)
+          const text = formatReviewPrompt(event.payload)
+          return api.client.session.promptAsync({
+            sessionID,
+            directory: api.state.path.directory,
+            parts: [{ type: "text", text }],
+          }).then(() => {
+            api.route.navigate("session", { sessionID })
+            api.ui.toast({ variant: "success", message: "Review sent to the active session" })
+          })
+        }
+
+        stdout.on("data", (chunk) => {
+          buffer += chunk.toString()
+          let newlineIndex = buffer.indexOf("\n")
+          while (newlineIndex !== -1) {
+            const line = buffer.slice(0, newlineIndex).trim()
+            buffer = buffer.slice(newlineIndex + 1)
+            if (line.indexOf("review-submitted") !== -1) {
+              void handleSubmitted(line).catch((error) => {
+                api.ui.toast({ variant: "error", message: error instanceof Error ? error.message : "Failed to submit review" })
+              })
+            }
+            newlineIndex = buffer.indexOf("\n")
+          }
+        })
+
+        waitForServerStarted(child).then((started) => {
+          api.ui.toast({ variant: "info", message: `Open ${started.url} in your browser` })
+        })
       },
     },
   ])
