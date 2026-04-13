@@ -1,8 +1,8 @@
-const test = require("node:test")
-const assert = require("node:assert/strict")
-const { spawn } = require("node:child_process")
-const http = require("node:http")
-const path = require("node:path")
+import test from "node:test"
+import assert from "node:assert/strict"
+import { spawn } from "node:child_process"
+import http from "node:http"
+import path from "node:path"
 
 async function request(port, pathname, options = {}) {
   return new Promise((resolve, reject) => {
