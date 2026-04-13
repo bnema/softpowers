@@ -63,10 +63,17 @@ fi
 # Test 5: Verify bootstrap text does not reference a hardcoded skills path
 echo "Test 5: Checking bootstrap does not advertise a wrong skills path..."
 if grep -q 'configDir}/skills/superpowers/' "$SUPERPOWERS_PLUGIN_FILE"; then
-    echo "  [FAIL] Plugin still references old configDir skills path"
-    exit 1
+  echo "  [FAIL] Plugin still references old configDir skills path"
+  exit 1
 else
-    echo "  [PASS] Plugin does not advertise a misleading skills path"
+  echo "  [PASS] Plugin does not advertise a misleading skills path"
+fi
+
+if grep -q "Review branch locally" "$REPO_ROOT/docs/README.opencode.md"; then
+  echo "  [PASS] OpenCode docs mention branch review"
+else
+  echo "  [FAIL] OpenCode docs do not mention branch review"
+  exit 1
 fi
 
 echo "Test 6: Checking TUI plugin surface..."

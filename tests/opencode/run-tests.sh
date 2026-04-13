@@ -4,13 +4,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
 
 echo "========================================"
 echo " OpenCode Plugin Test Suite"
 echo "========================================"
 echo ""
-echo "Repository: $(cd ../.. && pwd)"
+echo "Repository: $REPO_ROOT"
 echo "Test time: $(date)"
 echo ""
 
@@ -59,6 +60,8 @@ done
 # List of tests to run (no external dependencies)
 tests=(
     "test-plugin-loading.sh"
+    "../branch-review/test-review-shared.sh"
+    "../branch-review/test-server.sh"
 )
 
 # Integration tests (require OpenCode)

@@ -95,6 +95,12 @@ The plugin does two things:
 1. **Injects bootstrap context** via the `experimental.chat.system.transform` hook, adding superpowers awareness to every conversation.
 2. **Registers the skills directory** via the `config` hook, so OpenCode discovers all superpowers skills without symlinks or manual config.
 
+### Local branch review
+
+In OpenCode TUI sessions, Superpowers adds a `Review branch locally` command and finish-flow option. It starts a local browser review UI for the full branch diff against the detected base branch, lets you leave inline review comments, and sends the final grouped review back into the active session as one user message.
+
+The browser draft stays local until you submit it. The TUI then refocuses the active session so you can watch the response stream immediately.
+
 ### Tool Mapping
 
 Skills written for Claude Code are automatically adapted for OpenCode:

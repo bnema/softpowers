@@ -61,18 +61,19 @@ function reviewEnv() {
   }
 }
 
-test("server prints startup json with random port", async () => {
+test("server prints startup json with random port", async (t) => {
   const { child, started } = startServer()
   const startup = await started
+  t.after(() => child.kill())
   assert.equal(startup.type, "server-started")
   assert.equal(typeof startup.port, "number")
   assert.match(startup.url, /^http:\/\/127\.0\.0\.1:/)
-  child.kill()
 })
 
-test("server responds to health and rejects a missing token", async () => {
+test("server responds to health and rejects a missing token", async (t) => {
   const { child, started } = startServer(reviewEnv())
   const startup = await started
+  t.after(() => child.kill())
 
   const health = await request(startup.port, "/health")
   assert.equal(health.status, 200)
@@ -80,39 +81,36 @@ test("server responds to health and rejects a missing token", async () => {
   const submit = await request(startup.port, "/api/submit", { method: "POST" })
   assert.equal(submit.status, 403)
   assert.match(submit.body, /invalid token/)
-
-  child.kill()
 })
 
-test("server returns 500 when diff loading fails", async () => {
+test("server returns 500 when diff loading fails", async (t) => {
   const env = reviewEnv()
   env.SUPERPOWERS_REVIEW_REPO = "/definitely/missing"
   const { child, started } = startServer(env)
   const startup = await started
+  t.after(() => child.kill())
 
   const diff = await request(startup.port, "/api/diff", { timeout: 2000 })
   assert.equal(diff.status, 500)
 
   const health = await request(startup.port, "/health")
   assert.equal(health.status, 200)
-
-  child.kill()
 })
 
-test("server responds to valid submit requests with not implemented", async () => {
+test("server responds to valid submit requests with ok response", async (t) => {
   const { child, started } = startServer(reviewEnv())
   const startup = await started
+  t.after(() => child.kill())
 
   const submit = await request(startup.port, "/api/submit", { method: "POST", headers: { "x-review-token": startup.token } })
-  assert.equal(submit.status, 501)
-  assert.match(submit.body, /not implemented/)
-
-  child.kill()
+  assert.equal(submit.status, 200)
+  assert.deepEqual(JSON.parse(submit.body), { ok: true })
 })
 
-test("diff endpoint returns files and hunks", async () => {
+test("diff endpoint returns files and hunks", async (t) => {
   const { child, started } = startServer(reviewEnv())
   const startup = await started
+  t.after(() => child.kill())
 
   const diff = await request(startup.port, "/api/diff")
   assert.equal(diff.status, 200)
@@ -123,14 +121,13 @@ test("diff endpoint returns files and hunks", async () => {
   assert.equal(typeof body.patch, "string")
   assert.match(body.patch, /diff --git/)
   assert.match(body.patch, /@@/)
-
-  child.kill()
 })
 
-test("server exposes cached highlight assets under /assets", async () => {
+test("server exposes cached highlight assets under /assets", async (t) => {
   const env = reviewEnv()
   const { child, started } = startServer(env)
   const startup = await started
+  t.after(() => child.kill())
 
   const asset = await request(startup.port, "/assets/highlight.js")
   assert.equal(asset.status, 200)
@@ -138,13 +135,12 @@ test("server exposes cached highlight assets under /assets", async () => {
 
   const cachedAsset = path.join(env.XDG_CACHE_HOME, "superpowers", "branch-review", "highlightjs", "11.11.1", "highlight.min.js")
   assert.ok(fs.existsSync(cachedAsset))
-
-  child.kill()
 })
 
-test("root page includes review bootstrap state", async () => {
+test("root page includes review bootstrap state", async (t) => {
   const { child, started } = startServer(reviewEnv())
   const startup = await started
+  t.after(() => child.kill())
 
   const root = await request(startup.port, "/")
   assert.equal(root.status, 200)
@@ -157,6 +153,4 @@ test("root page includes review bootstrap state", async () => {
   assert.equal(bootstrap.repo, process.cwd())
   assert.equal(bootstrap.base, "main")
   assert.equal(typeof bootstrap.head, "string")
-
-  child.kill()
 })
