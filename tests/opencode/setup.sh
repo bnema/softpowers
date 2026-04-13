@@ -36,6 +36,7 @@ cp "$REPO_ROOT/.opencode/plugins/superpowers-tui.tsx" "$SUPERPOWERS_TUI_PLUGIN_F
 # Register plugin via symlink (what OpenCode actually reads)
 mkdir -p "$OPENCODE_CONFIG_DIR/plugins"
 ln -sf "$SUPERPOWERS_PLUGIN_FILE" "$OPENCODE_CONFIG_DIR/plugins/superpowers.js"
+cp "$REPO_ROOT/.opencode/plugins/superpowers-tui.tsx" "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx"
 
 cat > "$OPENCODE_CONFIG_DIR/tui.json" <<'EOF'
 {
