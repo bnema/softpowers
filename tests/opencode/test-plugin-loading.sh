@@ -114,6 +114,16 @@ else
   exit 1
 fi
 
+echo "Test 5g: Checking local-branch-review skill..."
+if [ -f "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" ] \
+  && grep -q "review-start.cjs" "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" \
+  && grep -q "review-stop.cjs" "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md"; then
+  echo "  [PASS] local-branch-review skill exists and documents the launcher commands"
+else
+  echo "  [FAIL] local-branch-review skill missing or incomplete"
+  exit 1
+fi
+
 echo "Test 6: Checking TUI plugin surface..."
 if grep -q '"./tui"' "$REPO_ROOT/package.json"; then
   echo "  [PASS] package exports a TUI entrypoint"
