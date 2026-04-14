@@ -98,20 +98,51 @@ function git(args) {
   return execFileSync("git", args, { cwd: process.env.SUPERPOWERS_REVIEW_REPO, encoding: "utf8" })
 }
 
-function loadDiff() {
+function loadRepoRefs() {
   const base = process.env.SUPERPOWERS_REVIEW_BASE
+  const headRef = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim()
+
+  return {
+    base,
+    head: headRef === "HEAD" ? git(["rev-parse", "--short", "HEAD"]).trim() : headRef,
+  }
+}
+
+function loadDiffSnapshot(includeFiles = true) {
+  const { base, head } = loadRepoRefs()
   const mergeBase = git(["merge-base", base, "HEAD"]).trim()
-  const names = git(["diff", "--name-only", mergeBase]).trim().split("\n").filter(Boolean)
   const patch = git(["diff", "--unified=3", mergeBase])
-  return { files: names, patch }
+  const snapshot = { base, head, patch }
+
+  if (!includeFiles) return snapshot
+
+  return {
+    ...snapshot,
+    files: git(["diff", "--name-only", mergeBase]).trim().split("\n").filter(Boolean),
+  }
+}
+
+function loadReviewStatus() {
+  const { base, head, patch } = loadDiffSnapshot(false)
+
+  return {
+    fingerprint: crypto.createHash("sha256").update(patch).digest("hex"),
+    base,
+    head,
+  }
+}
+
+function loadDiff() {
+  const { files, patch } = loadDiffSnapshot()
+  return { files, patch }
 }
 
 function loadBootstrap() {
-  const head = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim()
+  const { base, head } = loadRepoRefs()
   return {
     repo: process.env.SUPERPOWERS_REVIEW_REPO,
-    base: process.env.SUPERPOWERS_REVIEW_BASE,
-    head: head === "HEAD" ? git(["rev-parse", "--short", "HEAD"]).trim() : head,
+    base,
+    head,
     token,
     session,
   }
@@ -156,6 +187,14 @@ function requireReviewSession(url) {
   return { statusCode: 400, body: JSON.stringify({ error: "session is required" }) }
 }
 
+function rejectInvalidToken(req, res) {
+  if (req.headers["x-review-token"] === token) return false
+
+  res.writeHead(403, { "content-type": "application/json" })
+  res.end(JSON.stringify({ error: "invalid token" }))
+  return true
+}
+
 function readBody(req, limit) {
   return new Promise((resolve, reject) => {
     const chunks = []
@@ -174,7 +213,6 @@ function readBody(req, limit) {
         const error = new Error("request body too large")
         error.statusCode = 413
         finish(reject, error)
-        req.destroy()
         return
       }
 
@@ -197,10 +235,8 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify(payload))
     }
 
-    if (req.url === "/api/submit" && req.method === "POST") {
-      if (req.headers["x-review-token"] !== token) {
-        res.writeHead(403, { "content-type": "application/json" })
-        res.end(JSON.stringify({ error: "invalid token" }))
+    if (url.pathname === "/api/submit" && req.method === "POST") {
+      if (rejectInvalidToken(req, res)) {
         return
       }
 
@@ -241,15 +277,24 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/diff") {
-      if (req.headers["x-review-token"] !== token) {
-        res.writeHead(403, { "content-type": "application/json" })
-        res.end(JSON.stringify({ error: "invalid token" }))
+      if (rejectInvalidToken(req, res)) {
         return
       }
 
       const diff = loadDiff()
       res.writeHead(200, { "content-type": "application/json" })
       res.end(JSON.stringify(diff))
+      return
+    }
+
+    if (url.pathname === "/api/review-status") {
+      if (rejectInvalidToken(req, res)) {
+        return
+      }
+
+      const status = loadReviewStatus()
+      res.writeHead(200, { "content-type": "application/json" })
+      res.end(JSON.stringify(status))
       return
     }
 

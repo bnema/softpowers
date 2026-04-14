@@ -8,7 +8,7 @@ import * as reviewClient from "../../.opencode/plugins/branch-review/review-clie
 import { initTheme } from "../../.opencode/plugins/branch-review/review-theme.js"
 import * as reviewTheme from "../../.opencode/plugins/branch-review/review-theme.js"
 
-const { renderHighlightedCode, storageKey } = reviewClient
+const { renderHighlightedCode, storageKey, renderStaleBanner, preserveComposerAcrossReload } = reviewClient
 
 test("parseUnifiedDiff extracts files and line anchors", () => {
   const files = parseUnifiedDiff(`diff --git a/src/app.js b/src/app.js
@@ -157,6 +157,111 @@ test("currentReview omits blank comments from submission content", () => {
   })
 })
 
+test("renderStaleBanner returns a stale status banner", () => {
+  assert.equal(typeof renderStaleBanner, "function")
+
+  const calls = []
+  const document = {
+    createElement(tagName) {
+      const element = {
+        tagName: String(tagName).toUpperCase(),
+        className: "",
+        dataset: {},
+        textContent: "",
+        innerHTML: "",
+        children: [],
+        append(...nodes) {
+          this.children.push(...nodes)
+        },
+        setAttribute(name, value) {
+          this.attributes ||= []
+          this.attributes.push([name, value])
+        },
+        addEventListener(type, handler) {
+          calls.push([type, handler])
+        },
+      }
+      return element
+    },
+  }
+
+  const banner = renderStaleBanner(document, {
+    stale: true,
+    reloading: false,
+    onReload() {},
+  })
+
+  assert.equal(banner.tagName, "DIV")
+  assert.match(banner.className, /stale/i)
+  assert.equal(banner.dataset.kind, "stale")
+  assert.deepEqual(banner.attributes, [
+    ["role", "status"],
+    ["aria-live", "polite"],
+  ])
+  assert.match(banner.children[0].innerHTML, /<svg/i)
+  assert.equal(banner.children[1].textContent, "Diff changed")
+  assert.equal(banner.children[2].textContent, "Reload")
+  assert.equal(banner.children[2].className, "review-status__action")
+  assert.equal(banner.children.length, 3)
+  assert.equal(calls.length, 1)
+})
+
+test("preserveComposerAcrossReload keeps the exact anchor", () => {
+  assert.equal(typeof preserveComposerAcrossReload, "function")
+
+  const composer = {
+    path: "src/app.js",
+    side: "new",
+    startLine: 12,
+    endLine: 14,
+    body: "Keep this",
+  }
+  const files = [
+    {
+      path: "src/app.js",
+      hunks: [
+        {
+          lines: [
+            { type: "add", newLine: 12, text: "const first = true" },
+            { type: "add", newLine: 13, text: "const second = true" },
+            { type: "add", newLine: 14, text: "const third = true" },
+          ],
+        },
+      ],
+    },
+  ]
+
+  assert.strictEqual(preserveComposerAcrossReload(composer, files), composer)
+})
+
+test("preserveComposerAcrossReload drops a missing anchor", () => {
+  assert.equal(typeof preserveComposerAcrossReload, "function")
+
+  const composer = {
+    path: "src/app.js",
+    side: "new",
+    startLine: 12,
+    endLine: 14,
+    body: "Keep this",
+  }
+  const files = [
+    {
+      path: "src/app.js",
+      hunks: [
+        {
+          lines: [
+            { type: "add", newLine: 20, text: "const first = true" },
+            { type: "add", newLine: 21, text: "const second = true" },
+            { type: "add", newLine: 22, text: "const third = true" },
+          ],
+        },
+      ],
+    },
+  ]
+
+  assert.equal(preserveComposerAcrossReload(composer, files), null)
+})
+
 test("createDraftPreviewDisclosure starts collapsed", () => {
   assert.equal(typeof reviewClient.createDraftPreviewDisclosure, "function")
 
@@ -211,6 +316,232 @@ test("loadDiff sends the review token header", async () => {
   }
 
   assert.deepEqual(calls, [["/api/diff", { headers: { "x-review-token": "review-token" } }]])
+})
+
+test("loadReviewStatus sends the review token header", async () => {
+  assert.equal(typeof reviewClient.loadReviewStatus, "function")
+
+  const calls = []
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push([url, options])
+    return {
+      ok: true,
+      json: async () => ({ status: "pending" }),
+    }
+  }
+
+  try {
+    await reviewClient.loadReviewStatus({ token: "review-token" })
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+
+  assert.deepEqual(calls, [["/api/review-status", { headers: { "x-review-token": "review-token" } }]])
+})
+
+test("loadReviewStatus throws on failed status requests", async () => {
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 503,
+    json: async () => ({ ok: false }),
+  })
+
+  try {
+    await assert.rejects(() => reviewClient.loadReviewStatus({ token: "review-token" }), /failed to load review status/)
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
+test("pollReviewStatus marks review stale when fingerprint changes", async () => {
+  assert.equal(typeof reviewClient.pollReviewStatus, "function")
+
+  const state = {
+    bootstrap: { token: "review-token" },
+    diffFingerprint: "loaded-fingerprint",
+    stale: false,
+    loadReviewStatus: async () => ({ fingerprint: "new-fingerprint" }),
+  }
+
+  await reviewClient.pollReviewStatus(state)
+
+  assert.equal(state.stale, true)
+})
+
+test("pollReviewStatus leaves stale state unchanged when status request fails", async () => {
+  assert.equal(typeof reviewClient.pollReviewStatus, "function")
+
+  const state = {
+    bootstrap: { token: "review-token" },
+    diffFingerprint: "loaded-fingerprint",
+    stale: true,
+    loadReviewStatus: async () => {
+      throw new Error("network down")
+    },
+  }
+
+  await reviewClient.pollReviewStatus(state)
+
+  assert.equal(state.stale, true)
+})
+
+test("pollReviewStatus skips fetch while reloading", async () => {
+  assert.equal(typeof reviewClient.pollReviewStatus, "function")
+
+  const calls = []
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = async (...args) => {
+    calls.push(args)
+    throw new Error("should not fetch")
+  }
+
+  const state = {
+    bootstrap: { token: "review-token" },
+    diffFingerprint: "loaded-fingerprint",
+    stale: true,
+    reloading: true,
+    loadReviewStatus: async () => ({ fingerprint: "new-fingerprint" }),
+  }
+
+  try {
+    await reviewClient.pollReviewStatus(state)
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+
+  assert.equal(state.stale, true)
+  assert.deepEqual(calls, [])
+})
+
+test("reloadDiff replaces the snapshot and clears stale state", async () => {
+  assert.equal(typeof reviewClient.reloadDiff, "function")
+
+  const oldSnapshot = { patch: "old" }
+  const newSnapshot = { patch: "new" }
+  const calls = []
+  const state = {
+    bootstrap: { token: "review-token" },
+    diffSnapshot: oldSnapshot,
+    diffFingerprint: "old-fingerprint",
+    stale: true,
+    reloading: false,
+    loadDiff: async () => newSnapshot,
+    renderFreshDiffSnapshot: async (payload) => {
+      calls.push(payload)
+      state.diffSnapshot = payload
+    },
+    renderSidebar() {},
+  }
+
+  await reviewClient.reloadDiff(state)
+
+  assert.equal(state.diffSnapshot, newSnapshot)
+  assert.equal(state.stale, false)
+  assert.equal(state.reloading, false)
+  assert.deepEqual(calls, [newSnapshot])
+})
+
+test("reloadDiff preserves stale state when reload fails", async () => {
+  assert.equal(typeof reviewClient.reloadDiff, "function")
+
+  const state = {
+    bootstrap: { token: "review-token" },
+    diffSnapshot: { patch: "old" },
+    diffFingerprint: "old-fingerprint",
+    stale: true,
+    reloading: false,
+    loadDiff: async () => {
+      throw new Error("reload failed")
+    },
+    renderSidebar() {},
+  }
+
+  await reviewClient.reloadDiff(state)
+
+  assert.equal(state.stale, true)
+  assert.equal(state.reloading, false)
+})
+
+test("reloadDiff ignores an overlapping call", async () => {
+  assert.equal(typeof reviewClient.reloadDiff, "function")
+
+  const resolveReloads = []
+  const calls = []
+  const state = {
+    bootstrap: { token: "review-token" },
+    stale: true,
+    reloading: false,
+    loadDiff: async () => {
+      calls.push("loadDiff")
+      return new Promise((resolve) => {
+        resolveReloads.push(resolve)
+      })
+    },
+    renderFreshDiffSnapshot: async () => {
+      calls.push("renderFreshDiffSnapshot")
+    },
+    renderSidebar() {
+      calls.push("renderSidebar")
+    },
+  }
+
+  const first = reviewClient.reloadDiff(state)
+  const second = reviewClient.reloadDiff(state)
+
+  for (const resolve of resolveReloads) {
+    resolve({ patch: "new" })
+  }
+
+  await Promise.all([first, second])
+
+  assert.deepEqual(calls, ["renderSidebar", "loadDiff", "renderFreshDiffSnapshot", "renderSidebar"])
+  assert.equal(state.stale, false)
+  assert.equal(state.reloading, false)
+})
+
+test("reloadDiff leaves diffSnapshot untouched until render snapshot finishes", async () => {
+  assert.equal(typeof reviewClient.reloadDiff, "function")
+
+  let releaseRender
+  const renderReady = new Promise((resolve) => {
+    releaseRender = resolve
+  })
+
+  const state = {
+    bootstrap: { token: "review-token" },
+    diffSnapshot: { patch: "old" },
+    diffFingerprint: "old-fingerprint",
+    stale: true,
+    reloading: false,
+    loadDiff: async () => ({ patch: "new", files: [] }),
+    renderFreshDiffSnapshot: async () => {
+      await renderReady
+    },
+    renderSidebar() {},
+  }
+
+  const inFlight = reviewClient.reloadDiff(state)
+
+  await Promise.resolve()
+  assert.equal(state.diffSnapshot.patch, "old")
+
+  releaseRender()
+  await inFlight
+
+  assert.equal(state.diffSnapshot.patch, "old")
+})
+
+test("fingerprintForLoadedDiff returns a stable hash", async () => {
+  assert.equal(typeof reviewClient.fingerprintForLoadedDiff, "function")
+
+  const first = await reviewClient.fingerprintForLoadedDiff({ patch: "diff --git a/src/app.js b/src/app.js\n" })
+  const second = await reviewClient.fingerprintForLoadedDiff({ patch: "diff --git a/src/app.js b/src/app.js\n" })
+  const different = await reviewClient.fingerprintForLoadedDiff({ patch: "diff --git a/src/app.js b/src/app.js\n+const answer = 42\n" })
+
+  assert.equal(first, second)
+  assert.notEqual(first, different)
 })
 
 test("submitReview returns the verified delivery message", async () => {

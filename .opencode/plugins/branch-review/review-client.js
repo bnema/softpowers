@@ -177,6 +177,15 @@ const panelLeftCloseIcon = [
   lucideSvgEnd,
 ].join("")
 
+const refreshCwIcon = [
+  lucideSvgRoot,
+  `<path d="M21 2v6h-6" />`,
+  `<path d="M21 8a9 9 0 0 0-15.5-2.36L3 8" />`,
+  `<path d="M3 22v-6h6" />`,
+  `<path d="M3 16a9 9 0 0 0 15.5 2.36L21 16" />`,
+  lucideSvgEnd,
+].join("")
+
 function setIconButtonContent(button, icon, label) {
   if (!button) return
   button.innerHTML = `${icon}<span class="sr-only">${label}</span>`
@@ -761,6 +770,113 @@ function renderFileSection(state, file, refreshComments, refreshDraftOverview, s
   return section
 }
 
+export function renderStaleBanner(document, { stale, reloading, onReload }) {
+  if (!stale) return null
+
+  const banner = document.createElement("div")
+  banner.className = `review-status review-status--${reloading ? "reloading" : "stale"}`
+  banner.dataset.kind = reloading ? "reloading" : "stale"
+  banner.setAttribute("role", "status")
+  banner.setAttribute("aria-live", "polite")
+
+  const icon = document.createElement("span")
+  icon.className = "review-status__icon"
+  icon.innerHTML = refreshCwIcon
+
+  const message = document.createElement("span")
+  message.className = "review-status__label"
+  message.textContent = reloading ? "Reloading..." : "Diff changed"
+
+  banner.append(icon, message)
+
+  if (!reloading && typeof onReload === "function") {
+    const button = document.createElement("button")
+    button.type = "button"
+    button.className = "review-status__action"
+    button.textContent = "Reload"
+    button.addEventListener("click", onReload)
+    banner.append(button)
+  }
+
+  return banner
+}
+
+function composerHasExactAnchor(file, composer) {
+  const side = composer?.side
+  const startLine = Number(composer?.startLine)
+  const endLine = Number(composer?.endLine)
+  if (!side || !Number.isFinite(startLine) || !Number.isFinite(endLine)) return false
+
+  const refs = new Set(selectableLinesForFile(file, side).map((line) => line.lineRef))
+  const lower = Math.min(startLine, endLine)
+  const upper = Math.max(startLine, endLine)
+
+  for (let lineRef = lower; lineRef <= upper; lineRef += 1) {
+    if (!refs.has(lineRef)) return false
+  }
+
+  return true
+}
+
+export function preserveComposerAcrossReload(composer, files) {
+  if (!composer) return null
+
+  const path = String(composer.path || "")
+  if (!path) return null
+
+  for (const file of files || []) {
+    if (file?.path !== path) continue
+    if (composerHasExactAnchor(file, composer)) return composer
+  }
+
+  return null
+}
+
+async function renderFreshDiffSnapshot(app, payload) {
+  app.diffView.replaceChildren()
+
+  const parsedFiles = parseUnifiedDiff(payload.patch)
+  const renderedFiles = payload.files.map(
+    (filePath) => parsedFiles.find((file) => file.path === filePath) || { path: filePath, additions: 0, deletions: 0, hunks: [] },
+  )
+
+  await loadHighlightLanguages(renderedFiles.map((file) => file.path))
+
+  const nextFingerprint = await fingerprintForLoadedDiff(payload)
+
+  app.diffSnapshot = payload
+  app.diffFingerprint = nextFingerprint
+  app.files = renderedFiles
+  app.tree = buildFileTree(renderedFiles)
+  app.dragSelection = null
+  app.composer = preserveComposerAcrossReload(app.composer, renderedFiles)
+  app.stale = false
+
+  const diffControls = document.createElement("div")
+  diffControls.className = "diff-view__controls"
+
+  const sidebarToggle = document.createElement("button")
+  sidebarToggle.type = "button"
+  sidebarToggle.className = "diff-view__sidebar-toggle icon-button"
+  syncSidebarToggle(sidebarToggle, app.sidebarCollapsed)
+  sidebarToggle.addEventListener("click", () => {
+    app.sidebarCollapsed = setSidebarCollapsed(document, !app.sidebarCollapsed)
+    syncSidebarToggle(sidebarToggle, app.sidebarCollapsed)
+  })
+
+  diffControls.append(sidebarToggle)
+  app.diffView.append(diffControls)
+
+  for (const file of renderedFiles) {
+    app.diffView.append(renderFileSection(app.state, file, app.refreshComments, app.renderDraftOverview, app.handleLineSelection))
+  }
+
+  app.renderSidebar()
+  app.refreshComments()
+  app.syncComposerUI()
+  app.scheduleLayoutReport("after-render")
+}
+
 export async function loadDiff(bootstrap) {
   const response = await fetch("/api/diff", {
     headers: {
@@ -769,6 +885,63 @@ export async function loadDiff(bootstrap) {
   })
   if (!response.ok) throw new Error(`failed to load diff (${response.status})`)
   return response.json()
+}
+
+export async function loadReviewStatus(bootstrap) {
+  const response = await fetch("/api/review-status", {
+    headers: {
+      "x-review-token": bootstrap.token,
+    },
+  })
+  if (!response.ok) throw new Error(`failed to load review status (${response.status})`)
+  return response.json()
+}
+
+export async function pollReviewStatus(app) {
+  if (!app?.bootstrap || !app.diffFingerprint || app.reloading) return app?.stale ?? false
+
+  try {
+    const loader = app.loadReviewStatus || loadReviewStatus
+    const status = await loader(app.bootstrap)
+    const nextStale = String(status?.fingerprint || "") !== String(app.diffFingerprint || "")
+
+    if (nextStale !== app.stale) {
+      app.stale = nextStale
+      app.renderSidebar?.()
+    }
+
+    return nextStale
+  } catch {
+    return app.stale ?? false
+  }
+}
+
+export async function reloadDiff(app) {
+  if (!app?.bootstrap || app.reloading) return null
+
+  const loader = app.loadDiff || loadDiff
+  const renderSnapshot = app.renderFreshDiffSnapshot || ((payload) => renderFreshDiffSnapshot(app, payload))
+
+  app.reloading = true
+  app.renderSidebar?.()
+
+  try {
+    const payload = await loader(app.bootstrap)
+    await renderSnapshot(payload)
+    app.stale = false
+    return payload
+  } catch {
+    return null
+  } finally {
+    app.reloading = false
+    app.renderSidebar?.()
+  }
+}
+
+export async function fingerprintForLoadedDiff(payload) {
+  const bytes = new TextEncoder().encode(String(payload?.patch || ""))
+  const hash = await crypto.subtle.digest("SHA-256", bytes)
+  return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
 export async function submitReview(state, bootstrap) {
@@ -809,17 +982,46 @@ function renderApp(bootstrap) {
     }
   })()
   initTheme({ document, storage, matchMedia: globalThis.matchMedia?.bind(globalThis) })
-  let sidebarCollapsed = setSidebarCollapsed(document, false)
-  const layoutDebugEnabled = isLayoutDebugEnabled(storage)
-  const runLayoutReport = (reason = "manual") => reportReviewLayout({ document, diffView, reason })
-  const scheduleLayoutReport = (reason) => {
-    if (!layoutDebugEnabled) return
+  const app = {
+    bootstrap,
+    state,
+    fileList,
+    diffView,
+    draftEditor,
+    storage,
+    sidebarCollapsed: setSidebarCollapsed(document, false),
+    activePath: "",
+    tree: buildFileTree([]),
+    composer: null,
+    dragSelection: null,
+    files: [],
+    layoutDebugEnabled: isLayoutDebugEnabled(storage),
+    runLayoutReport: null,
+    scheduleLayoutReport: null,
+    renderSidebar: null,
+    refreshComments: null,
+    syncComposerUI: null,
+    renderDraftOverview: null,
+    handleLineSelection: null,
+    loadDiff,
+    loadReviewStatus,
+    renderFreshDiffSnapshot: null,
+    pollReviewStatus: null,
+    reloadDiff: null,
+    stale: false,
+    reloading: false,
+    diffSnapshot: null,
+    diffFingerprint: "",
+  }
+  app.runLayoutReport = (reason = "manual") => reportReviewLayout({ document, diffView: app.diffView, reason })
+  app.scheduleLayoutReport = (reason) => {
+    if (!app.layoutDebugEnabled) return
     globalThis.setTimeout?.(() => {
-      runLayoutReport(reason)
+      app.runLayoutReport(reason)
     }, 0)
   }
 
-  globalThis.__superpowersReviewLayout = runLayoutReport
+  globalThis.__superpowersReviewLayout = app.runLayoutReport
   globalThis.__superpowersEnableReviewLayoutDebug = () => {
     try {
       storage?.setItem?.("superpowers:review:debug-layout", "1")
@@ -833,15 +1035,10 @@ function renderApp(bootstrap) {
     console.info("[review-layout] debug flag cleared")
   }
 
-  if (layoutDebugEnabled) {
+  if (app.layoutDebugEnabled) {
     console.info("[review-layout] debug enabled — run __superpowersReviewLayout('after-repro') in devtools after reproducing the width issue")
-    globalThis.addEventListener?.("resize", () => scheduleLayoutReport("resize"), { signal: lineDragCleanup.signal })
+    globalThis.addEventListener?.("resize", () => app.scheduleLayoutReport("resize"), { signal: lineDragCleanup.signal })
   }
-
-  let activePath = ""
-  let tree = buildFileTree([])
-  let composer = null
-  let dragSelection = null
 
   draftEditor.replaceChildren()
   draftEditor.className = "draft-dock"
@@ -869,7 +1066,7 @@ function renderApp(bootstrap) {
     draftBody.hidden = nextCollapsed
     draftToggle.textContent = nextCollapsed ? "Expand panel" : "Collapse panel"
     draftToggle.setAttribute("aria-expanded", String(!nextCollapsed))
-    scheduleLayoutReport(nextCollapsed ? "draft-collapse" : "draft-expand")
+    app.scheduleLayoutReport(nextCollapsed ? "draft-collapse" : "draft-expand")
   })
 
   draftHeader.append(draftHeading, draftToggle)
@@ -921,42 +1118,6 @@ function renderApp(bootstrap) {
   draftBody.append(summaryLabel, draftCommentsHeading, draftComments, actions, status, draftPreviewSection)
   draftEditor.append(draftHeader, draftBody)
 
-  function cancelComposer() {
-    composer = null
-    syncComposerUI()
-  }
-
-  function saveComposer() {
-    if (!composer) return
-    if (!String(composer.body || "").trim()) return
-
-    state.comments.push(createComposerComment(composer))
-    composer = null
-    saveState(state)
-    refreshComments()
-  }
-
-  function applyComposerSelection(file, nextSelection, keepBody, focusComposer = true) {
-    if (!nextSelection) return
-
-    composer = {
-      ...nextSelection,
-      path: file.path,
-      body: keepBody && composer ? composer.body : "",
-    }
-
-    syncComposerUI()
-    if (!focusComposer) return
-
-    queueMicrotask(() => {
-      document.querySelector(".diff-line__composer textarea")?.focus()
-    })
-  }
-
-  function stopLineDrag() {
-    dragSelection = null
-  }
-
   function renderDraftOverview() {
     draftComments.replaceChildren()
 
@@ -989,18 +1150,54 @@ function renderApp(bootstrap) {
     }
   }
 
+  function cancelComposer() {
+    app.composer = null
+    app.syncComposerUI()
+  }
+
+  function saveComposer() {
+    if (!app.composer) return
+    if (!String(app.composer.body || "").trim()) return
+
+    state.comments.push(createComposerComment(app.composer))
+    app.composer = null
+    saveState(state)
+    app.refreshComments()
+  }
+
+  function applyComposerSelection(file, nextSelection, keepBody, focusComposer = true) {
+    if (!nextSelection) return
+
+    app.composer = {
+      ...nextSelection,
+      path: file.path,
+      body: keepBody && app.composer ? app.composer.body : "",
+    }
+
+    app.syncComposerUI()
+    if (!focusComposer) return
+
+    queueMicrotask(() => {
+      document.querySelector(".diff-line__composer textarea")?.focus()
+    })
+  }
+
+  function stopLineDrag() {
+    app.dragSelection = null
+  }
+
   function syncComposerUI() {
     for (const wrapper of document.querySelectorAll(".diff-line")) {
       const path = wrapper.dataset.path || ""
       const side = wrapper.dataset.side || ""
       const lineRef = Number(wrapper.dataset.lineRef || "")
       const selected =
-        Boolean(composer) &&
-        composer.path === path &&
-        composer.side === side &&
+        Boolean(app.composer) &&
+        app.composer.path === path &&
+        app.composer.side === side &&
         Number.isFinite(lineRef) &&
-        lineRef >= composer.startLine &&
-        lineRef <= composer.endLine
+        lineRef >= app.composer.startLine &&
+        lineRef <= app.composer.endLine
 
       wrapper.classList.toggle("diff-line--selected", selected)
 
@@ -1014,7 +1211,7 @@ function renderApp(bootstrap) {
     }
 
     for (const slot of document.querySelectorAll(".diff-line__composer")) {
-      renderComposerForLine(slot, composer, saveComposer, cancelComposer)
+      renderComposerForLine(slot, app.composer, saveComposer, cancelComposer)
     }
   }
 
@@ -1026,12 +1223,12 @@ function renderApp(bootstrap) {
     if (lineRef === null || lineRef === undefined) return
 
     if (event.type === "mouseenter") {
-      if (!dragSelection || !(event.buttons & 1)) return
-      if (dragSelection.path !== file.path || dragSelection.side !== side) return
+      if (!app.dragSelection || !(event.buttons & 1)) return
+      if (app.dragSelection.path !== file.path || app.dragSelection.side !== side) return
 
       applyComposerSelection(
         file,
-        selectionForRange(file, side, dragSelection.startLine, Number(lineRef)),
+        selectionForRange(file, side, app.dragSelection.startLine, Number(lineRef)),
         true,
         false,
       )
@@ -1041,7 +1238,7 @@ function renderApp(bootstrap) {
     if (event.type === "mousedown") {
       if (event.button !== 0) return
       event.preventDefault()
-      dragSelection = {
+      app.dragSelection = {
         path: file.path,
         side,
         startLine: Number(lineRef),
@@ -1049,18 +1246,49 @@ function renderApp(bootstrap) {
     }
 
     const nextSelection =
-      event.shiftKey && composer && composer.path === file.path && composer.side === side
-        ? selectionForRange(file, side, composer.startLine, Number(lineRef))
+      event.shiftKey && app.composer && app.composer.path === file.path && app.composer.side === side
+        ? selectionForRange(file, side, app.composer.startLine, Number(lineRef))
         : normalizeSelection([{ lineRef, text: line.text }], side)
 
-    const keepBody = Boolean(event.shiftKey && composer && composer.path === file.path && composer.side === side)
+    const keepBody = Boolean(event.shiftKey && app.composer && app.composer.path === file.path && app.composer.side === side)
     applyComposerSelection(file, nextSelection, keepBody)
+  }
+
+  app.renderDraftOverview = renderDraftOverview
+  app.syncComposerUI = syncComposerUI
+  app.handleLineSelection = handleLineSelection
+  app.refreshComments = () => {
+    for (const slot of document.querySelectorAll(".diff-line__comments")) {
+      const path = slot.dataset.path || ""
+      const side = slot.dataset.side || ""
+      const line = Number(slot.dataset.line || "")
+      slot.replaceChildren()
+      for (const comment of state.comments) {
+        if (comment.path === path && comment.side === side && Number(commentLineRef(comment)) === line) {
+          slot.append(buildCommentCard(state, comment, app.refreshComments, renderDraftOverview))
+        }
+      }
+    }
+
+    app.renderSidebar()
+    app.syncComposerUI()
+    renderDraftOverview()
+    renderDraftPreview(state)
+    app.scheduleLayoutReport("refresh-comments")
   }
 
   document.addEventListener("mouseup", stopLineDrag, { signal: lineDragCleanup.signal })
 
-  const renderSidebar = () => {
+  function renderSidebar() {
     fileList.replaceChildren()
+
+    const staleBanner = renderStaleBanner(document, {
+      stale: app.stale,
+      reloading: app.reloading,
+      onReload: () => {
+        void reloadDiff(app)
+      },
+    })
 
     const listHeading = document.createElement("h3")
     listHeading.textContent = "Files"
@@ -1069,9 +1297,9 @@ function renderApp(bootstrap) {
     treeContainer.className = "file-tree"
 
     const counts = buildCommentCounts(state)
-    for (const child of tree.children) {
-      treeContainer.append(renderTreeNode(child, counts, activePath, (path) => {
-        activePath = path
+    for (const child of app.tree.children) {
+      treeContainer.append(renderTreeNode(child, counts, app.activePath, (path) => {
+        app.activePath = path
         renderSidebar()
         document.getElementById(fileSectionId(path))?.scrollIntoView({ behavior: "smooth", block: "start" })
       }))
@@ -1085,66 +1313,35 @@ function renderApp(bootstrap) {
       toggleTheme({ document, storage, button: themeToggle })
     })
 
-    fileList.append(listHeading, treeContainer, themeToggle)
+    fileList.append(...(staleBanner ? [staleBanner] : []), listHeading, treeContainer, themeToggle)
   }
 
-  const refreshComments = () => {
-    for (const slot of document.querySelectorAll(".diff-line__comments")) {
-      const path = slot.dataset.path || ""
-      const side = slot.dataset.side || ""
-      const line = Number(slot.dataset.line || "")
-      slot.replaceChildren()
-      for (const comment of state.comments) {
-        if (comment.path === path && comment.side === side && Number(commentLineRef(comment)) === line) {
-          slot.append(buildCommentCard(state, comment, refreshComments, renderDraftOverview))
-        }
-      }
-    }
-
-    renderSidebar()
-    syncComposerUI()
-    renderDraftOverview()
-    renderDraftPreview(state)
-    scheduleLayoutReport("refresh-comments")
-  }
-
+  app.renderSidebar = renderSidebar
+  app.renderFreshDiffSnapshot = (payload) => renderFreshDiffSnapshot(app, payload)
+  app.pollReviewStatus = () => pollReviewStatus(app)
+  app.reloadDiff = () => reloadDiff(app)
   renderDraftPreview(state)
   renderDraftOverview()
 
+  function startPolling() {
+    const timer = globalThis.setInterval?.(() => {
+      void pollReviewStatus(app)
+    }, 5000)
+
+    if (!timer) return
+    app.pollTimer = timer
+    lineDragCleanup.signal.addEventListener(
+      "abort",
+      () => {
+        globalThis.clearInterval?.(timer)
+      },
+      { once: true },
+    )
+  }
+
   return loadDiff(bootstrap)
-    .then(async (payload) => {
-      diffView.replaceChildren()
-      const parsedFiles = parseUnifiedDiff(payload.patch)
-      const renderedFiles = payload.files.map(
-        (filePath) => parsedFiles.find((file) => file.path === filePath) || { path: filePath, additions: 0, deletions: 0, hunks: [] },
-      )
-      await loadHighlightLanguages(renderedFiles.map((file) => file.path))
-      tree = buildFileTree(renderedFiles)
-
-      const diffControls = document.createElement("div")
-      diffControls.className = "diff-view__controls"
-
-      const sidebarToggle = document.createElement("button")
-      sidebarToggle.type = "button"
-      sidebarToggle.className = "diff-view__sidebar-toggle icon-button"
-      syncSidebarToggle(sidebarToggle, sidebarCollapsed)
-      sidebarToggle.addEventListener("click", () => {
-        sidebarCollapsed = setSidebarCollapsed(document, !sidebarCollapsed)
-        syncSidebarToggle(sidebarToggle, sidebarCollapsed)
-      })
-
-      diffControls.append(sidebarToggle)
-      diffView.append(diffControls)
-
-      for (const file of renderedFiles) {
-        diffView.append(renderFileSection(state, file, refreshComments, renderDraftOverview, handleLineSelection))
-      }
-
-      renderSidebar()
-      refreshComments()
-      syncComposerUI()
-      scheduleLayoutReport("after-render")
-    })
+    .then((payload) => renderFreshDiffSnapshot(app, payload))
+    .then(() => startPolling())
     .catch((error) => {
       setStatus(error instanceof Error ? error.message : "Failed to load diff", "error")
     })

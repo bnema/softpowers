@@ -149,9 +149,21 @@ function reviewEnvWithSession(session = "ses_expected") {
   }
 }
 
-function loadReadModule(tempRoot) {
+function loadServerModule(tempRoot, exportNames, options = {}) {
   const serverPath = path.join(process.cwd(), ".opencode/plugins/branch-review/server.cjs")
   const source = fs.readFileSync(serverPath, "utf8")
+  const execFileSyncImpl = options.execFileSync || (() => "")
+  const createHashImpl =
+    options.createHash ||
+    (() => ({
+      update() {
+        return this
+      },
+      digest() {
+        return "fingerprint"
+      },
+    }))
+
   const mockRequire = (specifier) => {
     if (specifier === "node:http") {
       return {
@@ -160,12 +172,13 @@ function loadReadModule(tempRoot) {
             if (typeof callback === "function") callback()
           },
           address: () => ({ port: 1234 }),
+          close() {},
         }),
       }
     }
 
     if (specifier === "node:child_process") {
-      return { execFileSync: () => "" }
+      return { execFileSync: execFileSyncImpl }
     }
 
     if (specifier === "node:readline") {
@@ -178,7 +191,10 @@ function loadReadModule(tempRoot) {
     }
 
     if (specifier === "node:crypto") {
-      return { randomBytes: () => ({ toString: () => "token" }) }
+      return {
+        randomBytes: () => ({ toString: () => "token" }),
+        createHash: createHashImpl,
+      }
     }
 
     if (specifier === "node:fs") return fs
@@ -214,80 +230,48 @@ function loadReadModule(tempRoot) {
     __dirname: path.join(tempRoot, ".opencode/plugins/branch-review"),
   }
 
-  vm.runInNewContext(`${source}\nmodule.exports = { readModule }`, context)
-  return context.module.exports.readModule
+  vm.runInNewContext(`${source}\nmodule.exports = { ${exportNames.join(", ")} }`, context)
+  return context.module.exports
+}
+
+function loadReadModule(tempRoot) {
+  return loadServerModule(tempRoot, ["readModule"]).readModule
 }
 
 function loadIdleTimeoutMs(env = {}) {
-  const serverPath = path.join(process.cwd(), ".opencode/plugins/branch-review/server.cjs")
-  const source = fs.readFileSync(serverPath, "utf8")
+  return loadServerModule(process.cwd(), ["idleTimeoutMs"], { env }).idleTimeoutMs
+}
 
-  const mockRequire = (specifier) => {
-    if (specifier === "node:http") {
+function loadDiffHashCallCount(tempRoot) {
+  let hashCalls = 0
+
+  loadServerModule(tempRoot, ["loadDiff"], {
+    createHash() {
+      hashCalls += 1
       return {
-        createServer: () => ({
-          listen(_port, _host, callback) {
-            if (typeof callback === "function") callback()
-          },
-          address: () => ({ port: 1234 }),
-          close() {},
-        }),
+        update() {
+          return this
+        },
+        digest() {
+          return "fingerprint"
+        },
       }
-    }
-
-    if (specifier === "node:child_process") {
-      return { execFileSync: () => "" }
-    }
-
-    if (specifier === "node:readline") {
-      return {
-        createInterface: () => ({
-          close() {},
-          on() {},
-        }),
-      }
-    }
-
-    if (specifier === "node:crypto") {
-      return { randomBytes: () => ({ toString: () => "token" }) }
-    }
-
-    if (specifier === "node:fs") return fs
-    if (specifier === "node:path") return path
-
-    return createRequire(import.meta.url)(specifier)
-  }
-
-  const context = {
-    Buffer,
-    JSON,
-    URL,
-    clearInterval,
-    clearTimeout,
-    module: { exports: {} },
-    process: {
-      env: {
-        SUPERPOWERS_REVIEW_REPO: process.cwd(),
-        SUPERPOWERS_REVIEW_BASE: "main",
-        SUPERPOWERS_REVIEW_SESSION: "ses_expected",
-        ...env,
-      },
-      exit(code) {
-        throw new Error(`unexpected exit ${code}`)
-      },
-      stdout: { write() {} },
-      stderr: { write() {} },
     },
-    require: mockRequire,
-    setInterval() {
-      return { unref() {} }
-    },
-    setTimeout,
-    __dirname: path.join(process.cwd(), ".opencode/plugins/branch-review"),
-  }
+  }).loadDiff()
+  return hashCalls
+}
 
-  vm.runInNewContext(`${source}\nmodule.exports = { idleTimeoutMs }`, context)
-  return context.module.exports.idleTimeoutMs
+function loadReviewStatusNameOnlyCallCount(tempRoot) {
+  let nameOnlyCalls = 0
+
+  loadServerModule(tempRoot, ["loadReviewStatus"], {
+    execFileSync(command, args, options) {
+      if (Array.isArray(args) && args.includes("--name-only")) nameOnlyCalls += 1
+      return execFileSync(command, args, options)
+    },
+  }).loadReviewStatus()
+
+  return nameOnlyCalls
 }
 
 test("server refuses to start without an attached session", () => {
@@ -359,6 +343,22 @@ test("server rejects diff requests without a matching token", async (t) => {
   const diff = await request(startup.port, "/api/diff")
   assert.equal(diff.status, 403)
   assert.match(diff.body, /invalid token/)
+})
+
+test("server rejects review status requests without a matching token", async (t) => {
+  const { child, started } = startServer(reviewEnv())
+  const startup = await started
+  t.after(() => child.kill())
+
+  const status = await request(startup.port, "/api/review-status")
+  assert.equal(status.status, 403)
+  assert.match(status.body, /invalid token/)
+})
+
+test("review status does not call git diff name-only", () => {
+  const repo = createRepo()
+
+  assert.equal(loadReviewStatusNameOnlyCallCount(repo), 0)
 })
 
 test("server returns 500 when diff loading fails", async (t) => {
@@ -442,6 +442,47 @@ test("server returns an error when the launcher reports a failed handoff", async
   })
 })
 
+test("server rejects submit bodies larger than the limit", async (t) => {
+  const { child, started } = startServer(reviewEnv())
+  const startup = await started
+  t.after(() => child.kill())
+
+  const submit = await request(startup.port, "/api/submit", {
+    method: "POST",
+    headers: { "x-review-token": startup.token },
+    body: "x".repeat(64 * 1024 + 1),
+  })
+
+  assert.equal(submit.status, 413)
+  assert.match(submit.body, /request body too large/)
+})
+
+test("server forwards malformed submit JSON as the raw payload", async (t) => {
+  const { child, started } = startServer(reviewEnv())
+  const startup = await started
+  t.after(() => child.kill())
+
+  const payload = '{"summary": "unterminated"'
+  const submit = request(startup.port, "/api/submit", {
+    method: "POST",
+    headers: { "x-review-token": startup.token },
+    body: payload,
+  })
+  const event = await waitForJsonEvent(child, (entry) => entry.type === "review-submitted")
+
+  child.stdin.write(
+    JSON.stringify({
+      type: "review-ack",
+      requestId: event.requestId,
+      ok: true,
+    }) + "\n",
+  )
+
+  const response = await submit
+  assert.equal(response.status, 200)
+  assert.equal(event.payload, payload)
+})
+
 test("server rejects root requests without a matching session", async (t) => {
   const { child, started } = startServer(reviewEnvWithSession())
   const startup = await started
@@ -467,6 +508,41 @@ test("diff endpoint returns files and hunks", async (t) => {
   assert.equal(typeof body.patch, "string")
   assert.match(body.patch, /diff --git/)
   assert.match(body.patch, /@@/)
+})
+
+test("review status returns fingerprint, base, and head", async (t) => {
+  const repo = createRepo()
+  const { child, started } = startServer({ ...reviewEnv(), SUPERPOWERS_REVIEW_REPO: repo, SUPERPOWERS_REVIEW_BASE: "main" })
+  const startup = await started
+  t.after(() => child.kill())
+
+  const status = await request(startup.port, "/api/review-status", { headers: { "x-review-token": startup.token } })
+  assert.equal(status.status, 200)
+
+  const body = JSON.parse(status.body)
+  assert.equal(Object.keys(body).sort().join(","), "base,fingerprint,head")
+  assert.equal(typeof body.fingerprint, "string")
+  assert.equal(body.base, "main")
+  assert.equal(body.head, "feature")
+})
+
+test("review status fingerprint changes when the diff changes", async (t) => {
+  const repo = createRepo()
+  const { child, started } = startServer({ ...reviewEnv(), SUPERPOWERS_REVIEW_REPO: repo, SUPERPOWERS_REVIEW_BASE: "main" })
+  const startup = await started
+  t.after(() => child.kill())
+
+  const initial = await request(startup.port, "/api/review-status", { headers: { "x-review-token": startup.token } })
+  assert.equal(initial.status, 200)
+
+  const initialBody = JSON.parse(initial.body)
+  fs.writeFileSync(path.join(repo, "tracked.txt"), "base\nfeature commit\nunstaged change\nextra change\n")
+
+  const updated = await request(startup.port, "/api/review-status", { headers: { "x-review-token": startup.token } })
+  assert.equal(updated.status, 200)
+
+  const updatedBody = JSON.parse(updated.body)
+  assert.notEqual(initialBody.fingerprint, updatedBody.fingerprint)
 })
 
 test("server no longer serves a remote highlight asset", async (t) => {
@@ -579,6 +655,12 @@ test("diff endpoint includes staged and unstaged changes from the checkout", asy
   assert.match(body.patch, /feature commit/)
   assert.match(body.patch, /staged change/)
   assert.match(body.patch, /unstaged change/)
+})
+
+test("loadDiff does not hash the patch", () => {
+  const repo = createRepo()
+
+  assert.equal(loadDiffHashCallCount(repo), 0)
 })
 
 test("submit preserves multibyte request bodies across split chunks", async (t) => {
