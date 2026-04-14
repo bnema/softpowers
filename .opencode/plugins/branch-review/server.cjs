@@ -19,6 +19,7 @@ const allowedModuleNames = new Set([
 const submissionReader = readline.createInterface({ input: process.stdin })
 let submissionShutdownRequested = false
 let lastActivityAt = Date.now()
+const staticAssetCache = new Map()
 
 function touchActivity() {
   lastActivityAt = Date.now()
@@ -41,27 +42,39 @@ function closeSubmissionServer() {
 
 function registerSubmissionAck(requestId) {
   return new Promise((resolve, reject) => {
-    pendingSubmissions.set(requestId, { resolve, reject })
+    const timeout = setTimeout(() => {
+      settlePendingSubmission(
+        requestId,
+        "reject",
+        new Error(`review launcher ack timeout after ${idleTimeoutMs}ms`),
+      )
+    }, idleTimeoutMs)
+
+    pendingSubmissions.set(requestId, { resolve, reject, timeout })
   })
 }
 
-function settleSubmissionAck(event) {
-  const pending = pendingSubmissions.get(event.requestId)
+function settlePendingSubmission(requestId, settle, value) {
+  const pending = pendingSubmissions.get(requestId)
   if (!pending) return false
 
-  pendingSubmissions.delete(event.requestId)
-  pending.resolve(event)
+  pendingSubmissions.delete(requestId)
+  clearTimeout(pending.timeout)
+  pending[settle](value)
   return true
+}
+
+function settleSubmissionAck(event) {
+  return settlePendingSubmission(event.requestId, "resolve", event)
 }
 
 function rejectPendingSubmissions(message) {
   if (pendingSubmissions.size === 0) return
 
   const error = new Error(message)
-  for (const pending of pendingSubmissions.values()) {
-    pending.reject(error)
+  for (const requestId of pendingSubmissions.keys()) {
+    settlePendingSubmission(requestId, "reject", error)
   }
-  pendingSubmissions.clear()
 }
 
 submissionReader.on("line", (line) => {
@@ -148,12 +161,30 @@ function loadBootstrap() {
   }
 }
 
+function readCachedText(filePath) {
+  const cached = staticAssetCache.get(filePath)
+
+  try {
+    const stat = fs.statSync(filePath)
+    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+      return cached.text
+    }
+
+    const text = fs.readFileSync(filePath, "utf8")
+    staticAssetCache.set(filePath, { mtimeMs: stat.mtimeMs, size: stat.size, text })
+    return text
+  } catch (error) {
+    staticAssetCache.delete(filePath)
+    throw error
+  }
+}
+
 function readTemplate() {
-  return fs.readFileSync(path.join(__dirname, "review-template.html"), "utf8")
+  return readCachedText(path.join(__dirname, "review-template.html"))
 }
 
 function readClient() {
-  return fs.readFileSync(path.join(__dirname, "review-client.js"), "utf8")
+  return readCachedText(path.join(__dirname, "review-client.js"))
 }
 
 function readModule(name) {
@@ -161,15 +192,15 @@ function readModule(name) {
     throw new Error(`unsupported module name: ${name}`)
   }
 
-  return fs.readFileSync(path.join(__dirname, name), "utf8")
+  return readCachedText(path.join(__dirname, name))
 }
 
 function readStyles() {
-  return fs.readFileSync(path.join(__dirname, "review-styles.css"), "utf8")
+  return readCachedText(path.join(__dirname, "review-styles.css"))
 }
 
 function readPromptHelpers() {
-  return fs.readFileSync(path.join(__dirname, "review-prompt.js"), "utf8")
+  return readCachedText(path.join(__dirname, "review-prompt.js"))
 }
 
 function escapeBootstrapJson(value) {
@@ -378,8 +409,9 @@ const idleTimer = setInterval(() => {
   if (Date.now() - lastActivityAt < idleTimeoutMs) return
 
   clearInterval(idleTimer)
+  rejectPendingSubmissions("review launcher closed before acknowledging submission")
   closeSubmissionServer()
-  process.exit(0)
+  setImmediate(() => process.exit(0))
 }, idleCheckMs)
 
 idleTimer.unref?.()

@@ -11,6 +11,7 @@ const {
   removeStateArtifacts,
   sessionStateFile,
   sleep,
+  waitForExit,
 } = require("./launch-shared.cjs")
 
 async function waitForUrlFile(urlFile, child, timeoutMs) {
@@ -30,17 +31,6 @@ async function waitForUrlFile(urlFile, child, timeoutMs) {
   }
 
   throw new Error("timed out waiting for review url")
-}
-
-async function waitForExit(pid, timeoutMs) {
-  const deadline = Date.now() + timeoutMs
-
-  while (Date.now() < deadline) {
-    if (!isProcessAlive(pid)) return
-    await sleep(25)
-  }
-
-  throw new Error(`review bridge pid ${pid} did not exit after SIGTERM`)
 }
 
 async function replaceSameSessionBridge(session) {

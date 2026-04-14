@@ -62,6 +62,17 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+async function waitForExit(pid, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+
+  while (Date.now() < deadline) {
+    if (!isProcessAlive(pid)) return
+    await sleep(25)
+  }
+
+  throw new Error(`review bridge pid ${pid} did not exit after SIGTERM`)
+}
+
 function removeIfExists(filePath) {
   try {
     fs.rmSync(filePath, { force: true })
@@ -107,4 +118,5 @@ module.exports = {
   removeStateArtifacts,
   sessionStateFile,
   sleep,
+  waitForExit,
 }

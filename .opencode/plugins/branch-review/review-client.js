@@ -742,7 +742,7 @@ function renderDiffLine(state, file, line, refreshComments, refreshDraftOverview
 function renderFileSection(state, file, refreshComments, refreshDraftOverview, selectLine) {
   const section = document.createElement("section")
   section.className = "file-section"
-  section.id = `file-${file.path.replace(/[^a-z0-9]+/gi, "-")}`
+  section.id = fileSectionId(file.path)
 
   const scroller = document.createElement("div")
   scroller.className = "file-section__scroller"

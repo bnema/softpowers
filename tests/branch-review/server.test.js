@@ -442,6 +442,35 @@ test("server returns an error when the launcher reports a failed handoff", async
   })
 })
 
+test("server times out a pending submit when the launcher never acks", async (t) => {
+  const { child, started } = startServer({
+    ...reviewEnvWithSession(),
+    SUPERPOWERS_REVIEW_IDLE_TIMEOUT_MS: "50",
+  })
+  const startup = await started
+  t.after(() => child.kill())
+
+  const keepAlive = setInterval(() => {
+    request(startup.port, "/health").catch(() => {})
+  }, 15)
+  t.after(() => clearInterval(keepAlive))
+
+  const submit = request(startup.port, "/api/submit", {
+    method: "POST",
+    headers: { "x-review-token": startup.token },
+    body: JSON.stringify({ summary: "Wait for an ack timeout", comments: [] }),
+  })
+
+  const result = await Promise.race([
+    submit.then((response) => ({ kind: "response", response })),
+    new Promise((resolve) => setTimeout(() => resolve({ kind: "timeout" }), 1000)),
+  ])
+
+  assert.notEqual(result.kind, "timeout")
+  assert.equal(result.response.status, 502)
+  assert.match(JSON.parse(result.response.body).error, /timeout|closed/i)
+})
+
 test("server rejects submit bodies larger than the limit", async (t) => {
   const { child, started } = startServer(reviewEnv())
   const startup = await started
