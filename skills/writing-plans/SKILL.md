@@ -171,3 +171,5 @@ After saving the plan, offer execution choice:
 - For `New branch here`, ask for the new branch name before creating it.
 - If the working tree is dirty and the user chooses `New branch here`, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue.
 - Do not offer `Continue here` on the default branch.
+
+Once workspace selection is settled and before implementation starts, ask whether to start the local reviewer server in that workspace so the user can review while you work.

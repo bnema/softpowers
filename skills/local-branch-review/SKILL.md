@@ -1,6 +1,6 @@
 ---
 name: local-branch-review
-description: Use when the user asks to start, stop, reopen, or manually control the local branch-review or reviewer web UI for a branch diff
+description: Use when the user asks to start, stop, reopen, or control the local branch-review UI, or accepts an offer to start it before or during implementation
 ---
 
 # Local Branch Review
@@ -9,7 +9,8 @@ Local branch review is the local equivalent of reviewing a GitHub pull request. 
 
 ## When to Use
 
-- User asks to start, open, reopen, stop, or manually control the local branch-review UI
+- User asks to start, open, reopen, stop, or control the local branch-review UI
+- User accepts an offer to start the local branch-review UI before or during implementation
 
 Do not use for:
 

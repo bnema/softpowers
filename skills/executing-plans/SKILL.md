@@ -24,11 +24,12 @@ Load plan, review critically, execute all tasks, report when complete.
    - On any other branch: `Continue here`, `New worktree`, or `New branch here`
 5. For `New worktree`: use `superpowers:using-git-worktrees`
 6. For `New branch here`:
-   - Ask for the new branch name before creating it
-   - Check whether the working tree is dirty
-   - If dirty, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue
-   - Create and switch to the fresh branch in the current directory only after confirmation
+    - Ask for the new branch name before creating it
+    - Check whether the working tree is dirty
+    - If dirty, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue
+    - Create and switch to the fresh branch in the current directory only after confirmation
 7. For `Continue here`: verify the current branch is not the default branch, then proceed in place
+8. Once workspace selection is settled and before loading the plan, ask whether to start the local reviewer server in that workspace so the user can review while you work.
 
 ### Step 2: Load and Review Plan
 1. Read plan file

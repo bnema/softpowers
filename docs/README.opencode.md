@@ -107,7 +107,9 @@ The plugin does two things:
 
 ### Local branch review
 
-In OpenCode TUI sessions, Superpowers adds a `Review branch locally` command and finish-flow option. It starts a local browser review UI for the full branch diff against the detected base branch, lets you leave inline review comments, and sends the final grouped review back into the active session as one user message.
+In OpenCode TUI sessions, Superpowers adds a `Review branch locally` command and finish-flow option. It can also offer the local reviewer server after workspace selection and before implementation starts, so you can review while it works.
+
+It starts a local browser review UI for the full branch diff against the detected base branch, lets you leave inline review comments, and sends the final grouped review back into the active session as one user message.
 
 The browser draft stays local until you submit it. The TUI then refocuses the active session so you can watch the response stream immediately.
 

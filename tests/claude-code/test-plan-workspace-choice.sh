@@ -6,6 +6,8 @@ ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 WRITING_PLANS="$ROOT_DIR/skills/writing-plans/SKILL.md"
 EXECUTING_PLANS="$ROOT_DIR/skills/executing-plans/SKILL.md"
 SDD="$ROOT_DIR/skills/subagent-driven-development/SKILL.md"
+LOCAL_BRANCH_REVIEW="$ROOT_DIR/skills/local-branch-review/SKILL.md"
+OPENCODE_README="$ROOT_DIR/docs/README.opencode.md"
 
 echo "=== Test: plan execution workspace choice ==="
 
@@ -43,7 +45,52 @@ else
 fi
 
 echo ""
-echo "Test 4: execution skills require branch naming and dirty-tree warning..."
+echo "Test 4: writing-plans places the reviewer prompt after workspace selection..."
+WRITING_PLANS_CONTEXT_LINE=$(grep -n 'If Subagent-Driven or Inline Execution is chosen:' "$WRITING_PLANS" | head -n1 | cut -d: -f1 || true)
+WRITING_PLANS_PROMPT_LINE=$(grep -n 'review while you work' "$WRITING_PLANS" | head -n1 | cut -d: -f1 || true)
+if ! grep -q 'OpenCode-only' "$WRITING_PLANS" && \
+   grep -q 'local reviewer server' "$WRITING_PLANS" && \
+   [[ -n "$WRITING_PLANS_CONTEXT_LINE" && -n "$WRITING_PLANS_PROMPT_LINE" && "$WRITING_PLANS_PROMPT_LINE" -gt "$WRITING_PLANS_CONTEXT_LINE" ]]; then
+    echo "  [PASS] writing-plans keeps the reviewer prompt after workspace choices"
+else
+    echo "  [FAIL] writing-plans does not place the reviewer prompt after workspace selection"
+    exit 1
+fi
+
+echo ""
+echo "Test 5: execution skills place the reviewer prompt after workspace setup..."
+EXECUTING_CONTEXT_LINE=$(grep -n '### Step 1: Establish Workspace' "$EXECUTING_PLANS" | head -n1 | cut -d: -f1 || true)
+EXECUTING_PROMPT_LINE=$(grep -n 'review while you work' "$EXECUTING_PLANS" | head -n1 | cut -d: -f1 || true)
+SDD_CONTEXT_LINE=$(grep -n '### Workspace Setup' "$SDD" | head -n1 | cut -d: -f1 || true)
+SDD_PROMPT_LINE=$(grep -n 'review while you work' "$SDD" | head -n1 | cut -d: -f1 || true)
+if ! grep -q 'OpenCode-only' "$EXECUTING_PLANS" && \
+   ! grep -q 'OpenCode-only' "$SDD" && \
+   grep -q 'local reviewer server' "$EXECUTING_PLANS" && \
+   grep -q 'local reviewer server' "$SDD" && \
+   [[ -n "$EXECUTING_CONTEXT_LINE" && -n "$EXECUTING_PROMPT_LINE" && "$EXECUTING_PROMPT_LINE" -gt "$EXECUTING_CONTEXT_LINE" ]] && \
+   [[ -n "$SDD_CONTEXT_LINE" && -n "$SDD_PROMPT_LINE" && "$SDD_PROMPT_LINE" -gt "$SDD_CONTEXT_LINE" ]]; then
+    echo "  [PASS] execution skills keep the reviewer prompt after workspace setup"
+else
+    echo "  [FAIL] execution skills do not place the reviewer prompt after workspace setup"
+    exit 1
+fi
+
+echo ""
+echo "Test 6: execution docs and review skill reflect the proactive reviewer offer..."
+if grep -q 'accepts an offer' "$LOCAL_BRANCH_REVIEW" && \
+   grep -q 'before or during implementation' "$LOCAL_BRANCH_REVIEW" && \
+   ! grep -q 'OpenCode-only' "$LOCAL_BRANCH_REVIEW" && \
+   grep -q 'before implementation starts' "$OPENCODE_README" && \
+   ! grep -q 'OpenCode-only' "$OPENCODE_README" && \
+   grep -q 'local reviewer server' "$OPENCODE_README"; then
+    echo "  [PASS] related docs describe the proactive reviewer offer"
+else
+    echo "  [FAIL] related docs do not describe the proactive reviewer offer"
+    exit 1
+fi
+
+echo ""
+echo "Test 7: execution skills require branch naming and dirty-tree warning..."
 if grep -q "Ask for the new branch name" "$EXECUTING_PLANS" && \
    grep -q "working tree is dirty" "$EXECUTING_PLANS" && \
    grep -q "Ask for the new branch name" "$SDD" && \
@@ -55,7 +102,7 @@ else
 fi
 
 echo ""
-echo "Test 5: related skills reference the new conditional worktree usage..."
+echo "Test 8: related skills reference the new conditional worktree usage..."
 if grep -q 'REQUIRED only when the chosen workspace mode is `New worktree`' "$ROOT_DIR/skills/using-git-worktrees/SKILL.md" && \
    grep -q 'executing-plans.*Step 4' "$ROOT_DIR/skills/finishing-a-development-branch/SKILL.md"; then
     echo "  [PASS] related skill docs are aligned"
