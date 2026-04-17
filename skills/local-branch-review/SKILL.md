@@ -17,16 +17,28 @@ Do not use for:
 - normal finish-flow review
 - generic code review requests
 
+## Launcher Location
+
+Use the wrapper scripts that live beside this skill file:
+
+- `./review-start.cjs`
+- `./review-stop.cjs`
+
+Resolve those paths relative to this skill directory, not relative to the repo you are reviewing and not relative to your current working directory. In OpenCode git-plugin installs, that usually means a path inside the Superpowers package cache under `~/.cache/opencode/packages/.../skills/local-branch-review/`.
+
+Do not assume the launcher lives at a repo-local path like `.opencode/plugins/branch-review/...`, and do not infer it from a temp attachment path.
+
 ## Commands
 
 | Action | Command | Expected result |
 |--------|---------|-----------------|
-| Start | `node ".opencode/plugins/branch-review/review-start.cjs" --session <session-id> --base <base-ref> --repo "$PWD"` | Prints a URL like `http://127.0.0.1:<port>/?session=<sessionID>&base=<baseRef>` |
-| Stop | `node ".opencode/plugins/branch-review/review-stop.cjs" --session <session-id>` | Prints `stopped review bridge` |
+| Start | `node "./review-start.cjs" --session <session-id> --base <base-ref> --repo <repo-root>` | Prints a URL like `http://127.0.0.1:<port>/?session=<sessionID>&base=<baseRef>` |
+| Stop | `node "./review-stop.cjs" --session <session-id>` | Prints `stopped review bridge` |
 
 ## Rules
 
 - `--session` is required. If you do not have it, ask instead of guessing.
+- `--repo` should be the actual git repo root being reviewed. Do not substitute the skill cache directory, a temp file path, or some other current working directory.
 - The UI is session-bound. Return the printed URL to the user.
 - To reopen, rerun the start command with the same `--session`.
 - Do not pass `--state-file` for normal use.

@@ -117,6 +117,8 @@ The browser draft stays local until you submit it. The TUI then refocuses the ac
 
 For manual reviews, the launcher prints a URL like `http://127.0.0.1:<port>/?session=<sessionID>&base=<baseRef>`.
 
+Agents should launch the review server via the wrapper scripts in `skills/local-branch-review/`, resolved from the installed Superpowers package copy. For git-plugin installs, that is usually inside `~/.cache/opencode/packages/...`, not a repo-local `.opencode/plugins/...` path.
+
 This is a hard product constraint: the review server will not start at all without an attached OpenCode session.
 
 That `session=<sessionID>` query parameter is still required at page load. If the review page opens without the matching session, it fails fast instead of accepting a review that cannot return to OpenCode.

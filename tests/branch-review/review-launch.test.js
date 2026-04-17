@@ -17,6 +17,14 @@ function reviewStopPath() {
   return path.join(process.cwd(), ".opencode/plugins/branch-review/review-stop.cjs")
 }
 
+function skillReviewStartPath() {
+  return path.join(process.cwd(), "skills/local-branch-review/review-start.cjs")
+}
+
+function skillReviewStopPath() {
+  return path.join(process.cwd(), "skills/local-branch-review/review-stop.cjs")
+}
+
 function cacheStateDir(cacheHome) {
   return path.join(cacheHome, "superpowers", "branch-review")
 }
@@ -131,6 +139,42 @@ test("review start requires a session", () => {
 
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, /session is required/)
+})
+
+test("skill wrapper resolves the review launcher relative to the skill directory", () => {
+  const tempDir = makeTempDir("superpowers-review-skill-")
+  const launcherPath = createFakeLauncherScript(tempDir)
+  const stateFile = path.join(tempDir, "state.json")
+  const repoDir = path.join(tempDir, "repo")
+  const randomCwd = path.join(tempDir, "not-the-repo")
+  fs.mkdirSync(repoDir)
+  fs.mkdirSync(randomCwd)
+
+  const start = spawnSync(process.execPath, [skillReviewStartPath(), "--session", "ses_skill", "--base", "main", "--repo", repoDir, "--state-file", stateFile, "--launcher-path", launcherPath], {
+    cwd: randomCwd,
+    encoding: "utf8",
+    timeout: 10000,
+  })
+
+  assert.equal(start.status, 0)
+  assert.equal(start.stderr, "")
+  assert.equal(start.stdout.trim(), "http://127.0.0.1:4321/?session=ses_skill&base=main")
+
+  const state = readJson(stateFile)
+  assert.equal(state.repo, repoDir)
+  assert.ok(isProcessAlive(state.pid))
+
+  const stop = spawnSync(process.execPath, [skillReviewStopPath(), "--state-file", stateFile], {
+    cwd: randomCwd,
+    encoding: "utf8",
+    timeout: 10000,
+  })
+
+  assert.equal(stop.status, 0)
+  assert.match(stop.stdout, /stopped review bridge/)
+  assert.equal(fs.existsSync(stateFile), false)
+
+  fs.rmSync(tempDir, { recursive: true, force: true })
 })
 
 test("review start prints the url and writes state", (t) => {

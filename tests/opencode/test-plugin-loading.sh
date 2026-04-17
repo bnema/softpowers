@@ -116,11 +116,13 @@ fi
 
 echo "Test 5g: Checking local-branch-review skill..."
 if [ -f "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" ] \
+  && [ -f "$SUPERPOWERS_SKILLS_DIR/local-branch-review/review-start.cjs" ] \
+  && [ -f "$SUPERPOWERS_SKILLS_DIR/local-branch-review/review-stop.cjs" ] \
   && grep -q "review-start.cjs" "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" \
   && grep -q "review-stop.cjs" "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md"; then
-  echo "  [PASS] local-branch-review skill exists and documents the launcher commands"
+  echo "  [PASS] local-branch-review skill exists with cache-safe launcher wrappers"
 else
-  echo "  [FAIL] local-branch-review skill missing or incomplete"
+  echo "  [FAIL] local-branch-review skill missing wrappers or launcher docs"
   exit 1
 fi
 
