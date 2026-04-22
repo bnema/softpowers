@@ -57,6 +57,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --help, -h           Show this help"
             echo ""
             echo "Tests:"
+            echo "  test-workflow-choice.sh              Check workflow selection / direct-vs-full-flow guidance"
+            echo "  test-plan-workspace-choice.sh        Check plan execution workspace choices"
             echo "  test-subagent-driven-development.sh  Test skill loading and requirements"
             echo ""
             echo "Integration Tests (use --integration):"
@@ -73,6 +75,7 @@ done
 
 # List of skill tests to run (fast unit tests)
 tests=(
+    "test-workflow-choice.sh"
     "test-plan-workspace-choice.sh"
     "test-subagent-driven-development.sh"
 )
