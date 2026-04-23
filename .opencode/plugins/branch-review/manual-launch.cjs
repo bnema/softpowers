@@ -1,11 +1,10 @@
 const { spawn, spawnSync } = require("node:child_process")
 const fs = require("node:fs")
-const path = require("node:path")
 const readline = require("node:readline")
+const { pathToFileURL } = require("node:url")
 const { parseArgs } = require("./launch-shared.cjs")
 
 const args = parseArgs()
-
 const session = args.get("session")
 
 if (!session) {
@@ -15,10 +14,10 @@ if (!session) {
 
 const opencodeUrl = args.get("opencode-url") || process.env.OPENCODE_API_URL || null
 const urlFile = args.get("url-file") || null
-
-const reviewServerPath = args.get("review-server-path") || path.join(__dirname, "server.cjs")
-const repo = args.get("repo") || process.env.SUPERPOWERS_REVIEW_REPO || process.cwd()
-const base = args.get("base") || process.env.SUPERPOWERS_REVIEW_BASE || "main"
+const reviewServerPath = args.get("review-server-path") || require.resolve("local-pr-review-server/server.cjs")
+const reviewAdapterPath = args.get("review-adapter-path") || require.resolve("local-pr-review-server/opencode.js")
+const repo = args.get("repo") || process.cwd()
+const base = args.get("base") || "main"
 const promptTimeoutMs = Number.parseInt(
   args.get("prompt-timeout-ms") || process.env.SUPERPOWERS_REVIEW_PROMPT_TIMEOUT_MS || "15000",
   10,
@@ -36,10 +35,12 @@ function getShutdownTimeoutMs() {
   return Number.isFinite(shutdownTimeoutMs) && shutdownTimeoutMs > 0 ? shutdownTimeoutMs : 250
 }
 
-async function loadReviewPrompt() {
-  const source = fs.readFileSync(path.join(__dirname, "review-prompt.js"), "utf8")
-  const module = await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`)
-  return module.formatReviewPrompt
+async function loadReviewAdapter() {
+  const module = await import(pathToFileURL(reviewAdapterPath).href)
+  if (module.default && typeof module.default === "object") {
+    return { ...module.default, ...module }
+  }
+  return module
 }
 
 async function waitForExit(child) {
@@ -68,14 +69,14 @@ async function shutdownChild(child) {
 }
 
 async function main() {
-  const formatReviewPrompt = await loadReviewPrompt()
+  const { formatReviewPrompt, buildOpenCodeReviewUrl } = await loadReviewAdapter()
   const child = spawn(process.execPath, [reviewServerPath], {
     cwd: repo,
     env: {
       ...process.env,
-      SUPERPOWERS_REVIEW_REPO: repo,
-      SUPERPOWERS_REVIEW_BASE: base,
-      SUPERPOWERS_REVIEW_SESSION: session,
+      LOCAL_PR_REVIEW_REPO: repo,
+      LOCAL_PR_REVIEW_BASE: base,
+      LOCAL_PR_REVIEW_CONTEXT_ID: session,
     },
     stdio: ["pipe", "pipe", "pipe"],
   })
@@ -101,11 +102,8 @@ async function main() {
     }
 
     const submissionAck = { type: "review-ack", requestId, ok: ack.ok }
-    if (ack.ok) {
-      submissionAck.message = ack.message
-    } else {
-      submissionAck.error = ack.error
-    }
+    if (ack.ok) submissionAck.message = ack.message
+    else submissionAck.error = ack.error
 
     child.stdin.write(JSON.stringify(submissionAck) + "\n")
   }
@@ -118,9 +116,7 @@ async function main() {
     try {
       const response = await fetch(`${opencodeUrl.replace(/\/$/, "")}/session/${session}/prompt_async`, {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
           directory: repo,
           noReply: false,
@@ -143,12 +139,6 @@ async function main() {
     }
   }
 
-  const stopChild = async () => {
-    if (child.exitCode !== null || child.signalCode !== null) return
-    child.kill()
-    await waitForExit(child)
-  }
-
   await new Promise((resolve, reject) => {
     child.once("error", (error) => {
       if (settled) return
@@ -169,14 +159,12 @@ async function main() {
       }
 
       if (event.type === "server-started" && event.port != null) {
-        const sessionUrl = new URL(`http://127.0.0.1:${event.port}/`)
-        sessionUrl.searchParams.set("session", session)
-        sessionUrl.searchParams.set("base", base)
+        const sessionUrl = buildOpenCodeReviewUrl(event, { sessionID: session, baseRef: base })
         if (urlFile) {
-          fs.mkdirSync(path.dirname(urlFile), { recursive: true })
-          fs.writeFileSync(urlFile, sessionUrl.toString())
+          fs.mkdirSync(require("node:path").dirname(urlFile), { recursive: true })
+          fs.writeFileSync(urlFile, sessionUrl)
         }
-        process.stdout.write(`Open ${sessionUrl.toString()}\n`)
+        process.stdout.write(`Open ${sessionUrl}\n`)
         return
       }
 

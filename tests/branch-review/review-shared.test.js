@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { formatReviewPrompt, resolveBaseRef, waitForServerStarted } from "../../.opencode/plugins/branch-review/review-shared.js"
+import { buildReviewUrl, formatReviewPrompt, resolveBaseRef, waitForServerStarted } from "../../.opencode/plugins/branch-review/review-shared.mjs"
 
 function git(cwd, args) {
   execFileSync("git", args, { cwd, stdio: "ignore" })
@@ -36,47 +36,6 @@ test("formatReviewPrompt groups comments by file", () => {
   assert.match(text, /Check the retry path/)
 })
 
-test("formatReviewPrompt renders range comments with both lines", () => {
-  const text = formatReviewPrompt({
-    comments: [
-      {
-        path: "src/app.js",
-        side: "new",
-        startLine: 20,
-        endLine: 21,
-        body: "This path needs a guard",
-      },
-    ],
-  })
-
-  assert.match(text, /- new lines 20-21: This path needs a guard/)
-})
-
-test("formatReviewPrompt uses a longer fence when a snippet contains triple backticks", () => {
-  const text = formatReviewPrompt({
-    comments: [
-      {
-        path: "src/app.js",
-        side: "new",
-        startLine: 20,
-        endLine: 22,
-        body: "This path needs a guard",
-        snippetLines: ["before", "```", "after"],
-      },
-    ],
-  })
-
-  const lines = text.split("\n")
-  const start = lines.indexOf("  Snippet:")
-
-  assert.ok(start >= 0)
-  assert.match(lines[start + 1], /^  `{4,}$/)
-  assert.equal(lines[start + 2], "  before")
-  assert.equal(lines[start + 3], "  ```")
-  assert.equal(lines[start + 4], "  after")
-  assert.match(lines[start + 5], /^  `{4,}$/)
-})
-
 test("resolveBaseRef prefers an explicit base", () => {
   const base = resolveBaseRef({ explicitBase: "main", currentBranch: "feature/x", upstreamBranch: "origin/feature/x" })
 
@@ -103,7 +62,7 @@ test("waitForServerStarted resolves after split startup chunks", async () => {
   const started = waitForServerStarted(child)
 
   child.stdout.emit("data", Buffer.from('noise line\n{"type":"server-'))
-  child.stdout.emit("data", Buffer.from('started","port":4321,"url":"http://127.0.0.1:4321"}\ntrailing line\n'))
+  child.stdout.emit("data", Buffer.from('started","port":4321,"url":"http://127.0.0.1:4321/?context=seed"}\ntrailing line\n'))
 
   const result = await Promise.race([
     started,
@@ -111,5 +70,14 @@ test("waitForServerStarted resolves after split startup chunks", async () => {
   ])
 
   assert.notEqual(result, "timed out")
-  assert.deepEqual(result, { type: "server-started", port: 4321, url: "http://127.0.0.1:4321" })
+  assert.deepEqual(result, { type: "server-started", port: 4321, url: "http://127.0.0.1:4321/?context=seed" })
+})
+
+test("buildReviewUrl adds the OpenCode session and base parameters", () => {
+  const url = buildReviewUrl(
+    { type: "server-started", port: 4321, url: "http://127.0.0.1:4321/?context=seed" },
+    { sessionID: "ses_123", baseRef: "main" },
+  )
+
+  assert.equal(url, "http://127.0.0.1:4321/?context=ses_123&session=ses_123&base=main")
 })

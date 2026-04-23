@@ -149,11 +149,14 @@ else
   echo "  [PASS] Root plugin helper has been moved out of the plugin scan path"
 fi
 
-echo "Test 8: Checking installed TUI runtime dependencies..."
-if [ -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/review-shared.js" ] && [ -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/server.cjs" ]; then
-  echo "  [PASS] Installed package includes branch-review runtime files"
+echo "Test 8: Checking installed branch-review integration files..."
+if [ -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/review-shared.mjs" ] \
+  && [ ! -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/runtime-source.cjs" ] \
+  && [ ! -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/server.cjs" ] \
+  && [ -d "$SUPERPOWERS_DIR/node_modules/local-pr-review-server" ]; then
+  echo "  [PASS] Installed package uses the external local-pr-review-server dependency"
 else
-  echo "  [FAIL] Installed package is missing branch-review runtime files"
+  echo "  [FAIL] Installed package is missing the external dependency or still vendors the runtime"
   exit 1
 fi
 

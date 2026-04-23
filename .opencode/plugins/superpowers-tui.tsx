@@ -1,13 +1,20 @@
 type TuiPlugin = (api: any) => void
 type TuiPluginModule = { id: string; tui: TuiPlugin }
 
-import { formatReviewPrompt, resolveBaseRef, spawnReviewServer, waitForServerStarted } from "./branch-review/review-shared.js"
-
-// @ts-expect-error OpenCode loads this plugin as an ES module.
-const bundledServerPath = decodeURIComponent(new URL("./branch-review/server.cjs", import.meta.url).pathname)
+import { buildReviewUrl, formatReviewPrompt, resolveBaseRef, spawnReviewServer, waitForServerStarted } from "./branch-review/review-shared.mjs"
 
 const tui: TuiPlugin = (api) => {
   let child: ReturnType<typeof spawnReviewServer> | null = null
+
+  const sendReviewAck = (target: ReturnType<typeof spawnReviewServer>, requestId: string, ack: { ok: true; message: string } | { ok: false; error: string }) => {
+    if (!target.stdin || target.stdin.destroyed) throw new Error("review server stdin is closed")
+    target.stdin.write(JSON.stringify({
+      type: "review-ack",
+      requestId,
+      ok: ack.ok,
+      ...(ack.ok ? { message: ack.message } : { error: ack.error }),
+    }) + "\n")
+  }
 
   api.lifecycle.onDispose(() => {
     if (child && !child.killed) child.kill()
@@ -33,7 +40,6 @@ const tui: TuiPlugin = (api) => {
         const sessionID = api.route.current.params.sessionID as string
         const baseRef = resolveBaseRef({ cwd: api.state.path.directory, explicitBase: null, currentBranch: api.state.vcs?.branch || null, upstreamBranch: null })
         child = spawnReviewServer({
-          serverPath: bundledServerPath,
           cwd: api.state.path.directory,
           sessionID,
           baseRef,
@@ -46,13 +52,13 @@ const tui: TuiPlugin = (api) => {
         let stderrBuffer = ""
 
         if (stderr) {
-          stderr.on("data", (chunk) => {
+          stderr.on("data", (chunk: { toString(): string }) => {
             stderrBuffer += chunk.toString()
             if (stderrBuffer.length > 2048) stderrBuffer = stderrBuffer.slice(-2048)
           })
         }
 
-        spawnedChild.once("exit", (code, signal) => {
+        spawnedChild.once("exit", (code: number | null, signal: string | null) => {
           const wasCurrentChild = child === spawnedChild
           if (wasCurrentChild) child = null
           if (!wasCurrentChild || code === 0) return
@@ -62,29 +68,38 @@ const tui: TuiPlugin = (api) => {
         })
 
         let buffer = ""
-        const handleSubmitted = (line: string) => {
-          const event = JSON.parse(line)
-          const text = formatReviewPrompt(event.payload)
-          return api.client.session.promptAsync({
-            sessionID,
-            directory: api.state.path.directory,
-            parts: [{ type: "text", text }],
-          }).then(() => {
+        const handleSubmitted = async (line: string) => {
+          try {
+            const event = JSON.parse(line)
+            const text = formatReviewPrompt(event.payload)
+            await api.client.session.promptAsync({
+              sessionID,
+              directory: api.state.path.directory,
+              parts: [{ type: "text", text }],
+            })
+            sendReviewAck(spawnedChild, event.requestId, { ok: true, message: "Review delivered to OpenCode session" })
             if (child === spawnedChild && !spawnedChild.killed) spawnedChild.kill()
             child = null
             api.route.navigate("session", { sessionID })
             api.ui.toast({ variant: "success", message: "Review sent to the active session" })
-          })
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Failed to submit review"
+            try {
+              const event = JSON.parse(line)
+              sendReviewAck(spawnedChild, event.requestId, { ok: false, error: message })
+            } catch {}
+            api.ui.toast({ variant: "error", message })
+          }
         }
 
-        stdout.on("data", (chunk) => {
+        stdout.on("data", (chunk: { toString(): string }) => {
           buffer += chunk.toString()
           let newlineIndex = buffer.indexOf("\n")
           while (newlineIndex !== -1) {
             const line = buffer.slice(0, newlineIndex).trim()
             buffer = buffer.slice(newlineIndex + 1)
             if (line.indexOf("review-submitted") !== -1) {
-              void handleSubmitted(line).catch((error) => {
+              void handleSubmitted(line).catch((error: unknown) => {
                 api.ui.toast({ variant: "error", message: error instanceof Error ? error.message : "Failed to submit review" })
               })
             }
@@ -93,7 +108,8 @@ const tui: TuiPlugin = (api) => {
         })
 
         waitForServerStarted(child).then((started) => {
-          api.ui.toast({ variant: "info", message: `Open ${started.url} in your browser` })
+          const reviewUrl = buildReviewUrl(started, { sessionID, baseRef })
+          api.ui.toast({ variant: "info", message: `Open ${reviewUrl} in your browser` })
         }).catch((error) => {
           api.ui.toast({ variant: "error", message: error instanceof Error ? error.message : "Review server failed to start" })
           child = null

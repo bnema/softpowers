@@ -107,7 +107,7 @@ The plugin does two things:
 
 ### Local branch review
 
-In OpenCode TUI sessions, Superpowers adds a `Review branch locally` command and finish-flow option. It can also offer the local reviewer server after workspace selection and before implementation starts, so you can review while it works.
+In OpenCode TUI sessions, Superpowers adds a `Review branch locally` command and finish-flow option. Superpowers execution workflows also ensure the local reviewer server starts automatically after workspace selection and before implementation starts, unless you explicitly opt out, so you can review while it works.
 
 It starts a local browser review UI for the full branch diff against the detected base branch, lets you leave inline review comments, and sends the final grouped review back into the active session as one user message.
 
@@ -115,13 +115,15 @@ The browser draft stays local until you submit it. The TUI then refocuses the ac
 
 ### Manual branch review session handoff
 
-For manual reviews, the launcher prints a URL like `http://127.0.0.1:<port>/?session=<sessionID>&base=<baseRef>`.
+For manual reviews, the launcher prints a URL like `http://127.0.0.1:<port>/?context=<sessionID>&session=<sessionID>&base=<baseRef>`.
 
 Agents should launch the review server via the wrapper scripts in `skills/local-branch-review/`, resolved from the installed Superpowers package copy. For git-plugin installs, that is usually inside `~/.cache/opencode/packages/...`, not a repo-local `.opencode/plugins/...` path.
 
+Superpowers now consumes the standalone `local-pr-review-server` package as an installed dependency. The browser-review server runtime is no longer vendored inside this repo.
+
 This is a hard product constraint: the review server will not start at all without an attached OpenCode session.
 
-That `session=<sessionID>` query parameter is still required at page load. If the review page opens without the matching session, it fails fast instead of accepting a review that cannot return to OpenCode.
+The printed review URL still carries `session=<sessionID>`, and Superpowers also maps that same value into the external runtime context so the page fails fast if the expected OpenCode handoff is missing.
 
 ### Tool Mapping
 

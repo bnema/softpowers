@@ -72,6 +72,41 @@ setInterval(() => {}, 1000)
   return scriptPath
 }
 
+function createFakeReviewAdapterModule(source = `export function formatReviewPrompt(payload) {
+  const lines = ["Local branch review", ""]
+  if (payload?.summary) lines.push("Summary", String(payload.summary), "")
+
+  let currentPath = null
+  for (const comment of Array.isArray(payload?.comments) ? payload.comments : []) {
+    if (!comment || !String(comment.body || "").trim()) continue
+    const path = comment.path || "unknown file"
+    if (path !== currentPath) {
+      currentPath = path
+      lines.push(\`File: \${path}\`)
+    }
+
+    const lineRef = comment.newLine ?? comment.oldLine ?? comment.line ?? "unknown"
+    lines.push(\`- \${comment.side} line \${lineRef}: \${String(comment.body).trim()}\`)
+    if (comment.snippet) lines.push(\`  Snippet: \${comment.snippet}\`)
+  }
+
+  return lines.join("\\n")
+}
+
+export function buildOpenCodeReviewUrl(started, args) {
+  const url = new URL(started?.url || \`http://127.0.0.1:\${started?.port || 0}/\`)
+  url.searchParams.set("context", args.sessionID)
+  url.searchParams.set("session", args.sessionID)
+  if (args.baseRef) url.searchParams.set("base", args.baseRef)
+  return url.toString()
+}
+`) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-review-adapter-"))
+  const filePath = path.join(dir, "opencode-adapter.mjs")
+  fs.writeFileSync(filePath, source)
+  return filePath
+}
+
 function createAckableHungReviewServerScript(markerPath, pidPath, requestId) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
   const scriptPath = path.join(dir, "hung-review-server.cjs")
@@ -301,6 +336,77 @@ test("startOpenCodeStub does not reject after it has resolved", async () => {
   }
 })
 
+test("manual launcher loads the prompt formatter from the configured adapter module", { timeout: 10000 }, async (t) => {
+  const reviewAdapterPath = createFakeReviewAdapterModule(`export function formatReviewPrompt(payload) {
+  return ["REMOTE RUNTIME", "Summary", payload.summary].join("\\n")
+}
+
+export function buildOpenCodeReviewUrl(started, args) {
+  const url = new URL(started?.url || \`http://127.0.0.1:\${started?.port || 0}/\`)
+  url.searchParams.set("context", args.sessionID)
+  url.searchParams.set("session", args.sessionID)
+  if (args.baseRef) url.searchParams.set("base", args.baseRef)
+  return url.toString()
+}
+`)
+  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
+  const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-runtime", "Summary from adapter override")
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const opencodeCli = startFakeOpencodeCli()
+  const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
+
+  let stdout = ""
+  let stderr = ""
+  const child = spawn(
+    process.execPath,
+    [launcher, "--session", "ses_runtime", "--review-server-path", reviewServerPath, "--review-adapter-path", reviewAdapterPath, "--repo", repoDir, "--base", "main"],
+    {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      env: { ...process.env, ...opencodeCli.env },
+    },
+  )
+
+  child.stdout.on("data", (chunk) => {
+    stdout += chunk.toString()
+  })
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk.toString()
+  })
+
+  t.after(() => {
+    child.kill()
+    fs.rmSync(path.dirname(reviewAdapterPath), { recursive: true, force: true })
+  })
+
+  const exit = new Promise((resolve, reject) => {
+    child.on("exit", (code, signal) => {
+      if (code === 0) resolve()
+      else reject(new Error(`launcher exited with ${code ?? signal}`))
+    })
+    child.on("error", reject)
+  })
+
+  await Promise.race([
+    exit,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timed out waiting for launcher exit")), 5000)),
+  ])
+
+  assert.match(stdout, /Open http:\/\/127\.0\.0\.1:4321\/\?context=ses_runtime&session=ses_runtime&base=main/)
+  assert.equal(stderr, "")
+  assert.ok(fs.existsSync(opencodeCli.argvPath))
+  const argv = JSON.parse(fs.readFileSync(opencodeCli.argvPath, "utf8"))
+  assert.deepEqual(argv.slice(0, 5), ["run", "-s", "ses_runtime", "--dir", repoDir])
+  assert.match(argv[5], /REMOTE RUNTIME/)
+  assert.match(argv[5], /Summary from adapter override/)
+  assert.deepEqual(JSON.parse(fs.readFileSync(ackPath, "utf8")), {
+    type: "review-ack",
+    requestId: "review-request-runtime",
+    ok: true,
+    message: "Review delivered via opencode CLI",
+  })
+})
+
 test("manual launcher includes opencode cli stderr when fallback execution fails", { timeout: 10000 }, async () => {
   const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
   const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-failure")
@@ -308,33 +414,36 @@ test("manual launcher includes opencode cli stderr when fallback execution fails
   const opencodeCli = startFailingOpencodeCli()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
 
-  const result = spawnSync(
-    process.execPath,
-    [
-      launcher,
-      "--session",
-      "ses_offline",
-      "--review-server-path",
-      reviewServerPath,
-      "--repo",
-      repoDir,
-      "--base",
-      "main",
-    ],
-    { cwd: process.cwd(), encoding: "utf8", env: { ...process.env, ...opencodeCli.env } },
-  )
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        launcher,
+        "--session",
+        "ses_offline",
+        "--review-server-path",
+        reviewServerPath,
+        "--repo",
+        repoDir,
+        "--base",
+        "main",
+      ],
+      { cwd: process.cwd(), encoding: "utf8", env: { ...process.env, ...opencodeCli.env } },
+    )
 
-  assert.notEqual(result.status, 0)
-  assert.match(result.stderr, /opencode exited with 17/)
-  assert.match(result.stderr, /opencode cli stderr: boom/)
-  assert.match(result.stderr, /opencode cli stdout: boom/)
-  assert.ok(fs.existsSync(ackPath))
-  assert.deepEqual(JSON.parse(fs.readFileSync(ackPath, "utf8")), {
-    type: "review-ack",
-    requestId: "review-request-failure",
-    ok: false,
-    error: "opencode exited with 17\nstderr:\nopencode cli stderr: boom\nstdout:\nopencode cli stdout: boom",
-  })
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /opencode exited with 17/)
+    assert.match(result.stderr, /opencode cli stderr: boom/)
+    assert.match(result.stderr, /opencode cli stdout: boom/)
+    assert.ok(fs.existsSync(ackPath))
+    assert.deepEqual(JSON.parse(fs.readFileSync(ackPath, "utf8")), {
+      type: "review-ack",
+      requestId: "review-request-failure",
+      ok: false,
+      error: "opencode exited with 17\nstderr:\nopencode cli stderr: boom\nstdout:\nopencode cli stdout: boom",
+    })
+  } finally {
+  }
 })
 
 test("manual launcher forwards the submitted review to OpenCode", { timeout: 10000 }, async (t) => {
@@ -364,7 +473,7 @@ test("manual launcher forwards the submitted review to OpenCode", { timeout: 100
       "--url-file",
       urlFile,
     ],
-    { cwd: process.cwd(), encoding: "utf8" },
+    { cwd: process.cwd(), encoding: "utf8", env: { ...process.env } },
   )
 
   child.stdout.on("data", (chunk) => {
@@ -407,8 +516,8 @@ test("manual launcher forwards the submitted review to OpenCode", { timeout: 100
   assert.match(received.body.parts[0].text, /File: src\/app\.js/)
   assert.match(received.body.parts[0].text, /- new line 14: Looks good/)
   assert.match(received.body.parts[0].text, /- old line 7: Needs fix/)
-  assert.match(stdout, /Open http:\/\/127\.0\.0\.1:4321\/\?session=ses_123&base=main/)
-  assert.equal(fs.readFileSync(urlFile, "utf8"), "http://127.0.0.1:4321/?session=ses_123&base=main")
+  assert.match(stdout, /Open http:\/\/127\.0\.0\.1:4321\/\?context=ses_123&session=ses_123&base=main/)
+  assert.equal(fs.readFileSync(urlFile, "utf8"), "http://127.0.0.1:4321/?context=ses_123&session=ses_123&base=main")
   assert.equal(stderr, "")
   assert.deepEqual(JSON.parse(fs.readFileSync(ackPath, "utf8")), {
     type: "review-ack",
@@ -512,7 +621,7 @@ test("manual launcher hands review to the opencode cli without opencode-url", { 
     new Promise((_, reject) => setTimeout(() => reject(new Error("timed out waiting for launcher exit")), 5000)),
   ])
 
-  assert.match(stdout, /Open http:\/\/127\.0\.0\.1:4321\/\?session=ses_offline&base=main/)
+  assert.match(stdout, /Open http:\/\/127\.0\.0\.1:4321\/\?context=ses_offline&session=ses_offline&base=main/)
   assert.equal(stdout.includes("Local branch review"), false)
   assert.ok(fs.existsSync(opencodeCli.argvPath))
   const argv = JSON.parse(fs.readFileSync(opencodeCli.argvPath, "utf8"))
@@ -558,7 +667,7 @@ test("manual launcher times out a hung prompt_async request", { timeout: 10000 }
       "--prompt-timeout-ms",
       "50",
     ],
-    { cwd: process.cwd(), encoding: "utf8" },
+    { cwd: process.cwd(), encoding: "utf8", env: { ...process.env } },
   )
 
   child.stderr.on("data", (chunk) => {
@@ -576,7 +685,7 @@ test("manual launcher times out a hung prompt_async request", { timeout: 10000 }
   })
 
   const exit = new Promise((resolve, reject) => {
-    child.on("exit", (code, signal) => {
+    child.on("exit", (code) => {
       if (code !== 0) resolve()
       else reject(new Error("launcher unexpectedly succeeded"))
     })

@@ -64,8 +64,8 @@ async function main() {
     process.exit(1)
   }
 
-  const base = args.get("base") || process.env.SUPERPOWERS_REVIEW_BASE || "main"
-  const repo = args.get("repo") || process.env.SUPERPOWERS_REVIEW_REPO || process.cwd()
+  const base = args.get("base") || "main"
+  const repo = args.get("repo") || process.cwd()
   const explicitStateFile = args.get("state-file") || null
   const stateFile = explicitStateFile || sessionStateFile(session)
   const aliasStateFile = defaultStateFile()
@@ -99,12 +99,7 @@ async function main() {
     child = spawn(process.execPath, [launcherPath, "--session", session, "--base", base, "--repo", repo, "--url-file", urlFile], {
       cwd: repo,
       detached: true,
-      env: {
-        ...process.env,
-        SUPERPOWERS_REVIEW_BASE: base,
-        SUPERPOWERS_REVIEW_REPO: repo,
-        SUPERPOWERS_REVIEW_SESSION: session,
-      },
+      env: process.env,
       stdio: ["ignore", stdoutFd, stderrFd],
     })
 

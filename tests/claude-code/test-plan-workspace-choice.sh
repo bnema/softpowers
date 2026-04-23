@@ -45,47 +45,47 @@ else
 fi
 
 echo ""
-echo "Test 4: writing-plans places the reviewer prompt after workspace selection..."
+echo "Test 4: writing-plans places automatic reviewer startup after workspace selection..."
 WRITING_PLANS_CONTEXT_LINE=$(grep -n 'If Subagent-Driven or Inline Execution is chosen:' "$WRITING_PLANS" | head -n1 | cut -d: -f1 || true)
 WRITING_PLANS_PROMPT_LINE=$(grep -n 'review while you work' "$WRITING_PLANS" | head -n1 | cut -d: -f1 || true)
 if ! grep -q 'OpenCode-only' "$WRITING_PLANS" && \
-   grep -q 'local reviewer server' "$WRITING_PLANS" && \
+   grep -q 'start the local reviewer server automatically' "$WRITING_PLANS" && \
    [[ -n "$WRITING_PLANS_CONTEXT_LINE" && -n "$WRITING_PLANS_PROMPT_LINE" && "$WRITING_PLANS_PROMPT_LINE" -gt "$WRITING_PLANS_CONTEXT_LINE" ]]; then
-    echo "  [PASS] writing-plans keeps the reviewer prompt after workspace choices"
+    echo "  [PASS] writing-plans starts the reviewer automatically after workspace choices"
 else
-    echo "  [FAIL] writing-plans does not place the reviewer prompt after workspace selection"
+    echo "  [FAIL] writing-plans does not auto-start the reviewer after workspace selection"
     exit 1
 fi
 
 echo ""
-echo "Test 5: execution skills place the reviewer prompt after workspace setup..."
+echo "Test 5: execution skills place automatic reviewer startup after workspace setup..."
 EXECUTING_CONTEXT_LINE=$(grep -n '### Step 1: Establish Workspace' "$EXECUTING_PLANS" | head -n1 | cut -d: -f1 || true)
 EXECUTING_PROMPT_LINE=$(grep -n 'review while you work' "$EXECUTING_PLANS" | head -n1 | cut -d: -f1 || true)
 SDD_CONTEXT_LINE=$(grep -n '### Workspace Setup' "$SDD" | head -n1 | cut -d: -f1 || true)
 SDD_PROMPT_LINE=$(grep -n 'review while you work' "$SDD" | head -n1 | cut -d: -f1 || true)
 if ! grep -q 'OpenCode-only' "$EXECUTING_PLANS" && \
    ! grep -q 'OpenCode-only' "$SDD" && \
-   grep -q 'local reviewer server' "$EXECUTING_PLANS" && \
-   grep -q 'local reviewer server' "$SDD" && \
+   grep -q 'start the local reviewer server automatically' "$EXECUTING_PLANS" && \
+   grep -q 'start the local reviewer server automatically' "$SDD" && \
    [[ -n "$EXECUTING_CONTEXT_LINE" && -n "$EXECUTING_PROMPT_LINE" && "$EXECUTING_PROMPT_LINE" -gt "$EXECUTING_CONTEXT_LINE" ]] && \
    [[ -n "$SDD_CONTEXT_LINE" && -n "$SDD_PROMPT_LINE" && "$SDD_PROMPT_LINE" -gt "$SDD_CONTEXT_LINE" ]]; then
-    echo "  [PASS] execution skills keep the reviewer prompt after workspace setup"
+    echo "  [PASS] execution skills auto-start the reviewer after workspace setup"
 else
-    echo "  [FAIL] execution skills do not place the reviewer prompt after workspace setup"
+    echo "  [FAIL] execution skills do not auto-start the reviewer after workspace setup"
     exit 1
 fi
 
 echo ""
-echo "Test 6: execution docs and review skill reflect the proactive reviewer offer..."
-if grep -q 'accepts an offer' "$LOCAL_BRANCH_REVIEW" && \
+echo "Test 6: execution docs and review skill reflect automatic reviewer startup..."
+if grep -q 'auto-starts the reviewer' "$LOCAL_BRANCH_REVIEW" && \
    grep -q 'before or during implementation' "$LOCAL_BRANCH_REVIEW" && \
    ! grep -q 'OpenCode-only' "$LOCAL_BRANCH_REVIEW" && \
-   grep -q 'before implementation starts' "$OPENCODE_README" && \
+   grep -q 'starts automatically' "$OPENCODE_README" && \
    ! grep -q 'OpenCode-only' "$OPENCODE_README" && \
    grep -q 'local reviewer server' "$OPENCODE_README"; then
-    echo "  [PASS] related docs describe the proactive reviewer offer"
+    echo "  [PASS] related docs describe automatic reviewer startup"
 else
-    echo "  [FAIL] related docs do not describe the proactive reviewer offer"
+    echo "  [FAIL] related docs do not describe automatic reviewer startup"
     exit 1
 fi
 

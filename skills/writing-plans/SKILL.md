@@ -172,4 +172,4 @@ After saving the plan, offer execution choice:
 - If the working tree is dirty and the user chooses `New branch here`, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue.
 - Do not offer `Continue here` on the default branch.
 
-Once workspace selection is settled and before implementation starts, ask whether to start the local reviewer server in that workspace so the user can review while you work.
+Once workspace selection is settled and before implementation starts, start the local reviewer server automatically in that workspace so the user can review while you work. Only ask instead if the user explicitly opted out or if you do not have the required session ID.
