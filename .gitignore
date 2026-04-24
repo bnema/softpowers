@@ -2,10 +2,8 @@
 .private-journal/
 .claude/
 .softpowers/
-docs/
-!docs/
-docs/*
-!docs/README.codex.md
+docs/**/plans/
+docs/**/specs/
 .DS_Store
 node_modules/
 inspo
