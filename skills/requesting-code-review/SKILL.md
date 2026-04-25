@@ -1,18 +1,18 @@
 ---
 name: requesting-code-review
-description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+description: Use when completing phases, implementing major features, or before merging to verify work meets requirements
 ---
 
 # Requesting Code Review
 
 Dispatch superpowers:code-reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation — never your session's history. This keeps the reviewer focused on the work product, not your thought process, and preserves your own context for continued work.
 
-**Core principle:** Review early, review often.
+**Core principle:** Review at meaningful checkpoints before issues cascade.
 
 ## When to Request Review
 
 **Mandatory:**
-- After each task in subagent-driven development
+- At the end of each phase in subagent-driven development
 - After completing major feature
 - Before merge to main
 
@@ -51,16 +51,16 @@ Use Task tool with superpowers:code-reviewer type, fill template at `code-review
 `<resolved-plan-path>` means the actual plan location after resolving `$OBSIDIAN_PROJECTS_PATH`, if configured.
 
 ```
-[Just completed Task 2: Add verification function]
+[Just completed Phase 2: Verification and repair]
 
-You: Let me request code review before proceeding.
+You: Let me request code review before proceeding to the next phase.
 
-BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | awk '{print $1}')
+BASE_SHA=$(git log --oneline | grep "Phase 1" | head -1 | awk '{print $1}')
 HEAD_SHA=$(git rev-parse HEAD)
 
 [Dispatch superpowers:code-reviewer subagent]
   WHAT_WAS_IMPLEMENTED: Verification and repair functions for conversation index
-  PLAN_OR_REQUIREMENTS: Task 2 from <resolved-plan-path>
+  PLAN_OR_REQUIREMENTS: Phase 2 from <resolved-plan-path>
   BASE_SHA: a7981ec
   HEAD_SHA: 3df7661
   DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
@@ -73,18 +73,20 @@ HEAD_SHA=$(git rev-parse HEAD)
   Assessment: Ready to proceed
 
 You: [Fix progress indicators]
-[Continue to Task 3]
+[Continue to Phase 3]
 ```
 
 ## Integration with Workflows
 
 **Subagent-Driven Development:**
-- Review after EACH task
-- Catch issues before they compound
-- Fix before moving to next task
+- Review after EACH phase
+- First run phase spec compliance review
+- Then run this code quality review only after spec compliance passes
+- Catch issues before they compound across phases
+- Fix before moving to next phase
 
 **Executing Plans:**
-- Review after each batch (3 tasks)
+- Review after each phase or explicit checkpoint
 - Get feedback, apply, continue
 
 **Ad-Hoc Development:**

@@ -123,15 +123,15 @@ Start a new session in your chosen platform and ask for something that should tr
 
 2. **using-git-worktrees** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
 
-3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
+3. **writing-plans** - Activates with approved design. Breaks work into phases containing bite-sized sub-tasks. Every sub-task has exact file paths, complete code, verification steps.
 
-4. **subagent-driven-development**, **executing-plans**, or **do-it-yourself** - Activates with plan. The agent can dispatch fresh subagents per task with two-stage review, execute in batches with checkpoints, or guide a human step by step while the human does the implementation.
+4. **subagent-driven-development**, **executing-plans**, or **do-it-yourself** - Activates with plan. The agent can dispatch fresh subagents per sub-task with two-stage review at phase boundaries, execute phases with checkpoints, or guide a human step by step while the human does the implementation.
 
 5. **test-driven-development** - Activates during structured implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
 
-6. **requesting-code-review** - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
+6. **requesting-code-review** - Activates at phase checkpoints. Reviews against plan, reports issues by severity. Critical issues block progress.
 
-7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
+7. **finishing-a-development-branch** - Activates when phases complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
 
 **The agent should consider relevant skills before any task.** Lightweight skills can trigger automatically; heavyweight workflows should be offered or explicitly chosen, not forced onto every request.
 
@@ -149,14 +149,14 @@ Start a new session in your chosen platform and ask for something that should tr
 **Collaboration** 
 - **brainstorming** - Socratic design refinement
 - **writing-plans** - Detailed implementation plans
-- **executing-plans** - Batch execution with checkpoints
+- **executing-plans** - Phase execution with checkpoints
 - **do-it-yourself** - Guide a human through implementation one step at a time while they stay the primary implementer
 - **dispatching-parallel-agents** - Concurrent subagent workflows
 - **requesting-code-review** - Pre-review checklist
 - **receiving-code-review** - Responding to feedback
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
-- **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
+- **subagent-driven-development** - Fast iteration with two-stage review at phase boundaries (spec compliance, then code quality)
 
 **Meta**
 - **writing-skills** - Create new skills following best practices (includes testing methodology)

@@ -6,21 +6,21 @@ Use this template when dispatching a spec compliance reviewer subagent.
 
 ```
 Task tool (general-purpose):
-  description: "Review spec compliance for Task N"
+  description: "Review spec compliance for Phase N"
   prompt: |
-    You are reviewing whether an implementation matches its specification.
+    You are reviewing whether a completed phase matches its specification.
 
     ## What Was Requested
 
-    [FULL TEXT of task requirements]
+    [FULL TEXT of phase requirements, including all sub-tasks and acceptance criteria]
 
-    ## What Implementer Claims They Built
+    ## What Implementers Claim They Built
 
-    [From implementer's report]
+    [Reports from all sub-task implementers and any phase-fix subagents]
 
     ## CRITICAL: Do Not Trust the Report
 
-    The implementer finished suspiciously quickly. Their report may be incomplete,
+    The implementers may have finished suspiciously quickly. Their reports may be incomplete,
     inaccurate, or optimistic. You MUST verify everything independently.
 
     **DO NOT:**
@@ -36,7 +36,7 @@ Task tool (general-purpose):
 
     ## Your Job
 
-    Read the implementation code and verify:
+    Read the implementation code for the entire phase and verify:
 
     **Missing requirements:**
     - Did they implement everything that was requested?
