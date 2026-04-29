@@ -112,4 +112,16 @@ else
 fi
 
 echo ""
+echo "Test 9: execution docs require phase-level review gates instead of per-task review..."
+if grep -q 'Review gates happen at the end of each phase, not after every task/sub-task' "$WRITING_PLANS" && \
+   grep -q 'Review gates belong at the end of each phase, not after every task/sub-task' "$EXECUTING_PLANS" && \
+   grep -q 'Review after EACH phase, not after each task/sub-task' "$ROOT_DIR/skills/requesting-code-review/SKILL.md" && \
+   grep -q 'dispatch external reviewers only at the end of the phase, not after every task/sub-task' "$SDD"; then
+    echo "  [PASS] execution docs emphasize phase-level review gates"
+else
+    echo "  [FAIL] execution docs still allow per-task review spam"
+    exit 1
+fi
+
+echo ""
 echo "=== All plan workspace choice tests passed ==="

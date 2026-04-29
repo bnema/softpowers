@@ -9,7 +9,7 @@ Execute phased plans by dispatching fresh subagents for sub-tasks, with two-stag
 
 **Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history — you construct exactly what they need. This also preserves your own context for coordination work.
 
-**Core principle:** Fresh subagent per sub-task + two-stage review at phase boundaries (spec then quality) = high quality without review spam
+**Core principle:** Fresh subagent per sub-task + two-stage review at phase boundaries (spec then quality) = high quality without review spam. Track task completion as work progresses, but dispatch external reviewers only at the end of the phase, not after every task/sub-task.
 
 ## When to Use
 
@@ -35,6 +35,7 @@ digraph when_to_use {
 - Same session (no context switch)
 - Fresh subagent per sub-task (no context pollution)
 - Two-stage review after each phase: spec compliance first, then code quality
+- No reviewer dispatch after individual sub-tasks unless a sub-task is explicitly its own phase
 - Faster iteration with fewer reviewer invocations than per-task review
 
 ## The Process
@@ -277,7 +278,7 @@ Done!
 - Let implementer self-review replace actual review (both are needed)
 - **Start code quality review before spec compliance is ✅** (wrong order)
 - Move to the next phase while either phase review has open issues
-- Dispatch spec or code quality reviewers after every sub-task unless the plan explicitly defines each sub-task as its own phase
+- Dispatch spec or code quality reviewers after every task/sub-task unless the plan explicitly defines that task as its own phase
 
 **If subagent asks questions:**
 - Answer clearly and completely

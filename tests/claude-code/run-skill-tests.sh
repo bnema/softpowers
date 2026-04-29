@@ -15,13 +15,6 @@ echo "Test time: $(date)"
 echo "Claude version: $(claude --version 2>/dev/null || echo 'not found')"
 echo ""
 
-# Check if Claude Code is available
-if ! command -v claude &> /dev/null; then
-    echo "ERROR: Claude Code CLI not found"
-    echo "Install Claude Code first: https://code.claude.com"
-    exit 1
-fi
-
 # Parse command line arguments
 VERBOSE=false
 SPECIFIC_TEST=""
@@ -59,7 +52,7 @@ while [[ $# -gt 0 ]]; do
             echo "Tests:"
             echo "  test-workflow-choice.sh              Check workflow selection / direct-vs-full-flow guidance"
             echo "  test-plan-workspace-choice.sh        Check plan execution workspace choices"
-            echo "  test-subagent-driven-development.sh  Test skill loading and requirements"
+            echo "  test-subagent-driven-development.sh  Test skill loading and requirements (disabled by default; requires Claude Code headless access)"
             echo ""
             echo "Integration Tests (use --integration):"
             echo "  test-subagent-driven-development-integration.sh  Full workflow execution"
@@ -77,7 +70,8 @@ done
 tests=(
     "test-workflow-choice.sh"
     "test-plan-workspace-choice.sh"
-    "test-subagent-driven-development.sh"
+    # Disabled: requires a working Claude Code org/session in headless mode.
+    # "test-subagent-driven-development.sh"
 )
 
 # Integration tests (slow, full execution)
@@ -93,6 +87,21 @@ fi
 # Filter to specific test if requested
 if [ -n "$SPECIFIC_TEST" ]; then
     tests=("$SPECIFIC_TEST")
+fi
+
+requires_claude=false
+for test in "${tests[@]}"; do
+    case "$test" in
+        test-subagent-driven-development.sh|test-subagent-driven-development-integration.sh)
+            requires_claude=true
+            ;;
+    esac
+done
+
+if [ "$requires_claude" = true ] && ! command -v claude &> /dev/null; then
+    echo "ERROR: Claude Code CLI not found"
+    echo "Install Claude Code first: https://code.claude.com"
+    exit 1
 fi
 
 # Track results

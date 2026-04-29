@@ -8,7 +8,7 @@
 ## Installation
 
 ```bash
-pi install https://github.com/obra/superpowers
+pi install https://github.com/bnema/superpowers
 ```
 
 Pi clones the repo and discovers all skills from the `skills/` directory automatically.
@@ -41,7 +41,7 @@ If installed from GitHub:
 
 ```bash
 mkdir -p ~/.pi/agent/agents
-ln -sf ~/.pi/agent/git/github.com/obra/superpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
+ln -sf ~/.pi/agent/git/github.com/bnema/superpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
 ```
 
 If installed from a local path:
@@ -62,7 +62,7 @@ ls ~/.pi/agent/agents/code-reviewer.md
 Update superpowers:
 
 ```bash
-pi update https://github.com/obra/superpowers
+pi update https://github.com/bnema/superpowers
 ```
 
 Or pull manually if using a local path:
@@ -74,7 +74,7 @@ cd /path/to/superpowers && git pull
 ## Uninstalling
 
 ```bash
-pi remove https://github.com/obra/superpowers
+pi remove https://github.com/bnema/superpowers
 ```
 
 Or, if installed from a local path:

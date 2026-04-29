@@ -12,7 +12,7 @@ Install these profiles into your Pi user agents directory:
 
 ```bash
 mkdir -p ~/.pi/agent/agents
-ln -sf ~/.pi/agent/git/github.com/obra/superpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
+ln -sf ~/.pi/agent/git/github.com/bnema/superpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
 ```
 
 If Superpowers is installed from a local path, replace the source path accordingly.

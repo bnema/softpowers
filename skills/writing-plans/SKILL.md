@@ -30,7 +30,7 @@ Before defining phases and sub-tasks, map out which files will be created or mod
 - Files that change together should live together. Split by responsibility, not by technical layer.
 - In existing codebases, follow established patterns. If the codebase uses large files, don't unilaterally restructure - but if a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
 
-This structure informs the phase decomposition. Each phase should produce a coherent, reviewable outcome; each sub-task should be small enough to execute independently.
+This structure informs the phase decomposition. Each phase should produce a coherent, reviewable outcome; each sub-task should be small enough to track as a concrete checklist item. Reviews are phase gates: checklist tasks are marked complete as work progresses, and external spec/code reviews happen after the whole phase is complete.
 
 ## Bite-Sized Sub-task Granularity
 
@@ -128,6 +128,7 @@ Every sub-task and step must contain the actual content an engineer needs. These
 - Exact commands with expected output
 - DRY, YAGNI, TDD, frequent commits
 - Phase boundaries should be meaningful review checkpoints, not arbitrary batches
+- Review gates happen at the end of each phase, not after every task/sub-task
 
 ## Self-Review
 

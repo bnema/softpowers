@@ -7,7 +7,7 @@ description: Use when you have a written implementation plan to execute in a sep
 
 ## Overview
 
-Load plan, review critically, execute phases and their sub-tasks, report when complete.
+Load plan, review critically, execute phases and their sub-tasks, report when complete. Review gates belong at the end of each phase, not after every task/sub-task.
 
 **Announce at start:** "I'm using the executing-plans skill to implement this plan."
 
@@ -43,7 +43,7 @@ For each phase:
 1. Mark the phase as in_progress
 2. Follow each sub-task exactly (plan has bite-sized sub-tasks)
 3. Run verifications as specified
-4. At the phase checkpoint, run the two-stage review: spec compliance first, then code quality only after spec compliance passes
+4. At the phase checkpoint, run the two-stage review: spec compliance first, then code quality only after spec compliance passes. Do not dispatch reviewers after individual sub-tasks unless the plan defines that sub-task as its own phase.
 5. Fix review findings and re-review until both phase reviews pass
 6. Mark the phase as completed
 
@@ -76,6 +76,7 @@ After all phases complete and verified:
 - Review plan critically first
 - Follow plan steps exactly
 - Don't skip verifications
+- Run review gates at phase boundaries, not after every task/sub-task
 - Reference skills when plan says to
 - Stop when blocked, don't guess
 - Never start implementation on the default branch without explicit user consent

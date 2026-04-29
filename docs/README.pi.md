@@ -1,13 +1,13 @@
 # Superpowers for Pi
 
-> **Experimental.** Pi support is new. Report issues at <https://github.com/obra/superpowers/issues>.
+> **Experimental.** Pi support is new. Report issues at <https://github.com/bnema/superpowers/issues>.
 
 Complete guide for using Superpowers with [pi](https://github.com/mariozechner/pi-coding-agent).
 
 ## Quick Install
 
 ```bash
-pi install https://github.com/obra/superpowers
+pi install https://github.com/bnema/superpowers
 ```
 
 Pi clones the repository and discovers all skills from the `skills/` directory automatically. No plugins, hooks, or bootstrap scripts required for skill loading. For subagent-based workflows, install the bundled agent profile from `.pi/agents/`.
@@ -22,10 +22,10 @@ Pi clones the repository and discovers all skills from the `skills/` directory a
 ### Option A: Git Package (recommended)
 
 ```bash
-pi install https://github.com/obra/superpowers
+pi install https://github.com/bnema/superpowers
 ```
 
-This clones to `~/.pi/agent/git/github.com/obra/superpowers/` and adds the package to `~/.pi/agent/settings.json`.
+This clones to `~/.pi/agent/git/github.com/bnema/superpowers/` and adds the package to `~/.pi/agent/settings.json`.
 
 ### Option B: Local Path
 
@@ -69,7 +69,7 @@ If installed from GitHub:
 
 ```bash
 mkdir -p ~/.pi/agent/agents
-ln -sf ~/.pi/agent/git/github.com/obra/superpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
+ln -sf ~/.pi/agent/git/github.com/bnema/superpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
 ```
 
 If installed from a local path:
@@ -187,7 +187,7 @@ pi update
 `pi update` updates all installed packages. To update only Superpowers:
 
 ```bash
-pi update https://github.com/obra/superpowers
+pi update https://github.com/bnema/superpowers
 ```
 
 For local path installs, pull manually:
@@ -199,7 +199,7 @@ cd /path/to/superpowers && git pull
 ## Uninstalling
 
 ```bash
-pi remove https://github.com/obra/superpowers
+pi remove https://github.com/bnema/superpowers
 ```
 
 For symlink installs:
@@ -213,7 +213,7 @@ rm ~/.pi/agent/skills/superpowers
 ### Skills not found
 
 1. Check package is installed: `pi list`
-2. Check skills exist: `ls ~/.pi/agent/git/github.com/obra/superpowers/skills/`
+2. Check skills exist: `ls ~/.pi/agent/git/github.com/bnema/superpowers/skills/`
 3. Verify each skill has a `SKILL.md` with valid frontmatter
 
 ### Skill not triggering automatically
@@ -234,6 +234,6 @@ If the agent attempts a Claude Code tool that doesn't exist in pi, remind it of 
 
 ## Getting Help
 
-- Report issues: <https://github.com/obra/superpowers/issues>
-- Main documentation: <https://github.com/obra/superpowers>
+- Report issues: <https://github.com/bnema/superpowers/issues>
+- Main documentation: <https://github.com/bnema/superpowers>
 - Pi documentation: <https://github.com/mariozechner/pi-coding-agent>

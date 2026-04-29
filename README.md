@@ -10,9 +10,26 @@ If you choose the full flow, it teases a spec out of the conversation, then show
 
 After you've signed off on the design, your agent puts together an implementation plan that's clear enough for an enthusiastic junior engineer with poor taste, no judgement, no project context, and an aversion to testing to follow. It emphasizes true red/green TDD, YAGNI (You Aren't Gonna Need It), and DRY.
 
-Next up, once you say "go", it can launch a *subagent-driven-development* process, having agents work through each engineering task, inspecting and reviewing their work, and continuing forward. It's not uncommon for Claude to be able to work autonomously for a couple hours at a time without deviating from the plan you put together.
+Next up, once you say "go", it can launch a *subagent-driven-development* process, having agents work through each engineering task and running reviews at phase boundaries. Reviews are end-of-phase gates, not something to spam after every task. It's not uncommon for Claude to be able to work autonomously for a couple hours at a time without deviating from the plan you put together.
 
 There's a bunch more to it, but that's the core of the system. The heavy workflows are available when you want them, instead of being forced onto every tiny request.
+
+## About this fork
+
+This fork carries bnema-specific experiments on top of `obra/superpowers`. Use `upstream`/`obra` for the canonical project and `origin`/`bnema` for these custom changes.
+
+Notable differences in this fork:
+
+- OpenCode and Pi install/update docs point at `github.com/bnema/superpowers`.
+- OpenCode has a local branch review command and browser handoff flow.
+- Pi support is experimental, including `.pi/agents/` setup for subagent-based workflows.
+- Heavy Superpowers workflows are opt-in: small or clearly scoped tasks can stay in direct execution.
+- Plan execution can use phase-based review checkpoints and a `do-it-yourself` mode where the human stays the primary implementer.
+- Some local workflows understand `OBSIDIAN_PROJECTS_PATH` for spec/document discovery.
+- The local branch review server is consumed through the `local-pr-review-server` package from `bnema/local-pr-review-server`.
+- The fast Claude Code skill test runner skips `test-subagent-driven-development.sh` in this fork because it requires a working Claude Code org/session in headless mode.
+
+These changes are fork-specific unless and until they are merged upstream.
 
 
 ## Sponsorship
@@ -104,7 +121,7 @@ gemini extensions update superpowers
 ### Pi (experimental)
 
 ```bash
-pi install https://github.com/obra/superpowers
+pi install https://github.com/bnema/superpowers
 ```
 
 Pi discovers skills from the `skills/` directory automatically. No plugins or bootstrap required for skills. For subagent-based workflows, install the bundled Pi agent profile from `.pi/agents/` (see docs).
@@ -125,7 +142,7 @@ Start a new session in your chosen platform and ask for something that should tr
 
 3. **writing-plans** - Activates with approved design. Breaks work into phases containing bite-sized sub-tasks. Every sub-task has exact file paths, complete code, verification steps.
 
-4. **subagent-driven-development**, **executing-plans**, or **do-it-yourself** - Activates with plan. The agent can dispatch fresh subagents per sub-task with two-stage review at phase boundaries, execute phases with checkpoints, or guide a human step by step while the human does the implementation.
+4. **subagent-driven-development**, **executing-plans**, or **do-it-yourself** - Activates with plan. The agent can dispatch fresh subagents per sub-task with two-stage review at the end of each phase, execute phases with checkpoints, or guide a human step by step while the human does the implementation. Reviews happen after phases, not after every task.
 
 5. **test-driven-development** - Activates during structured implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
 

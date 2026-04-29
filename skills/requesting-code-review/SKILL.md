@@ -7,14 +7,16 @@ description: Use when completing phases, implementing major features, or before 
 
 Dispatch superpowers:code-reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation — never your session's history. This keeps the reviewer focused on the work product, not your thought process, and preserves your own context for continued work.
 
-**Core principle:** Review at meaningful checkpoints before issues cascade.
+**Core principle:** Review at meaningful checkpoints before issues cascade. In phased plan execution, that means end-of-phase review gates, not reviewer dispatch after every task/sub-task.
 
 ## When to Request Review
 
 **Mandatory:**
-- At the end of each phase in subagent-driven development
+- At the end of each phase in subagent-driven development and executing-plans workflows
 - After completing major feature
 - Before merge to main
+
+Do not request external code review after every individual task/sub-task unless that task is explicitly the whole phase.
 
 **Optional but valuable:**
 - When stuck (fresh perspective)
@@ -79,14 +81,14 @@ You: [Fix progress indicators]
 ## Integration with Workflows
 
 **Subagent-Driven Development:**
-- Review after EACH phase
+- Review after EACH phase, not after each task/sub-task
 - First run phase spec compliance review
 - Then run this code quality review only after spec compliance passes
 - Catch issues before they compound across phases
 - Fix before moving to next phase
 
 **Executing Plans:**
-- Review after each phase or explicit checkpoint
+- Review after each phase checkpoint, not after every task/sub-task
 - Get feedback, apply, continue
 
 **Ad-Hoc Development:**
