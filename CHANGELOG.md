@@ -10,4 +10,4 @@
 
 ### Changed
 
-- **Execution handoff**: Restore user choice between subagent-driven-development and executing-plans after plan writing. Subagent-driven is recommended but no longer mandatory. (Reverts `5e51c3e`)
+- **Execution handoff**: Plan writing now recommends Softassist for human-led implementation, with delegated implementation available only when explicitly chosen.

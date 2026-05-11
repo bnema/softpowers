@@ -30,10 +30,10 @@ run_integration_test() {
     TEST_PROJECT=$(create_test_project)
     echo "Test project: $TEST_PROJECT"
 
-    if [ "$mode" = "obsidian" ]; then
-        export OBSIDIAN_PROJECTS_PATH="$TEST_PROJECT/obsidian-projects"
+    if [ "$mode" = "projects-docs" ]; then
+        export PROJECTS_DOCS_PATH="$TEST_PROJECT/projects-docs"
     else
-        unset OBSIDIAN_PROJECTS_PATH || true
+        unset PROJECTS_DOCS_PATH || true
     fi
 
     # Set up minimal Node.js project
@@ -148,7 +148,7 @@ EOF
 
 # Note: We use a longer timeout since this is integration testing
 # Use --allowed-tools to enable tool usage in headless mode
-# IMPORTANT: Run from superpowers directory so local dev skills are available
+# IMPORTANT: Run from softpowers directory so local dev skills are available
     PROMPT="Change to directory $TEST_PROJECT and then execute the implementation plan at $plan_path using the subagent-driven-development skill.
 
 IMPORTANT: Follow the skill exactly. I will be verifying that you:
@@ -210,7 +210,7 @@ Begin now. Execute the plan."
 
     # Test 1: Skill was invoked
     echo "Test 1: Skill tool invoked..."
-    if grep -q '"name":"Skill".*"skill":"superpowers:subagent-driven-development"' "$SESSION_FILE"; then
+    if grep -q '"name":"Skill".*"skill":"softpowers:subagent-driven-development"' "$SESSION_FILE"; then
         echo "  [PASS] subagent-driven-development skill was invoked"
     else
         echo "  [FAIL] Skill was not invoked"
@@ -341,4 +341,4 @@ Begin now. Execute the plan."
 }
 
 run_integration_test "fallback"
-run_integration_test "obsidian"
+run_integration_test "projects-docs"

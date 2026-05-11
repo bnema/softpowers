@@ -7,7 +7,9 @@ description: Use when executing phased implementation plans with sub-tasks in th
 
 Execute phased plans by dispatching fresh subagents for sub-tasks, with two-stage review at the end of each phase: spec compliance review first, then code quality review.
 
-**Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history — you construct exactly what they need. This also preserves your own context for coordination work.
+This is Softpowers' delegated implementation mode. Use it only when the human explicitly chooses to have agents implement the plan. For the default human-led path, use `softassist` instead.
+
+**Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history. You construct exactly what they need. This also preserves your own context for coordination work.
 
 **Core principle:** Fresh subagent per sub-task + two-stage review at phase boundaries (spec then quality) = high quality without review spam. Track task completion as work progresses, but dispatch external reviewers only at the end of the phase, not after every task/sub-task.
 
@@ -66,7 +68,7 @@ digraph process {
     "Read plan, extract phases and sub-tasks with full text, note context, create TodoWrite" [shape=box];
     "More phases remain?" [shape=diamond];
     "Dispatch final code reviewer subagent for entire implementation" [shape=box];
-    "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
+    "Use softpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Establish workspace mode" -> "Read plan, extract phases and sub-tasks with full text, note context, create TodoWrite";
     "Read plan, extract phases and sub-tasks with full text, note context, create TodoWrite" -> "Start next phase";
@@ -90,7 +92,7 @@ digraph process {
     "Mark phase complete in TodoWrite" -> "More phases remain?";
     "More phases remain?" -> "Start next phase" [label="yes"];
     "More phases remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use superpowers:finishing-a-development-branch";
+    "Dispatch final code reviewer subagent for entire implementation" -> "Use softpowers:finishing-a-development-branch";
 }
 ```
 
@@ -104,7 +106,7 @@ Before dispatching any implementer subagent:
 4. Otherwise ask:
    - On the default branch: `New worktree` or `New branch here`
    - On any other branch: `Continue here`, `New worktree`, or `New branch here`
-5. For `New worktree`: use `superpowers:using-git-worktrees`
+5. For `New worktree`: use `softpowers:using-git-worktrees`
 6. For `New branch here`:
     - Ask for the new branch name before creating it
     - Check whether the working tree is dirty
@@ -155,7 +157,7 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 ## Example Workflow
 
-`<resolved-plan-path>` means the actual plan location after resolving `$OBSIDIAN_PROJECTS_PATH`, if configured.
+`<resolved-plan-path>` means the actual plan location after resolving `$PROJECTS_DOCS_PATH`, if configured.
 
 ```
 You: I'm using Subagent-Driven Development to execute this plan.
@@ -173,7 +175,7 @@ Sub-task 1.1: Hook installation script
 
 Implementer: "Before I begin - should the hook be installed at user or system level?"
 
-You: "User level (~/.config/superpowers/hooks/)"
+You: "User level (~/.config/softpowers/hooks/)"
 
 Implementer: "Got it. Implementing now..."
 [Later] Implementer:
@@ -298,13 +300,13 @@ Done!
 ## Integration
 
 **Required workflow skills:**
-- **superpowers:using-git-worktrees** - REQUIRED only when the chosen workspace mode is `New worktree`
-- **superpowers:writing-plans** - Creates the plan this skill executes
-- **superpowers:requesting-code-review** - Code review template for reviewer subagents
-- **superpowers:finishing-a-development-branch** - Complete development after all phases
+- **softpowers:using-git-worktrees** - REQUIRED only when the chosen workspace mode is `New worktree`
+- **softpowers:writing-plans** - Creates the plan this skill executes
+- **softpowers:requesting-code-review** - Code review template for reviewer subagents
+- **softpowers:finishing-a-development-branch** - Complete development after all phases
 
 **Subagents should use:**
-- **superpowers:test-driven-development** - Subagents follow TDD for each implementation sub-task
+- **softpowers:test-driven-development** - Subagents follow TDD for each implementation sub-task
 
 **Alternative workflow:**
-- **superpowers:executing-plans** - Use for parallel session instead of same-session execution
+- **softpowers:executing-plans** - Use for parallel session instead of same-session execution

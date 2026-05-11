@@ -1,6 +1,6 @@
 {
-  "name": "superpowers",
-  "description": "Core skills library: TDD, debugging, collaboration patterns, and proven techniques",
+  "name": "softpowers",
+  "description": "Human-led development workflow: co-design, planning, TDD, review, and verification with agent assistance",
   "version": "5.0.7",
   "contextFileName": "GEMINI.md"
 }

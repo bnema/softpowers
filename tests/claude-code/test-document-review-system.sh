@@ -25,10 +25,10 @@ run_review_test() {
     TEST_PROJECT=$(create_test_project)
     echo "Test project: $TEST_PROJECT"
 
-    if [ "$mode" = "obsidian" ]; then
-        export OBSIDIAN_PROJECTS_PATH="$TEST_PROJECT/obsidian-projects"
+    if [ "$mode" = "projects-docs" ]; then
+        export PROJECTS_DOCS_PATH="$TEST_PROJECT/projects-docs"
     else
-        unset OBSIDIAN_PROJECTS_PATH || true
+        unset PROJECTS_DOCS_PATH || true
     fi
 
     cd "$TEST_PROJECT"
@@ -195,4 +195,4 @@ Output your review in the format specified in the template."
 }
 
 run_review_test "fallback"
-run_review_test "obsidian"
+run_review_test "projects-docs"

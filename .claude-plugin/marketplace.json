@@ -1,19 +1,19 @@
 {
-  "name": "superpowers-dev",
-  "description": "Development marketplace for Superpowers core skills library",
+  "name": "softpowers-dev",
+  "description": "Development marketplace for Softpowers human-led agent assistance skills",
   "owner": {
-    "name": "Jesse Vincent",
-    "email": "jesse@fsck.com"
+    "name": "Brice Nema",
+    "email": ""
   },
   "plugins": [
     {
-      "name": "superpowers",
-      "description": "Core skills library for Claude Code: TDD, debugging, collaboration patterns, and proven techniques",
+      "name": "softpowers",
+      "description": "Human-led development workflow for Claude Code: co-design, planning, TDD, review, and verification with agent assistance",
       "version": "5.0.7",
       "source": "./",
       "author": {
-        "name": "Jesse Vincent",
-        "email": "jesse@fsck.com"
+        "name": "Brice Nema",
+        "email": ""
       }
     }
   ]

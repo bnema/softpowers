@@ -7,7 +7,7 @@ description: Use when the user asks to start, stop, reopen, or control the local
 
 Local branch review is the local equivalent of reviewing a GitHub pull request. The user reviews the branch diff in the browser, submits feedback, and that review is injected back into the active session so the agent can respond to it immediately.
 
-During implementation workflows, Superpowers also auto-starts the reviewer so feedback can arrive while the work is still in progress.
+During implementation workflows, Softpowers also auto-starts the reviewer so feedback can arrive while the work is still in progress.
 
 ## When to Use
 
@@ -26,11 +26,11 @@ Use the wrapper scripts that live beside this skill file:
 - `./review-start.cjs`
 - `./review-stop.cjs`
 
-Resolve those paths relative to this skill directory, not relative to the repo you are reviewing and not relative to your current working directory. In OpenCode git-plugin installs, that usually means a path inside the Superpowers package cache under `~/.cache/opencode/packages/.../skills/local-branch-review/`.
+Resolve those paths relative to this skill directory, not relative to the repo you are reviewing and not relative to your current working directory. In OpenCode git-plugin installs, that usually means a path inside the Softpowers package cache under `~/.cache/opencode/packages/.../skills/local-branch-review/`.
 
 Do not assume the launcher lives at a repo-local path like `.opencode/plugins/branch-review/...`, and do not infer it from a temp attachment path.
 
-The launcher uses the standalone `local-pr-review-server` package installed with Superpowers. Superpowers no longer ships the browser-review server runtime inside this repo.
+The launcher uses the standalone `local-pr-review-server` package installed with Softpowers. Softpowers no longer ships the browser-review server runtime inside this repo.
 
 ## Commands
 

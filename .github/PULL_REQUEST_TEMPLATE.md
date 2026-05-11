@@ -13,10 +13,10 @@ of human involvement will be closed without review.
      failed? What was the user experience that motivated this? -->
 
 ## What does this PR change?
-<!-- 1-3 sentences. What, not why — the "why" belongs above. -->
+<!-- 1-3 sentences. What, not why: the "why" belongs above. -->
 
 ## Is this change appropriate for the core library?
-<!-- Superpowers core contains general-purpose skills and infrastructure
+<!-- Softpowers core contains general-purpose skills and infrastructure
      that benefit all users. Ask yourself:
 
      - Would this be useful to someone working on a completely different
@@ -25,13 +25,13 @@ of human involvement will be closed without review.
      - Does this integrate or promote a third-party service?
 
      If your change is a new skill for a specific domain, workflow tool,
-     or third-party integration, it belongs in its own plugin — not here.
+     or third-party integration, it belongs in its own plugin: not here.
      See the plugin development docs for how to publish it separately. -->
 
 ## What alternatives did you consider?
 <!-- What other approaches did you try or evaluate before landing on this
      one? Why were they worse? If you didn't consider alternatives, say so
-     — but know that's a red flag. -->
+    : but know that's a red flag. -->
 
 ## Does this PR contain multiple unrelated changes?
 <!-- If yes: stop. Split it into separate PRs. Bundled PRs will be closed.
@@ -61,7 +61,7 @@ of human involvement will be closed without review.
 
 ## Rigor
 
-- [ ] If this is a skills change: I used `superpowers:writing-skills` and
+- [ ] If this is a skills change: I used `softpowers:writing-skills` and
       completed adversarial pressure testing (paste results below)
 - [ ] This change was tested adversarially, not just on the happy path
 - [ ] I did not modify carefully-tuned content (Red Flags table,
@@ -69,7 +69,7 @@ of human involvement will be closed without review.
       showing the change is an improvement
 
 <!-- If you changed wording in skills that shape agent behavior, show your
-     eval methodology and results. These are not prose — they are code. -->
+     eval methodology and results. These are not prose: they are code. -->
 
 ## Human review
 - [ ] A human has reviewed the COMPLETE proposed diff before submission

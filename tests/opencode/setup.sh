@@ -14,39 +14,39 @@ export XDG_CONFIG_HOME="$TEST_HOME/.config"
 export OPENCODE_CONFIG_DIR="$TEST_HOME/.config/opencode"
 
 # Standard install layout:
-#   $OPENCODE_CONFIG_DIR/superpowers/             ← package root
-#   $OPENCODE_CONFIG_DIR/superpowers/skills/      ← skills dir (../../skills from plugin)
-#   $OPENCODE_CONFIG_DIR/superpowers/.opencode/plugins/superpowers.js ← plugin file
-#   $OPENCODE_CONFIG_DIR/plugins/superpowers.js   ← symlink OpenCode reads
+#   $OPENCODE_CONFIG_DIR/softpowers/             ← package root
+#   $OPENCODE_CONFIG_DIR/softpowers/skills/      ← skills dir (../../skills from plugin)
+#   $OPENCODE_CONFIG_DIR/softpowers/.opencode/plugins/softpowers.js ← plugin file
+#   $OPENCODE_CONFIG_DIR/plugins/softpowers.js   ← symlink OpenCode reads
 
-SUPERPOWERS_DIR="$OPENCODE_CONFIG_DIR/superpowers"
-SUPERPOWERS_SKILLS_DIR="$SUPERPOWERS_DIR/skills"
-SUPERPOWERS_PLUGIN_FILE="$SUPERPOWERS_DIR/.opencode/plugins/superpowers.js"
-SUPERPOWERS_TUI_PLUGIN_FILE="$SUPERPOWERS_DIR/.opencode/plugins/superpowers-tui.tsx"
-SUPERPOWERS_BRANCH_REVIEW_DIR="$SUPERPOWERS_DIR/.opencode/plugins/branch-review"
-SUPERPOWERS_NODE_MODULES_DIR="$SUPERPOWERS_DIR/node_modules"
+SOFTPOWERS_DIR="$OPENCODE_CONFIG_DIR/softpowers"
+SOFTPOWERS_SKILLS_DIR="$SOFTPOWERS_DIR/skills"
+SOFTPOWERS_PLUGIN_FILE="$SOFTPOWERS_DIR/.opencode/plugins/softpowers.js"
+SOFTPOWERS_TUI_PLUGIN_FILE="$SOFTPOWERS_DIR/.opencode/plugins/softpowers-tui.tsx"
+SOFTPOWERS_BRANCH_REVIEW_DIR="$SOFTPOWERS_DIR/.opencode/plugins/branch-review"
+SOFTPOWERS_NODE_MODULES_DIR="$SOFTPOWERS_DIR/node_modules"
 
 # Install skills
-mkdir -p "$SUPERPOWERS_DIR"
-cp -r "$REPO_ROOT/skills" "$SUPERPOWERS_DIR/"
+mkdir -p "$SOFTPOWERS_DIR"
+cp -r "$REPO_ROOT/skills" "$SOFTPOWERS_DIR/"
 
 # Install plugin
-mkdir -p "$(dirname "$SUPERPOWERS_PLUGIN_FILE")"
-cp "$REPO_ROOT/.opencode/plugins/superpowers.js" "$SUPERPOWERS_PLUGIN_FILE"
-cp "$REPO_ROOT/.opencode/plugins/superpowers-tui.tsx" "$SUPERPOWERS_TUI_PLUGIN_FILE"
-cp -R "$REPO_ROOT/.opencode/plugins/branch-review" "$SUPERPOWERS_DIR/.opencode/plugins/"
-mkdir -p "$SUPERPOWERS_NODE_MODULES_DIR"
-cp -R "$REPO_ROOT/node_modules/local-pr-review-server" "$SUPERPOWERS_NODE_MODULES_DIR/"
+mkdir -p "$(dirname "$SOFTPOWERS_PLUGIN_FILE")"
+cp "$REPO_ROOT/.opencode/plugins/softpowers.js" "$SOFTPOWERS_PLUGIN_FILE"
+cp "$REPO_ROOT/.opencode/plugins/softpowers-tui.tsx" "$SOFTPOWERS_TUI_PLUGIN_FILE"
+cp -R "$REPO_ROOT/.opencode/plugins/branch-review" "$SOFTPOWERS_DIR/.opencode/plugins/"
+mkdir -p "$SOFTPOWERS_NODE_MODULES_DIR"
+cp -R "$REPO_ROOT/node_modules/local-pr-review-server" "$SOFTPOWERS_NODE_MODULES_DIR/"
 
 # Register plugin via symlink (what OpenCode actually reads)
 mkdir -p "$OPENCODE_CONFIG_DIR/plugins"
-ln -sf "$SUPERPOWERS_PLUGIN_FILE" "$OPENCODE_CONFIG_DIR/plugins/superpowers.js"
-ln -sf "$SUPERPOWERS_TUI_PLUGIN_FILE" "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx"
+ln -sf "$SOFTPOWERS_PLUGIN_FILE" "$OPENCODE_CONFIG_DIR/plugins/softpowers.js"
+ln -sf "$SOFTPOWERS_TUI_PLUGIN_FILE" "$OPENCODE_CONFIG_DIR/plugins/softpowers-tui.tsx"
 
 cat > "$OPENCODE_CONFIG_DIR/tui.json" <<'EOF'
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": [["./plugins/superpowers-tui.tsx", {}]]
+  "plugin": [["./plugins/softpowers-tui.tsx", {}]]
 }
 EOF
 
@@ -82,14 +82,14 @@ EOF
 
 echo "Setup complete: $TEST_HOME"
 echo "OPENCODE_CONFIG_DIR:  $OPENCODE_CONFIG_DIR"
-echo "Superpowers dir:      $SUPERPOWERS_DIR"
-echo "Skills dir:           $SUPERPOWERS_SKILLS_DIR"
-echo "Plugin file:          $SUPERPOWERS_PLUGIN_FILE"
-echo "TUI plugin file:      $SUPERPOWERS_TUI_PLUGIN_FILE"
-echo "Branch review dir:    $SUPERPOWERS_BRANCH_REVIEW_DIR"
-echo "Node modules dir:     $SUPERPOWERS_NODE_MODULES_DIR"
-echo "Plugin registered at: $OPENCODE_CONFIG_DIR/plugins/superpowers.js"
-echo "TUI symlink at:       $OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx"
+echo "Softpowers dir:      $SOFTPOWERS_DIR"
+echo "Skills dir:           $SOFTPOWERS_SKILLS_DIR"
+echo "Plugin file:          $SOFTPOWERS_PLUGIN_FILE"
+echo "TUI plugin file:      $SOFTPOWERS_TUI_PLUGIN_FILE"
+echo "Branch review dir:    $SOFTPOWERS_BRANCH_REVIEW_DIR"
+echo "Node modules dir:     $SOFTPOWERS_NODE_MODULES_DIR"
+echo "Plugin registered at: $OPENCODE_CONFIG_DIR/plugins/softpowers.js"
+echo "TUI symlink at:       $OPENCODE_CONFIG_DIR/plugins/softpowers-tui.tsx"
 echo "Test project at:      $TEST_HOME/test-project"
 
 # Helper function for cleanup (call from tests or trap)
@@ -102,8 +102,8 @@ cleanup_test_env() {
 # Export for use in tests
 export -f cleanup_test_env
 export REPO_ROOT
-export SUPERPOWERS_DIR
-export SUPERPOWERS_SKILLS_DIR
-export SUPERPOWERS_PLUGIN_FILE
-export SUPERPOWERS_TUI_PLUGIN_FILE
-export SUPERPOWERS_NODE_MODULES_DIR
+export SOFTPOWERS_DIR
+export SOFTPOWERS_SKILLS_DIR
+export SOFTPOWERS_PLUGIN_FILE
+export SOFTPOWERS_TUI_PLUGIN_FILE
+export SOFTPOWERS_NODE_MODULES_DIR

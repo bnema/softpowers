@@ -1,6 +1,6 @@
 # Codex App Compatibility Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use softpowers:subagent-driven-development (recommended) or softpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make `using-git-worktrees`, `finishing-a-development-branch`, and related skills work in the Codex App's sandboxed worktree environment without breaking existing behavior.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Git, Markdown (skill files are instruction documents, not executable code)
 
-**Spec:** `docs/superpowers/specs/2026-03-23-codex-app-compatibility-design.md`
+**Spec:** `docs/softpowers/specs/2026-03-23-codex-app-compatibility-design.md`
 
 ---
 
@@ -20,7 +20,7 @@
 | `skills/finishing-a-development-branch/SKILL.md` | Branch finishing workflow | Add Step 1.5 detection + cleanup guard |
 | `skills/subagent-driven-development/SKILL.md` | Plan execution with subagents | Update Integration description |
 | `skills/executing-plans/SKILL.md` | Plan execution inline | Update Integration description |
-| `skills/using-superpowers/references/codex-tools.md` | Codex platform reference | Add detection + finishing docs |
+| `skills/using-softpowers/references/codex-tools.md` | Codex platform reference | Add detection + finishing docs |
 
 ---
 
@@ -60,7 +60,7 @@ After reporting, STOP. Do not continue to Directory Selection or Creation Steps.
 
 **If `GIT_DIR` equals `GIT_COMMON`:** Proceed with the full worktree creation flow below.
 
-**Sandbox fallback:** If you proceed to Creation Steps but `git worktree add -b` fails with a permission error (e.g., "Operation not permitted"), treat this as a late-detected restricted environment. Fall back to the behavior above — run setup and baseline tests in the current directory, report accordingly, and STOP.
+**Sandbox fallback:** If you proceed to Creation Steps but `git worktree add -b` fails with a permission error (e.g., "Operation not permitted"), treat this as a late-detected restricted environment. Fall back to the behavior above: run setup and baseline tests in the current directory, report accordingly, and STOP.
 ```
 
 - [ ] **Step 3: Verify the insertion**
@@ -142,7 +142,7 @@ GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
 BRANCH=$(git branch --show-current)
 ```
 
-**Path A — `GIT_DIR` differs from `GIT_COMMON` AND `BRANCH` is empty (externally managed worktree, detached HEAD):**
+**Path A: `GIT_DIR` differs from `GIT_COMMON` AND `BRANCH` is empty (externally managed worktree, detached HEAD):**
 
 First, ensure all work is staged and committed (`git add` + `git commit`).
 
@@ -159,8 +159,8 @@ I cannot create branches, push, or open PRs from here.
 they may be lost when this workspace is cleaned up.
 
 If your host application provides these controls:
-- "Create branch" — to name a branch, then commit/push/PR
-- "Hand off to local" — to move changes to your local checkout
+- "Create branch": to name a branch, then commit/push/PR
+- "Hand off to local": to move changes to your local checkout
 
 Suggested branch name: <ticket-id/short-description>
 Suggested commit message: <summary-of-work>
@@ -168,13 +168,13 @@ Suggested commit message: <summary-of-work>
 
 Branch name: use ticket ID if available (e.g., `pri-823/codex-compat`), otherwise slugify the first 5 words of the plan title, otherwise omit. Avoid sensitive content in branch names.
 
-Skip to Step 5 (cleanup is a no-op — see guard below).
+Skip to Step 5 (cleanup is a no-op: see guard below).
 
-**Path B — `GIT_DIR` differs from `GIT_COMMON` AND `BRANCH` exists (externally managed worktree, named branch):**
+**Path B: `GIT_DIR` differs from `GIT_COMMON` AND `BRANCH` exists (externally managed worktree, named branch):**
 
 Proceed to Step 2 and present the 4-option menu as normal.
 
-**Path C — `GIT_DIR` equals `GIT_COMMON` (normal environment):**
+**Path C: `GIT_DIR` equals `GIT_COMMON` (normal environment):**
 
 Proceed to Step 2 and present the 4-option menu as normal.
 ```
@@ -202,7 +202,7 @@ payload instead of 4-option menu. Includes commit SHA and data loss warning."
 ### Task 4: Add Step 5 cleanup guard to `finishing-a-development-branch`
 
 **Files:**
-- Modify: `skills/finishing-a-development-branch/SKILL.md` (Step 5: Cleanup Worktree — find by section heading, line numbers will have shifted after Task 3)
+- Modify: `skills/finishing-a-development-branch/SKILL.md` (Step 5: Cleanup Worktree: find by section heading, line numbers will have shifted after Task 3)
 
 - [ ] **Step 1: Read the current Step 5 section**
 
@@ -240,7 +240,7 @@ GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
 GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
 ```
 
-If `GIT_DIR` differs from `GIT_COMMON`: skip worktree removal — the host environment owns this workspace.
+If `GIT_DIR` differs from `GIT_COMMON`: skip worktree removal: the host environment owns this workspace.
 
 **Otherwise, for Options 1 and 4:**
 
@@ -289,22 +289,22 @@ Options 1 and 4 only, matching Quick Reference and Common Mistakes."
 
 Change line 268 from:
 ```
-- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **softpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
 ```
 To:
 ```
-- **superpowers:using-git-worktrees** - REQUIRED: Ensures isolated workspace (creates one or verifies existing)
+- **softpowers:using-git-worktrees** - REQUIRED: Ensures isolated workspace (creates one or verifies existing)
 ```
 
 - [ ] **Step 2: Update `executing-plans`**
 
 Change line 68 from:
 ```
-- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **softpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
 ```
 To:
 ```
-- **superpowers:using-git-worktrees** - REQUIRED: Ensures isolated workspace (creates one or verifies existing)
+- **softpowers:using-git-worktrees** - REQUIRED: Ensures isolated workspace (creates one or verifies existing)
 ```
 
 - [ ] **Step 3: Verify both files**
@@ -326,11 +326,11 @@ always creating one."
 ### Task 6: Add environment detection docs to `codex-tools.md`
 
 **Files:**
-- Modify: `skills/using-superpowers/references/codex-tools.md:25` (append at end)
+- Modify: `skills/using-softpowers/references/codex-tools.md:25` (append at end)
 
 - [ ] **Step 1: Read the current file**
 
-Read `skills/using-superpowers/references/codex-tools.md` in full. Confirm it ends at line 25-26 after the multi_agent section.
+Read `skills/using-softpowers/references/codex-tools.md` in full. Confirm it ends at line 25-26 after the multi_agent section.
 
 - [ ] **Step 2: Append two new sections**
 
@@ -361,8 +361,8 @@ When the sandbox blocks branch/push operations (detached HEAD in an
 externally managed worktree), the agent commits all work and informs
 the user to use the App's native controls:
 
-- **"Create branch"** — names the branch, then commit/push/PR via App UI
-- **"Hand off to local"** — transfers work to the user's local checkout
+- **"Create branch"**: names the branch, then commit/push/PR via App UI
+- **"Hand off to local"**: transfers work to the user's local checkout
 
 The agent can still run tests, stage files, and output suggested branch
 names, commit messages, and PR descriptions for the user to copy.
@@ -378,7 +378,7 @@ Read the full file. Confirm:
 - [ ] **Step 4: Commit**
 
 ```bash
-git add skills/using-superpowers/references/codex-tools.md
+git add skills/using-softpowers/references/codex-tools.md
 git commit -m "docs(codex-tools): add environment detection and App finishing docs (PRI-823)
 
 Document the git-dir vs git-common-dir detection pattern and the Codex
@@ -387,7 +387,7 @@ App's native finishing flow for skills that need to adapt."
 
 ---
 
-### Task 7: Automated test — environment detection
+### Task 7: Automated test: environment detection
 
 **Files:**
 - Create: `tests/codex-app-compat/test-environment-detection.sh`
@@ -470,7 +470,7 @@ else
   log_fail "Codex App simulation: result='$result', branch='$branch'"
 fi
 
-echo "=== Test 5: Cleanup guard — linked worktree should NOT remove ==="
+echo "=== Test 5: Cleanup guard: linked worktree should NOT remove ==="
 cd "$TEMP_DIR/test-wt"
 result=$(detect_worktree)
 if [ "$result" = "linked" ]; then
@@ -479,7 +479,7 @@ else
   log_fail "Cleanup guard: expected 'linked', got '$result'"
 fi
 
-echo "=== Test 6: Cleanup guard — main repo SHOULD remove ==="
+echo "=== Test 6: Cleanup guard: main repo SHOULD remove ==="
 cd "$TEMP_DIR/test-repo"
 result=$(detect_worktree)
 if [ "$result" = "normal" ]; then
@@ -536,11 +536,11 @@ Expected: 6 passed, 0 failed.
 - [ ] **Step 2: Read each modified file and verify changes**
 
 Read each file end-to-end:
-- `skills/using-git-worktrees/SKILL.md` — Step 0 present, rest unchanged
-- `skills/finishing-a-development-branch/SKILL.md` — Step 1.5 present, cleanup guard present, rest unchanged
-- `skills/subagent-driven-development/SKILL.md` — line 268 updated
-- `skills/executing-plans/SKILL.md` — line 68 updated
-- `skills/using-superpowers/references/codex-tools.md` — two new sections at end
+- `skills/using-git-worktrees/SKILL.md`: Step 0 present, rest unchanged
+- `skills/finishing-a-development-branch/SKILL.md`: Step 1.5 present, cleanup guard present, rest unchanged
+- `skills/subagent-driven-development/SKILL.md`: line 268 updated
+- `skills/executing-plans/SKILL.md`: line 68 updated
+- `skills/using-softpowers/references/codex-tools.md`: two new sections at end
 
 - [ ] **Step 3: Verify no unintended changes**
 

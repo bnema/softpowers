@@ -23,8 +23,8 @@ const tui: TuiPlugin = (api) => {
   api.command.register(() => [
     {
       title: "Review branch locally",
-      value: "superpowers.review-branch-locally",
-      category: "Superpowers",
+      value: "softpowers.review-branch-locally",
+      category: "Softpowers",
       slash: { name: "review-branch-locally", aliases: ["review-branch"] },
       onSelect: () => {
         if (api.route.current.name !== "session") {
@@ -120,7 +120,7 @@ const tui: TuiPlugin = (api) => {
 }
 
 const plugin: TuiPluginModule & { id: string } = {
-  id: "superpowers.review",
+  id: "softpowers.review",
   tui,
 }
 

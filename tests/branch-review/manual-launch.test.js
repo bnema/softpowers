@@ -15,7 +15,7 @@ test("manual launcher requires a session", () => {
 })
 
 function createAckableFakeReviewServerScript(ackPath, requestId, summary = "Check the retry path", cwdPath = null) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-"))
   const scriptPath = path.join(dir, "fake-review-server.cjs")
   fs.writeFileSync(
     scriptPath,
@@ -101,14 +101,14 @@ export function buildOpenCodeReviewUrl(started, args) {
   return url.toString()
 }
 `) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-review-adapter-"))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-review-adapter-"))
   const filePath = path.join(dir, "opencode-adapter.mjs")
   fs.writeFileSync(filePath, source)
   return filePath
 }
 
 function createAckableHungReviewServerScript(markerPath, pidPath, requestId) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-"))
   const scriptPath = path.join(dir, "hung-review-server.cjs")
   fs.writeFileSync(
     scriptPath,
@@ -208,7 +208,7 @@ function startOpenCodeStub() {
 }
 
 function startFakeOpencodeCli() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-opencode-cli-"))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-opencode-cli-"))
   const argvPath = path.join(dir, "argv.json")
   const binPath = path.join(dir, "opencode")
 
@@ -231,7 +231,7 @@ process.exit(0)
 }
 
 function startFailingOpencodeCli() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-opencode-cli-"))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-opencode-cli-"))
   const binPath = path.join(dir, "opencode")
 
   fs.writeFileSync(
@@ -349,9 +349,9 @@ export function buildOpenCodeReviewUrl(started, args) {
   return url.toString()
 }
 `)
-  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
+  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-")), "ack.json")
   const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-runtime", "Summary from adapter override")
-  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-repo-"))
   const opencodeCli = startFakeOpencodeCli()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
 
@@ -408,9 +408,9 @@ export function buildOpenCodeReviewUrl(started, args) {
 })
 
 test("manual launcher includes opencode cli stderr when fallback execution fails", { timeout: 10000 }, async () => {
-  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
+  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-")), "ack.json")
   const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-failure")
-  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-repo-"))
   const opencodeCli = startFailingOpencodeCli()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
 
@@ -447,10 +447,10 @@ test("manual launcher includes opencode cli stderr when fallback execution fails
 })
 
 test("manual launcher forwards the submitted review to OpenCode", { timeout: 10000 }, async (t) => {
-  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
+  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-")), "ack.json")
   const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-open-code")
-  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
-  const urlFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "url.txt")
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-repo-"))
+  const urlFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-")), "url.txt")
   const opencode = await startOpenCodeStub()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
 
@@ -528,11 +528,11 @@ test("manual launcher forwards the submitted review to OpenCode", { timeout: 100
 })
 
 test("manual launcher starts the review server in the repo cwd", { timeout: 10000 }, async (t) => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-"))
   const ackPath = path.join(tempDir, "ack.json")
   const cwdPath = path.join(tempDir, "cwd.txt")
   const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-cwd", "Check cwd", cwdPath)
-  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-repo-"))
   const opencodeCli = startFakeOpencodeCli()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
 
@@ -573,9 +573,9 @@ test("manual launcher starts the review server in the repo cwd", { timeout: 1000
 })
 
 test("manual launcher hands review to the opencode cli without opencode-url", { timeout: 10000 }, async (t) => {
-  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-")), "ack.json")
+  const ackPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-")), "ack.json")
   const reviewServerPath = createAckableFakeReviewServerScript(ackPath, "review-request-cli")
-  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-repo-"))
   const opencodeCli = startFakeOpencodeCli()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
 
@@ -641,11 +641,11 @@ test("manual launcher hands review to the opencode cli without opencode-url", { 
 })
 
 test("manual launcher times out a hung prompt_async request", { timeout: 10000 }, async (t) => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-manual-launch-"))
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-manual-launch-"))
   const markerPath = path.join(tempDir, "stopped.txt")
   const pidPath = path.join(tempDir, "review-server.pid")
   const reviewServerPath = createAckableHungReviewServerScript(markerPath, pidPath, "review-request-hung")
-  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-repo-"))
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-repo-"))
   const opencode = await startHangingOpenCodeStub()
   const launcher = path.join(process.cwd(), ".opencode/plugins/branch-review/manual-launch.cjs")
 

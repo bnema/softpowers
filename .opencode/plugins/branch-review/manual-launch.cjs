@@ -19,11 +19,11 @@ const reviewAdapterPath = args.get("review-adapter-path") || require.resolve("lo
 const repo = args.get("repo") || process.cwd()
 const base = args.get("base") || "main"
 const promptTimeoutMs = Number.parseInt(
-  args.get("prompt-timeout-ms") || process.env.SUPERPOWERS_REVIEW_PROMPT_TIMEOUT_MS || "15000",
+  args.get("prompt-timeout-ms") || process.env.SOFTPOWERS_REVIEW_PROMPT_TIMEOUT_MS || "15000",
   10,
 )
 const shutdownTimeoutMs = Number.parseInt(
-  args.get("shutdown-timeout-ms") || process.env.SUPERPOWERS_REVIEW_SHUTDOWN_TIMEOUT_MS || "250",
+  args.get("shutdown-timeout-ms") || process.env.SOFTPOWERS_REVIEW_SHUTDOWN_TIMEOUT_MS || "250",
   10,
 )
 

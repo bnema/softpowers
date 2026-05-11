@@ -1,14 +1,14 @@
 {
-  "name": "superpowers",
+  "name": "softpowers",
   "version": "5.0.7",
   "type": "module",
-  "main": ".opencode/plugins/superpowers.js",
+  "main": ".opencode/plugins/softpowers.js",
   "dependencies": {
     "local-pr-review-server": "https://codeload.github.com/bnema/local-pr-review-server/tar.gz/v0.2.0-rc.1"
   },
   "exports": {
-    ".": "./.opencode/plugins/superpowers.js",
-    "./server": "./.opencode/plugins/superpowers.js",
-    "./tui": "./.opencode/plugins/superpowers-tui.tsx"
+    ".": "./.opencode/plugins/softpowers.js",
+    "./server": "./.opencode/plugins/softpowers.js",
+    "./tui": "./.opencode/plugins/softpowers-tui.tsx"
   }
 }

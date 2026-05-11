@@ -5,7 +5,7 @@ labels: platform-support
 ---
 
 <!--
-BEFORE FILING: Search existing issues — your IDE may already be
+BEFORE FILING: Search existing issues: your IDE may already be
 requested or discussed.
 -->
 
@@ -19,5 +19,5 @@ requested or discussed.
      integrations typically work with this tool. -->
 
 ## Have you tried manual installation?
-<!-- Many tools work with Superpowers through manual setup even without
+<!-- Many tools work with Softpowers through manual setup even without
      official support. Did you try? What happened? -->

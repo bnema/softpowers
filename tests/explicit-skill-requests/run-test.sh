@@ -21,7 +21,7 @@ fi
 
 # Get the directory where this script lives
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Get the superpowers plugin root (two levels up)
+# Get the softpowers plugin root (two levels up)
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 resolve_plan_path() {
@@ -29,15 +29,15 @@ resolve_plan_path() {
     local repo_name
 
     repo_name="$(basename "$PROJECT_DIR")"
-    if [ -n "${OBSIDIAN_PROJECTS_PATH:-}" ]; then
-        printf '%s/%s/plans/%s.md' "$OBSIDIAN_PROJECTS_PATH" "$repo_name" "$plan_name"
+    if [ -n "${PROJECTS_DOCS_PATH:-}" ]; then
+        printf '%s/%s/plans/%s.md' "$PROJECTS_DOCS_PATH" "$repo_name" "$plan_name"
     else
-        printf '%s/docs/superpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
+        printf '%s/docs/softpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
     fi
 }
 
 TIMESTAMP=$(date +%s)
-OUTPUT_DIR="/tmp/superpowers-tests/${TIMESTAMP}/explicit-skill-requests/${SKILL_NAME}"
+OUTPUT_DIR="/tmp/softpowers-tests/${TIMESTAMP}/explicit-skill-requests/${SKILL_NAME}"
 mkdir -p "$OUTPUT_DIR"
 
 # Read prompt from file
@@ -52,7 +52,7 @@ echo ""
 
 # Create a minimal project directory for the test
 PROJECT_DIR="$OUTPUT_DIR/project-run-test-${TIMESTAMP}-$$"
-mkdir -p "$PROJECT_DIR/docs/superpowers/plans"
+mkdir -p "$PROJECT_DIR/docs/softpowers/plans"
 PLAN_PATH="$(resolve_plan_path auth-system)"
 mkdir -p "$(dirname "$PLAN_PATH")"
 

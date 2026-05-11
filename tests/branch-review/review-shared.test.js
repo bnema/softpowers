@@ -12,7 +12,7 @@ function git(cwd, args) {
 }
 
 function createRepo() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "superpowers-review-shared-"))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "softpowers-review-shared-"))
   git(dir, ["init", "-b", "main"])
   git(dir, ["config", "user.email", "test@example.com"])
   git(dir, ["config", "user.name", "Test User"])

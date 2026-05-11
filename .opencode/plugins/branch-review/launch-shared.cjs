@@ -17,7 +17,7 @@ function parseArgs() {
 }
 
 function cacheDir() {
-  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "superpowers", "branch-review")
+  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "softpowers", "branch-review")
 }
 
 function defaultStateFile() {

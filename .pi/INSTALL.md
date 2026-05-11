@@ -1,4 +1,4 @@
-# Installing Superpowers for Pi
+# Installing Softpowers for Pi
 
 ## Prerequisites
 
@@ -8,7 +8,7 @@
 ## Installation
 
 ```bash
-pi install https://github.com/bnema/superpowers
+pi install https://github.com/bnema/softpowers
 ```
 
 Pi clones the repo and discovers all skills from the `skills/` directory automatically.
@@ -18,7 +18,7 @@ Pi clones the repo and discovers all skills from the `skills/` directory automat
 If you already have a local clone:
 
 ```bash
-pi install /path/to/superpowers
+pi install /path/to/softpowers
 ```
 
 ## Verify
@@ -33,7 +33,7 @@ Then start pi and use `/skill:brainstorming` to confirm skills load.
 
 ## Configure Required Subagents
 
-Some Superpowers skills call a `code-reviewer` subagent.
+Some Softpowers skills call a `code-reviewer` subagent.
 
 Pi packages do not install agent profiles automatically, so install the bundled profile once:
 
@@ -41,14 +41,14 @@ If installed from GitHub:
 
 ```bash
 mkdir -p ~/.pi/agent/agents
-ln -sf ~/.pi/agent/git/github.com/bnema/superpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
+ln -sf ~/.pi/agent/git/github.com/bnema/softpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
 ```
 
 If installed from a local path:
 
 ```bash
 mkdir -p ~/.pi/agent/agents
-ln -sf /path/to/superpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
+ln -sf /path/to/softpowers/.pi/agents/code-reviewer.md ~/.pi/agent/agents/code-reviewer.md
 ```
 
 Verify:
@@ -59,26 +59,26 @@ ls ~/.pi/agent/agents/code-reviewer.md
 
 ## Updating
 
-Update superpowers:
+Update softpowers:
 
 ```bash
-pi update https://github.com/bnema/superpowers
+pi update https://github.com/bnema/softpowers
 ```
 
 Or pull manually if using a local path:
 
 ```bash
-cd /path/to/superpowers && git pull
+cd /path/to/softpowers && git pull
 ```
 
 ## Uninstalling
 
 ```bash
-pi remove https://github.com/bnema/superpowers
+pi remove https://github.com/bnema/softpowers
 ```
 
 Or, if installed from a local path:
 
 ```bash
-pi remove /path/to/superpowers
+pi remove /path/to/softpowers
 ```

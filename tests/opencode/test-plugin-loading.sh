@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Test: Plugin Loading
-# Verifies that the superpowers plugin loads correctly in OpenCode
+# Verifies that the softpowers plugin loads correctly in OpenCode
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -13,7 +13,7 @@ source "$SCRIPT_DIR/setup.sh"
 # Trap to cleanup on exit
 trap cleanup_test_env EXIT
 
-plugin_link="$OPENCODE_CONFIG_DIR/plugins/superpowers.js"
+plugin_link="$OPENCODE_CONFIG_DIR/plugins/softpowers.js"
 
 # Test 1: Verify plugin file exists and is registered
 echo "Test 1: Checking plugin registration..."
@@ -34,26 +34,26 @@ fi
 
 # Test 2: Verify skills directory is populated
 echo "Test 2: Checking skills directory..."
-skill_count=$(find "$SUPERPOWERS_SKILLS_DIR" -name "SKILL.md" | wc -l)
+skill_count=$(find "$SOFTPOWERS_SKILLS_DIR" -name "SKILL.md" | wc -l)
 if [ "$skill_count" -gt 0 ]; then
     echo "  [PASS] Found $skill_count skills"
 else
-    echo "  [FAIL] No skills found in $SUPERPOWERS_SKILLS_DIR"
+    echo "  [FAIL] No skills found in $SOFTPOWERS_SKILLS_DIR"
     exit 1
 fi
 
-# Test 3: Check using-superpowers skill exists (critical for bootstrap)
-echo "Test 3: Checking using-superpowers skill (required for bootstrap)..."
-if [ -f "$SUPERPOWERS_SKILLS_DIR/using-superpowers/SKILL.md" ]; then
-    echo "  [PASS] using-superpowers skill exists"
+# Test 3: Check using-softpowers skill exists (critical for bootstrap)
+echo "Test 3: Checking using-softpowers skill (required for bootstrap)..."
+if [ -f "$SOFTPOWERS_SKILLS_DIR/using-softpowers/SKILL.md" ]; then
+    echo "  [PASS] using-softpowers skill exists"
 else
-    echo "  [FAIL] using-superpowers skill not found (required for bootstrap)"
+    echo "  [FAIL] using-softpowers skill not found (required for bootstrap)"
     exit 1
 fi
 
 # Test 4: Verify plugin JavaScript syntax (basic check)
 echo "Test 4: Checking plugin JavaScript syntax..."
-if node --check "$SUPERPOWERS_PLUGIN_FILE" 2>/dev/null; then
+if node --check "$SOFTPOWERS_PLUGIN_FILE" 2>/dev/null; then
     echo "  [PASS] Plugin JavaScript syntax is valid"
 else
     echo "  [FAIL] Plugin has JavaScript syntax errors"
@@ -62,7 +62,7 @@ fi
 
 # Test 5: Verify bootstrap text does not reference a hardcoded skills path
 echo "Test 5: Checking bootstrap does not advertise a wrong skills path..."
-if grep -q 'configDir}/skills/superpowers/' "$SUPERPOWERS_PLUGIN_FILE"; then
+if grep -q 'configDir}/skills/softpowers/' "$SOFTPOWERS_PLUGIN_FILE"; then
   echo "  [FAIL] Plugin still references old configDir skills path"
   exit 1
 else
@@ -89,7 +89,7 @@ echo "Test 5d: Checking OpenCode helper command..."
 if [ -f "$REPO_ROOT/commands/opencode-install-update.md" ] \
   && grep -q "docs/README.opencode.md" "$REPO_ROOT/commands/opencode-install-update.md" \
   && grep -q "~/.cache/opencode/packages" "$REPO_ROOT/commands/opencode-install-update.md" \
-  && grep -q "bnema/superpowers" "$REPO_ROOT/commands/opencode-install-update.md"; then
+  && grep -q "bnema/softpowers" "$REPO_ROOT/commands/opencode-install-update.md"; then
   echo "  [PASS] OpenCode helper command exists and points to fork docs"
 else
   echo "  [FAIL] OpenCode helper command is missing or incomplete"
@@ -115,11 +115,11 @@ else
 fi
 
 echo "Test 5g: Checking local-branch-review skill..."
-if [ -f "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" ] \
-  && [ -f "$SUPERPOWERS_SKILLS_DIR/local-branch-review/review-start.cjs" ] \
-  && [ -f "$SUPERPOWERS_SKILLS_DIR/local-branch-review/review-stop.cjs" ] \
-  && grep -q "review-start.cjs" "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" \
-  && grep -q "review-stop.cjs" "$SUPERPOWERS_SKILLS_DIR/local-branch-review/SKILL.md"; then
+if [ -f "$SOFTPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" ] \
+  && [ -f "$SOFTPOWERS_SKILLS_DIR/local-branch-review/review-start.cjs" ] \
+  && [ -f "$SOFTPOWERS_SKILLS_DIR/local-branch-review/review-stop.cjs" ] \
+  && grep -q "review-start.cjs" "$SOFTPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" \
+  && grep -q "review-stop.cjs" "$SOFTPOWERS_SKILLS_DIR/local-branch-review/SKILL.md"; then
   echo "  [PASS] local-branch-review skill exists with cache-safe launcher wrappers"
 else
   echo "  [FAIL] local-branch-review skill missing wrappers or launcher docs"
@@ -134,7 +134,7 @@ else
   exit 1
 fi
 
-if [ -L "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx" ] && [ "$(readlink -f "$OPENCODE_CONFIG_DIR/plugins/superpowers-tui.tsx")" = "$SUPERPOWERS_TUI_PLUGIN_FILE" ]; then
+if [ -L "$OPENCODE_CONFIG_DIR/plugins/softpowers-tui.tsx" ] && [ "$(readlink -f "$OPENCODE_CONFIG_DIR/plugins/softpowers-tui.tsx")" = "$SOFTPOWERS_TUI_PLUGIN_FILE" ]; then
   echo "  [PASS] TUI plugin symlink points at installed package copy"
 else
   echo "  [FAIL] TUI plugin symlink missing or incorrect"
@@ -150,10 +150,10 @@ else
 fi
 
 echo "Test 8: Checking installed branch-review integration files..."
-if [ -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/review-shared.mjs" ] \
-  && [ ! -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/runtime-source.cjs" ] \
-  && [ ! -f "$SUPERPOWERS_DIR/.opencode/plugins/branch-review/server.cjs" ] \
-  && [ -d "$SUPERPOWERS_DIR/node_modules/local-pr-review-server" ]; then
+if [ -f "$SOFTPOWERS_DIR/.opencode/plugins/branch-review/review-shared.mjs" ] \
+  && [ ! -f "$SOFTPOWERS_DIR/.opencode/plugins/branch-review/runtime-source.cjs" ] \
+  && [ ! -f "$SOFTPOWERS_DIR/.opencode/plugins/branch-review/server.cjs" ] \
+  && [ -d "$SOFTPOWERS_DIR/node_modules/local-pr-review-server" ]; then
   echo "  [PASS] Installed package uses the external local-pr-review-server dependency"
 else
   echo "  [FAIL] Installed package is missing the external dependency or still vendors the runtime"
@@ -161,7 +161,7 @@ else
 fi
 
 echo "Test 9: Checking TUI plugin config..."
-if [ -f "$OPENCODE_CONFIG_DIR/tui.json" ] && grep -q "superpowers-tui.tsx" "$OPENCODE_CONFIG_DIR/tui.json"; then
+if [ -f "$OPENCODE_CONFIG_DIR/tui.json" ] && grep -q "softpowers-tui.tsx" "$OPENCODE_CONFIG_DIR/tui.json"; then
   echo "  [PASS] TUI plugin config exists"
 else
   echo "  [FAIL] TUI plugin config missing"

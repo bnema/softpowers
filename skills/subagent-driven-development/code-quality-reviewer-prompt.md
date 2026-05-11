@@ -7,7 +7,7 @@ Use this template when dispatching a code quality reviewer subagent.
 **Only dispatch after the phase spec compliance review passes.**
 
 ```
-Task tool (superpowers:code-reviewer):
+Task tool (softpowers:code-reviewer):
   Use template at requesting-code-review/code-reviewer.md
 
   WHAT_WAS_IMPLEMENTED: [combined reports from all sub-task implementers and any phase-fix subagents]
@@ -21,6 +21,6 @@ Task tool (superpowers:code-reviewer):
 - Does each file have one clear responsibility with a well-defined interface?
 - Are units decomposed so they can be understood and tested independently?
 - Is the implementation following the file structure from the phase plan?
-- Did this implementation create new files that are already large, or significantly grow existing files? (Don't flag pre-existing file sizes — focus on what this change contributed.)
+- Did this implementation create new files that are already large, or significantly grow existing files? (Don't flag pre-existing file sizes: focus on what this change contributed.)
 
 **Code reviewer returns:** Strengths, Issues (Critical/Important/Minor), Assessment

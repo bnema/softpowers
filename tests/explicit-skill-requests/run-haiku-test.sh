@@ -8,11 +8,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 TIMESTAMP=$(date +%s)
-OUTPUT_DIR="/tmp/superpowers-tests/${TIMESTAMP}/explicit-skill-requests/haiku"
+OUTPUT_DIR="/tmp/softpowers-tests/${TIMESTAMP}/explicit-skill-requests/haiku"
 mkdir -p "$OUTPUT_DIR"
 
 PROJECT_DIR="$OUTPUT_DIR/project-run-haiku-test-${TIMESTAMP}-$$"
-mkdir -p "$PROJECT_DIR/docs/superpowers/plans"
+mkdir -p "$PROJECT_DIR/docs/softpowers/plans"
 mkdir -p "$PROJECT_DIR/.claude"
 
 resolve_plan_path() {
@@ -20,10 +20,10 @@ resolve_plan_path() {
     local repo_name
 
     repo_name="$(basename "$PROJECT_DIR")"
-    if [ -n "${OBSIDIAN_PROJECTS_PATH:-}" ]; then
-        printf '%s/%s/plans/%s.md' "$OBSIDIAN_PROJECTS_PATH" "$repo_name" "$plan_name"
+    if [ -n "${PROJECTS_DOCS_PATH:-}" ]; then
+        printf '%s/%s/plans/%s.md' "$PROJECTS_DOCS_PATH" "$repo_name" "$plan_name"
     else
-        printf '%s/docs/superpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
+        printf '%s/docs/softpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
     fi
 }
 

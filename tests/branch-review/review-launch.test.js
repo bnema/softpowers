@@ -26,7 +26,7 @@ function skillReviewStopPath() {
 }
 
 function cacheStateDir(cacheHome) {
-  return path.join(cacheHome, "superpowers", "branch-review")
+  return path.join(cacheHome, "softpowers", "branch-review")
 }
 
 function sessionStateFile(cacheHome, session) {
@@ -142,7 +142,7 @@ test("review start requires a session", () => {
 })
 
 test("skill wrapper resolves the review launcher relative to the skill directory", () => {
-  const tempDir = makeTempDir("superpowers-review-skill-")
+  const tempDir = makeTempDir("softpowers-review-skill-")
   const launcherPath = createFakeLauncherScript(tempDir)
   const stateFile = path.join(tempDir, "state.json")
   const repoDir = path.join(tempDir, "repo")
@@ -178,7 +178,7 @@ test("skill wrapper resolves the review launcher relative to the skill directory
 })
 
 test("review start prints the url and writes state", (t) => {
-  const tempDir = makeTempDir("superpowers-review-launch-")
+  const tempDir = makeTempDir("softpowers-review-launch-")
   const launcherPath = createFakeLauncherScript(tempDir)
   const stateFile = path.join(tempDir, "state.json")
   const markerFile = path.join(tempDir, "launch-marker.json")
@@ -219,7 +219,7 @@ test("review start prints the url and writes state", (t) => {
 })
 
 test("review stop kills the process and removes state", async (t) => {
-  const tempDir = makeTempDir("superpowers-review-launch-")
+  const tempDir = makeTempDir("softpowers-review-launch-")
   const launcherPath = createFakeLauncherScript(tempDir)
   const stateFile = path.join(tempDir, "state.json")
   const stopMarkerFile = path.join(tempDir, "stop-marker.txt")
@@ -257,7 +257,7 @@ test("review stop kills the process and removes state", async (t) => {
 })
 
 test("review start refuses to replace a live process", () => {
-  const tempDir = makeTempDir("superpowers-review-launch-")
+  const tempDir = makeTempDir("softpowers-review-launch-")
   const launcherPath = createFakeLauncherScript(tempDir)
   const stateFile = path.join(tempDir, "state.json")
   const repoDir = path.join(tempDir, "repo")
@@ -275,7 +275,7 @@ test("review start refuses to replace a live process", () => {
 })
 
 test("review start replaces stale state", () => {
-  const tempDir = makeTempDir("superpowers-review-launch-")
+  const tempDir = makeTempDir("softpowers-review-launch-")
   const launcherPath = createFakeLauncherScript(tempDir)
   const stateFile = path.join(tempDir, "state.json")
   const staleUrlFile = path.join(tempDir, "stale-url.txt")
@@ -311,7 +311,7 @@ test("review start replaces stale state", () => {
 })
 
 test("review start writes a session-keyed default state file", () => {
-  const tempDir = makeTempDir("superpowers-review-launch-")
+  const tempDir = makeTempDir("softpowers-review-launch-")
   const cacheHome = path.join(tempDir, "cache")
   const launcherPath = createFakeLauncherScript(tempDir)
   const repoDir = path.join(tempDir, "repo")
@@ -341,7 +341,7 @@ test("review start writes a session-keyed default state file", () => {
 })
 
 test("review start replaces a live bridge for the same session", async () => {
-  const tempDir = makeTempDir("superpowers-review-launch-")
+  const tempDir = makeTempDir("softpowers-review-launch-")
   const cacheHome = path.join(tempDir, "cache")
   const launcherPath = createFakeLauncherScript(tempDir)
   const repoDir = path.join(tempDir, "repo")
@@ -380,7 +380,7 @@ test("review start replaces a live bridge for the same session", async () => {
 })
 
 test("review start allows different sessions to keep separate state", () => {
-  const tempDir = makeTempDir("superpowers-review-launch-")
+  const tempDir = makeTempDir("softpowers-review-launch-")
   const cacheHome = path.join(tempDir, "cache")
   const launcherPath = createFakeLauncherScript(tempDir)
   const repoDir = path.join(tempDir, "repo")

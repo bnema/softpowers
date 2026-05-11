@@ -145,10 +145,10 @@ resolved_doc_root() {
     local repo_name
     repo_name=$(basename "$project_dir")
 
-    if [ -n "${OBSIDIAN_PROJECTS_PATH:-}" ]; then
-        echo "$OBSIDIAN_PROJECTS_PATH/$repo_name"
+    if [ -n "${PROJECTS_DOCS_PATH:-}" ]; then
+        echo "$PROJECTS_DOCS_PATH/$repo_name"
     else
-        echo "$project_dir/docs/superpowers"
+        echo "$project_dir/docs/softpowers"
     fi
 }
 

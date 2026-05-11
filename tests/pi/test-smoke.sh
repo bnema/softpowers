@@ -56,7 +56,7 @@ require_command node
 DEFAULT_SETTINGS="$HOME/.pi/agent/settings.json"
 DEFAULT_STATE_BEFORE="$(file_state "$DEFAULT_SETTINGS")"
 
-TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/superpowers-pi-smoke.XXXXXX")"
+TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/softpowers-pi-smoke.XXXXXX")"
 cleanup() {
     rm -rf "$TMP_ROOT"
 }

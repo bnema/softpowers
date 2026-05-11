@@ -6,7 +6,7 @@
 # Each session gets its own directory to avoid conflicts.
 #
 # Options:
-#   --project-dir <path>  Store session files under <path>/.superpowers/brainstorm/
+#   --project-dir <path>  Store session files under <path>/.softpowers/brainstorm/
 #                         instead of /tmp. Files persist after server stops.
 #   --host <bind-host>    Host/interface to bind (default: 127.0.0.1).
 #                         Use 0.0.0.0 in remote/containerized environments.
@@ -78,7 +78,7 @@ fi
 SESSION_ID="$$-$(date +%s)"
 
 if [[ -n "$PROJECT_DIR" ]]; then
-  SESSION_DIR="${PROJECT_DIR}/.superpowers/brainstorm/${SESSION_ID}"
+  SESSION_DIR="${PROJECT_DIR}/.softpowers/brainstorm/${SESSION_ID}"
 else
   SESSION_DIR="/tmp/brainstorm-${SESSION_ID}"
 fi
@@ -100,7 +100,7 @@ fi
 cd "$SCRIPT_DIR"
 
 # Resolve the harness PID (grandparent of this script).
-# $PPID is the ephemeral shell the harness spawned to run us — it dies
+# $PPID is the ephemeral shell the harness spawned to run us: it dies
 # when this script exits. The harness itself is $PPID's parent.
 OWNER_PID="$(ps -o ppid= -p "$PPID" 2>/dev/null | tr -d ' ')"
 if [[ -z "$OWNER_PID" || "$OWNER_PID" == "1" ]]; then

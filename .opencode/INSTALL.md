@@ -1,4 +1,4 @@
-# Installing Superpowers for OpenCode
+# Installing Softpowers for OpenCode
 
 ## Prerequisites
 
@@ -6,31 +6,31 @@
 
 ## Installation
 
-Add superpowers to the `plugin` array in your `opencode.json` (global or project-level):
+Add softpowers to the `plugin` array in your `opencode.json` (global or project-level):
 
 ```json
 {
-  "plugin": ["superpowers@git+https://github.com/bnema/superpowers.git"]
+  "plugin": ["softpowers@git+https://github.com/bnema/softpowers.git"]
 }
 ```
 
-Restart OpenCode. That's it — the plugin auto-installs and registers all skills.
+Restart OpenCode. That's it. The plugin auto-installs and registers all skills.
 
-Verify by asking: "Tell me about your superpowers"
+Verify by asking: "Tell me about your softpowers"
 
 ## Migrating from the old symlink-based install
 
-If you previously installed superpowers using `git clone` and symlinks, remove the old setup:
+If you previously installed softpowers using `git clone` and symlinks, remove the old setup:
 
 ```bash
 # Remove old symlinks
-rm -f ~/.config/opencode/plugins/superpowers.js
-rm -rf ~/.config/opencode/skills/superpowers
+rm -f ~/.config/opencode/plugins/softpowers.js
+rm -rf ~/.config/opencode/skills/softpowers
 
 # Optionally remove the cloned repo
-rm -rf ~/.config/opencode/superpowers
+rm -rf ~/.config/opencode/softpowers
 
-# Remove skills.paths from opencode.json if you added one for superpowers
+# Remove skills.paths from opencode.json if you added one for softpowers
 ```
 
 Then follow the installation steps above.
@@ -41,7 +41,7 @@ Use OpenCode's native `skill` tool:
 
 ```
 use skill tool to list skills
-use skill tool to load superpowers/brainstorming
+use skill tool to load softpowers/brainstorming
 ```
 
 ## Updating
@@ -53,7 +53,7 @@ On Unix, the cached path mirrors the plugin spec. That means git URL slashes bec
 To refresh this forked plugin, remove the cached package directory for the configured spec, then restart OpenCode:
 
 ```bash
-rm -rf ~/.cache/opencode/packages/superpowers@git+https:/github.com/bnema/superpowers.git
+rm -rf ~/.cache/opencode/packages/softpowers@git+https:/github.com/bnema/softpowers.git
 ```
 
 If you use a different repo, branch, or tag in your plugin spec, clear the matching cache directory for that exact spec.
@@ -62,7 +62,7 @@ To pin a specific version:
 
 ```json
 {
-  "plugin": ["superpowers@git+https://github.com/bnema/superpowers.git#v5.0.3"]
+  "plugin": ["softpowers@git+https://github.com/bnema/softpowers.git#v5.0.3"]
 }
 ```
 
@@ -70,7 +70,7 @@ To pin a specific version:
 
 ### Plugin not loading
 
-1. Check logs: `opencode run --print-logs "hello" 2>&1 | grep -i superpowers`
+1. Check logs: `opencode run --print-logs "hello" 2>&1 | grep -i softpowers`
 2. Verify the plugin line in your `opencode.json`
 3. Make sure you're running a recent version of OpenCode
 
@@ -89,5 +89,5 @@ When skills reference Claude Code tools:
 
 ## Getting Help
 
-- Report issues: https://github.com/bnema/superpowers/issues
-- Full documentation: https://github.com/bnema/superpowers/blob/main/docs/README.opencode.md
+- Report issues: https://github.com/bnema/softpowers/issues
+- Full documentation: https://github.com/bnema/softpowers/blob/main/docs/README.opencode.md

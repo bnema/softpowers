@@ -1,6 +1,6 @@
 # Zero-Dependency Brainstorm Server Implementation Plan
 
-> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED: Use softpowers:subagent-driven-development (if subagents available) or softpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the brainstorm server's vendored node_modules with a single zero-dependency `server.js` using Node built-ins.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js built-ins only: `http`, `crypto`, `fs`, `path`
 
-**Spec:** `docs/superpowers/specs/2026-03-11-zero-dep-brainstorm-server-design.md`
+**Spec:** `docs/softpowers/specs/2026-03-11-zero-dep-brainstorm-server-design.md`
 
 **Existing tests:** `tests/brainstorm-server/ws-protocol.test.js` (unit), `tests/brainstorm-server/server.test.js` (integration)
 
@@ -16,9 +16,9 @@
 
 ## File Map
 
-- **Create:** `skills/brainstorming/scripts/server.js` — the zero-dep replacement
-- **Modify:** `skills/brainstorming/scripts/start-server.sh:94,100` — change `index.js` to `server.js`
-- **Modify:** `.gitignore:6` — remove the `!skills/brainstorming/scripts/node_modules/` exception
+- **Create:** `skills/brainstorming/scripts/server.js`: the zero-dep replacement
+- **Modify:** `skills/brainstorming/scripts/start-server.sh:94,100`: change `index.js` to `server.js`
+- **Modify:** `.gitignore:6`: remove the `!skills/brainstorming/scripts/node_modules/` exception
 - **Delete:** `skills/brainstorming/scripts/index.js`
 - **Delete:** `skills/brainstorming/scripts/package.json`
 - **Delete:** `skills/brainstorming/scripts/package-lock.json`
@@ -294,7 +294,7 @@ function handleUpgrade(req, socket) {
         case OPCODES.PONG:
           break;
         default:
-          // Unsupported opcode — close with 1003
+          // Unsupported opcode: close with 1003
           const closeBuf = Buffer.alloc(2);
           closeBuf.writeUInt16BE(1003);
           socket.end(encodeFrame(OPCODES.CLOSE, closeBuf));
@@ -412,7 +412,7 @@ git commit -m "Add HTTP server, WebSocket handling, and file watching to server.
 - Delete: `skills/brainstorming/scripts/package-lock.json`
 - Delete: `skills/brainstorming/scripts/node_modules/` (entire directory)
 
-- [ ] **Step 1: Update start-server.sh — change `index.js` to `server.js`**
+- [ ] **Step 1: Update start-server.sh: change `index.js` to `server.js`**
 
 Two lines to change:
 
@@ -468,7 +468,7 @@ echo '<h2>Hello from smoke test</h2>' > /tmp/brainstorm-smoke/test.html
 
 Expected: Browser reloads and shows "Hello from smoke test" wrapped in frame template
 
-- [ ] **Step 4: Verify WebSocket works — check browser console**
+- [ ] **Step 4: Verify WebSocket works: check browser console**
 
 Open browser dev tools. The WebSocket connection should show as connected (no errors in console). The frame template's status indicator should show "Connected".
 

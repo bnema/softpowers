@@ -9,9 +9,11 @@ description: Use when you have a written implementation plan to execute in a sep
 
 Load plan, review critically, execute phases and their sub-tasks, report when complete. Review gates belong at the end of each phase, not after every task/sub-task.
 
-**Announce at start:** "I'm using the executing-plans skill to implement this plan."
+This is a delegated implementation mode. Use it only when the human explicitly chooses to have the agent implement the plan rather than using `softassist`.
 
-**Note:** Tell your human partner that Superpowers works much better with access to subagents. The quality of its work will be significantly higher if run on a platform with subagent support (such as Claude Code or Codex). If subagents are available, use superpowers:subagent-driven-development instead of this skill.
+**Announce at start:** "I'm using the executing-plans skill as delegated implementation for this plan."
+
+**Note:** This is the inline fallback for delegated implementation. If the human chose delegated implementation and subagents are available, prefer `softpowers:subagent-driven-development`. If the human wants to stay the primary implementer, use `softassist` instead.
 
 ## The Process
 
@@ -22,7 +24,7 @@ Load plan, review critically, execute phases and their sub-tasks, report when co
 4. Otherwise ask:
    - On the default branch: `New worktree` or `New branch here`
    - On any other branch: `Continue here`, `New worktree`, or `New branch here`
-5. For `New worktree`: use `superpowers:using-git-worktrees`
+5. For `New worktree`: use `softpowers:using-git-worktrees`
 6. For `New branch here`:
     - Ask for the new branch name before creating it
     - Check whether the working tree is dirty
@@ -51,7 +53,7 @@ For each phase:
 
 After all phases complete and verified:
 - Announce: "I'm using the finishing-a-development-branch skill to complete this work."
-- **REQUIRED SUB-SKILL:** Use superpowers:finishing-a-development-branch
+- **REQUIRED SUB-SKILL:** Use softpowers:finishing-a-development-branch
 - Follow that skill to verify tests, present options, execute choice
 
 ## When to Stop and Ask for Help
@@ -84,6 +86,6 @@ After all phases complete and verified:
 ## Integration
 
 **Required workflow skills:**
-- **superpowers:using-git-worktrees** - REQUIRED only when the chosen workspace mode is `New worktree`
-- **superpowers:writing-plans** - Creates the plan this skill executes
-- **superpowers:finishing-a-development-branch** - Complete development after all phases
+- **softpowers:using-git-worktrees** - REQUIRED only when the chosen workspace mode is `New worktree`
+- **softpowers:writing-plans** - Creates the plan this skill executes
+- **softpowers:finishing-a-development-branch** - Complete development after all phases
