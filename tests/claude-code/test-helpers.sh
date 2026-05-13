@@ -158,7 +158,7 @@ resolved_plan_path() {
     local project_dir="$1"
     local plan_name="$2"
 
-    echo "$(resolved_doc_root "$project_dir")/plans/$plan_name.md"
+    echo "$(resolved_doc_root "$project_dir")/plans/$plan_name.html"
 }
 
 # Resolve a spec path for a project
@@ -167,7 +167,7 @@ resolved_spec_path() {
     local project_dir="$1"
     local spec_name="$2"
 
-    echo "$(resolved_doc_root "$project_dir")/specs/$spec_name.md"
+    echo "$(resolved_doc_root "$project_dir")/specs/$spec_name.html"
 }
 
 # Create a simple plan file for testing

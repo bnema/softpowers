@@ -34,7 +34,7 @@ You MUST create a task for each of these items and complete them in order:
 3. **Ask clarifying questions**: one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches**: with trade-offs and your recommendation
 5. **Present design**: in sections scaled to their complexity, get user approval after each section
-6. **Write design doc**: if `PROJECTS_DOCS_PATH` is set, save to `$PROJECTS_DOCS_PATH/{repoName}/specs/YYYY-MM-DD-<topic>-design.html`; otherwise use `docs/softpowers/specs/YYYY-MM-DD-<topic>-design.html`, then commit
+6. **Write design doc**: run `printenv PROJECTS_DOCS_PATH`, resolve `{repoName}` explicitly, save the spec to the resolved html path, validate it, then commit only in the repo that actually owns that path
 7. **Spec self-review**: quick inline check for placeholders, contradictions, ambiguity, scope (see below)
 8. **User reviews written spec**: ask user to review the spec file before proceeding
 9. **Transition to implementation**: invoke writing-plans skill to create implementation plan
@@ -116,13 +116,36 @@ digraph brainstorming {
 
 **Documentation:**
 
-- Write the validated design (spec) to `$PROJECTS_DOCS_PATH/{repoName}/specs/YYYY-MM-DD-<topic>-design.html` if `PROJECTS_DOCS_PATH` is set; otherwise use `docs/softpowers/specs/YYYY-MM-DD-<topic>-design.html`
-- Copy `templates/spec.template.html` to the target path, then fill the content placeholders instead of rewriting the shell:
+- Before resolving the save path, run `printenv PROJECTS_DOCS_PATH`.
+- Resolve `{repoName}` this way:
+  - git repo available: use the git top-level directory basename
+  - no git repo: use the current project directory basename
+  - project not on disk yet / slug still ambiguous: ask the human once and use that slug
+- The canonical spec path is:
+  - `$PROJECTS_DOCS_PATH/{repoName}/specs/YYYY-MM-DD-<topic>-design.html` when `PROJECTS_DOCS_PATH` is set
+  - `docs/softpowers/specs/YYYY-MM-DD-<topic>-design.html` when it is unset
+- Prefer markdown-first authoring. Draft the spec body in markdown, then generate the HTML shell and TOC with:
+
+```bash
+node scripts/create-spec-doc.mjs \
+  --title "<Spec title>" \
+  --slug <topic-slug> \
+  --body /tmp/spec.md
+```
+
+- If you already have section fragments as HTML, pass `--body-format html` instead. Those fragments must contain `<section id="...">` blocks with `<h2>` headings.
+- The helper fills `templates/spec.template.html`, builds the TOC, validates the finished document, and prints the final path clearly.
+- If you must fill the template manually, keep the shell intact and replace:
   - `{{DOC_TITLE}}` — the spec name shown in `<title>` and `<h1>`
-  - `{{TOC_ITEMS}}` — ordered list of `<li><a href="#section-id">Section Title</a></li>` entries
+  - `{{TOC_ITEMS}}` — the full TOC block, typically `<h3>Table of contents</h3><ol>...</ol>`
   - `{{OVERVIEW}}` — the complete spec body (sections, code blocks, tables, etc.)
-- Use elements-of-style:writing-clearly-and-concisely skill if available
-- Commit the design document to git
+- Validate the saved spec with `node scripts/validate-spec-doc.mjs <resolved-spec-path>`.
+- Use elements-of-style:writing-clearly-and-concisely skill if available.
+- Commit rule:
+  - if the resolved spec path is inside the current project repo, commit it there
+  - if it resolves outside the current project repo, do not also create a repo-local copy; report the external path clearly and only commit in that external docs repo when it exists and the workflow actually calls for a commit
+- Canonical example source: `examples/html-docs/canonical-spec.md`
+- Canonical generated example: `docs/softpowers/specs/2026-05-13-canonical-html-spec-workflow-design.html`
 
 **Spec Self-Review:**
 After writing the spec document, look at it with fresh eyes:
@@ -137,7 +160,7 @@ Fix any issues inline. No need to re-review: just fix and move on.
 **User Review Gate:**
 After the spec review loop passes, ask the user to review the written spec before proceeding:
 
-> "Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the implementation plan."
+> "Spec written to `<path>` and validated. Please review it and let me know if you want to make any changes before we start writing out the implementation plan."
 
 Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
 

@@ -17,9 +17,17 @@ Assume the human is a skilled developer, but may know almost nothing about our t
 
 **Save plans to:** `$PROJECTS_DOCS_PATH/{repoName}/plans/YYYY-MM-DD-<feature-name>.html` if `PROJECTS_DOCS_PATH` is set; otherwise use `docs/softpowers/plans/YYYY-MM-DD-<feature-name>.html`
 
+- Before resolving the save path, run `printenv PROJECTS_DOCS_PATH`.
+- Resolve `{repoName}` this way:
+  - git repo available: use the git top-level directory basename
+  - no git repo: use the current project directory basename
+  - project not on disk yet / slug still ambiguous: ask the human once and use that slug
 - Copy `templates/plan.template.html` to the destination path.
 - Fill the existing phase/task/step regions instead of rebuilding the document shell.
 - Use small targeted snippets when they clarify a change; rely primarily on file refs, line refs, watch-outs, and verification blocks.
+- Commit rule:
+  - if the resolved plan path is inside the current project repo, commit it there
+  - if it resolves outside the current project repo, do not also create a repo-local copy; report the external path clearly and only commit in that external docs repo when it exists and the workflow actually calls for a commit
 
 ## Scope Check
 
@@ -53,7 +61,7 @@ Every plan is an HTML document generated from the shared template at `templates/
 
 **Top-level placeholders (fill in the copy):**
 - `{{DOC_TITLE}}` — the feature name shown in `<title>` and `<h1>`
-- `{{TOC_ITEMS}}` — ordered list of `<li><a href="#phase-N">Phase N: Title</a></li>` entries
+- `{{TOC_ITEMS}}` — the full TOC block, typically `<h3>Table of contents</h3><ol><li><a href="#phase-N">Phase N: Title</a></li>...</ol>`
 
 **Phase regions (copy the `<section class="sp-phase">` block for each phase):**
 - Set `id="phase-N"` and `data-phase-id="phase-N"` (sequential N starting at 1). The `id` is what TOC anchor links target (`href="#phase-N"`) so both must match.

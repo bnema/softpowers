@@ -21,9 +21,9 @@ resolve_plan_path() {
 
     repo_name="$(basename "$PROJECT_DIR")"
     if [ -n "${PROJECTS_DOCS_PATH:-}" ]; then
-        printf '%s/%s/plans/%s.md' "$PROJECTS_DOCS_PATH" "$repo_name" "$plan_name"
+        printf '%s/%s/plans/%s.html' "$PROJECTS_DOCS_PATH" "$repo_name" "$plan_name"
     else
-        printf '%s/docs/softpowers/plans/%s.md' "$PROJECT_DIR" "$plan_name"
+        printf '%s/docs/softpowers/plans/%s.html' "$PROJECT_DIR" "$plan_name"
     fi
 }
 
