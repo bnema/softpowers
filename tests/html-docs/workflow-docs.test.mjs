@@ -4,11 +4,13 @@ import { readFileSync } from 'node:fs';
 const brainstorming = readFileSync('skills/brainstorming/SKILL.md', 'utf8');
 const companion = readFileSync('skills/brainstorming/visual-companion.md', 'utf8');
 assert(brainstorming.includes('specs/YYYY-MM-DD-<topic>-design.html'));
+assert(!brainstorming.includes('specs/YYYY-MM-DD-<topic>-design.md'));
 assert(brainstorming.includes('templates/spec.template.html'));
 assert(companion.includes('skills/brainstorming/scripts/frame-template.html'));
 
 const writingPlans = readFileSync('skills/writing-plans/SKILL.md', 'utf8');
 assert(writingPlans.includes('plans/YYYY-MM-DD-<feature-name>.html'));
+assert(!writingPlans.includes('plans/YYYY-MM-DD-<feature-name>.md'));
 assert(writingPlans.includes('templates/plan.template.html'));
 assert(writingPlans.includes('data-phase-id'));
 assert(writingPlans.includes('data-task-id'));
@@ -19,6 +21,9 @@ assert(softassist.includes('data-doc-kind="plan"'));
 assert(softassist.includes('data-phase-id'));
 assert(softassist.includes('data-task-id'));
 assert(softassist.includes('data-step-id'));
+assert(softassist.includes('data-file'));
+assert(softassist.includes('data-lines'));
+assert(softassist.includes('data-command'));
 assert(softassist.includes('HTML plan remains the canonical readable artifact'));
 
 const readme = readFileSync('README.md', 'utf8');
