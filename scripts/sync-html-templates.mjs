@@ -95,8 +95,7 @@ function buildTemplate(def) {
 
   // The brainstorming server expects <!-- CONTENT --> (HTML comment), not {{CONTENT}}.
   // Additionally, the server test asserts id="claude-content" on the container.
-  // Spec templates use a pre-structured document shell with section placeholders.
-  // Plan templates use {{CONTENT}} as a conventional mustache placeholder.
+  // Spec and plan templates both emit pre-structured document shells with stable placeholders.
   let contentPlaceholder;
   if (def.name === 'brainstorm') {
     contentPlaceholder = '<div id="claude-content"><!-- CONTENT --></div>';
@@ -109,6 +108,31 @@ function buildTemplate(def) {
   </header>
   <nav class="sp-toc" aria-label="Table of contents">{{TOC_ITEMS}}</nav>
   <section id="overview" data-section="overview">{{OVERVIEW}}</section>
+</article>`;
+  } else if (def.name === 'plan') {
+    contentPlaceholder = `<article class="sp-document sp-plan" data-doc-kind="plan" data-doc-version="1">
+  <header class="sp-doc-header">
+    <p class="sp-eyebrow">Softpowers Plan</p>
+    <h1 id="top">{{DOC_TITLE}}</h1>
+    <button id="theme-toggle" class="theme-toggle" type="button">Toggle theme</button>
+  </header>
+  <nav class="sp-toc" aria-label="Table of contents">{{TOC_ITEMS}}</nav>
+  <section id="phase-1" class="sp-phase" data-phase-id="phase-1">
+    <header class="sp-phase-header">
+      <h2>{{PHASE_TITLE}}</h2>
+      <p class="sp-phase-goal">{{PHASE_GOAL}}</p>
+    </header>
+    <article id="task-1" class="sp-task" data-task-id="task-1">
+      <ol class="sp-step-list">
+        <li id="step-1" class="sp-step" data-step-id="step-1" data-step-kind="implementation" data-file="{{STEP_FILE}}" data-lines="{{STEP_LINES}}" data-command="{{VERIFY_COMMAND}}">
+          <h4>{{STEP_TITLE}}</h4>
+          <a class="sp-spec-link" href="{{SPEC_PATH}}#{{SPEC_SECTION}}">See spec rationale</a>
+          <div class="sp-verify-block"><code>{{VERIFY_COMMAND}}</code></div>
+          <div class="sp-watchouts">{{STEP_WATCHOUTS}}</div>
+        </li>
+      </ol>
+    </article>
+  </section>
 </article>`;
   } else {
     contentPlaceholder = '{{CONTENT}}';

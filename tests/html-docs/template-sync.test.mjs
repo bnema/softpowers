@@ -42,8 +42,17 @@ assert(specHtml.includes('{{TOC_ITEMS}}'));
 assert(specHtml.includes('{{OVERVIEW}}'));
 assert(specHtml.includes('{{DOC_TITLE}}'));
 
-assert(planHtml.includes('{{CONTENT}}'));
 assert(planHtml.includes('{{DOC_TITLE}}'));
+assert(planHtml.includes('{{TOC_ITEMS}}'));
+assert(planHtml.includes('{{PHASE_TITLE}}'));
+assert(planHtml.includes('{{PHASE_GOAL}}'));
+assert(planHtml.includes('{{STEP_TITLE}}'));
+assert(planHtml.includes('{{STEP_FILE}}'));
+assert(planHtml.includes('{{STEP_LINES}}'));
+assert(planHtml.includes('{{VERIFY_COMMAND}}'));
+assert(planHtml.includes('{{STEP_WATCHOUTS}}'));
+assert(planHtml.includes('{{SPEC_PATH}}'));
+assert(planHtml.includes('{{SPEC_SECTION}}'));
 
 // Verify self-contained: no external stylesheet or script refs
 assert(!specHtml.includes('<link rel="stylesheet"'));
@@ -64,5 +73,19 @@ assert(specHtml.includes('class="sp-toc"'));
 assert(specHtml.includes('theme-toggle'));
 assert(specHtml.includes('localStorage'));
 assert(specHtml.includes('id="overview"'));
+
+// Phase 2 Sub-task 2: plan-schema assertions
+assert(planHtml.includes('data-doc-kind="plan"'));
+assert(planHtml.includes('data-phase-id="phase-1"'));
+assert(planHtml.includes('data-task-id="task-1"'));
+assert(planHtml.includes('data-step-id="step-1"'));
+assert(planHtml.includes('data-file="{{STEP_FILE}}"'));
+assert(planHtml.includes('data-command="{{VERIFY_COMMAND}}"'));
+assert(planHtml.includes('class="sp-phase"'));
+assert(planHtml.includes('class="sp-task"'));
+assert(planHtml.includes('class="sp-step"'));
+assert(planHtml.includes('class="sp-spec-link"'));
+assert(planHtml.includes('class="sp-verify-block"'));
+assert(planHtml.includes('class="sp-watchouts"'));
 
 console.log('All template-sync tests passed.');
