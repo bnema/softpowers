@@ -20,3 +20,9 @@ assert(softassist.includes('data-phase-id'));
 assert(softassist.includes('data-task-id'));
 assert(softassist.includes('data-step-id'));
 assert(softassist.includes('HTML plan remains the canonical readable artifact'));
+
+const readme = readFileSync('README.md', 'utf8');
+assert(readme.includes('HTML'));
+assert(readme.includes('specs and implementation plans'));
+assert(readme.includes('softassist'));
+assert(readme.includes('ownership split'));

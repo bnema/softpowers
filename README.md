@@ -38,7 +38,7 @@ Notable differences in this fork:
 - Heavy workflows are opt-in: small or clearly scoped tasks can stay in direct execution.
 - Plan execution recommends `softassist`, where the human stays the primary implementer and the agent provides guidance, research, review, verification, and explicitly delegated mechanical help.
 - Fully delegated implementation remains available for cases where the human deliberately wants the agent to implement phases or sub-tasks.
-- Specs, plans, and design docs can be saved outside the repo by setting `PROJECTS_DOCS_PATH`; files go under `$PROJECTS_DOCS_PATH/{repoName}/plans` or `$PROJECTS_DOCS_PATH/{repoName}/specs`. When unset, Softpowers uses `docs/softpowers/` in the repo.
+- Specs, plans, and design docs are saved as reusable HTML documents. `brainstorming` produces HTML spec documents; `writing-plans` produces HTML implementation playbooks with phase/task/step navigation; `softassist` reads HTML specs and implementation plans and guides one step at a time. When `PROJECTS_DOCS_PATH` is set, files go under `$PROJECTS_DOCS_PATH/{repoName}/plans` or `$PROJECTS_DOCS_PATH/{repoName}/specs`. When unset, Softpowers uses `docs/softpowers/` in the repo.
 - The local branch review server is consumed through the `local-pr-review-server` package from `bnema/local-pr-review-server`.
 - The fast Claude Code skill test runner skips `test-subagent-driven-development.sh` in this fork because it requires a working Claude Code org/session in headless mode.
 
@@ -99,13 +99,13 @@ Start a new session in your chosen platform and ask for something that should tr
 
 0. **workflow selection** - For gray-area tasks, the agent offers a choice: direct execution, light guidance, or the full Softpowers flow.
 
-1. **brainstorming / co-design** - Activates when you choose the full design-first flow. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves design document when useful.
+1. **brainstorming / co-design** - Activates when you choose the full design-first flow. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves a reusable HTML spec document.
 
 2. **using-git-worktrees** - Activates after design approval when implementation needs an isolated workspace. Creates or verifies an isolated workspace, runs project setup, verifies clean test baseline.
 
-3. **writing-plans / co-planning** - Activates with approved design. Breaks work into phases containing bite-sized sub-tasks, concrete verification steps, and enough context for human-led implementation.
+3. **writing-plans / co-planning** - Activates with approved design. Produces an HTML implementation playbook with phase/task/step navigation, concrete verification steps, and enough context for human-led implementation.
 
-4. **softassist** - Recommended after planning. The human remains the primary implementer. The agent reads the plan, proposes an ownership split, guides one step at a time, fetches docs, runs verification, reviews changes, and handles agreed mechanical chores when explicitly delegated.
+4. **softassist** - Recommended after planning. The human remains the primary implementer. The agent reads the HTML plan, proposes an ownership split, guides one step at a time, fetches docs, runs verification, reviews changes, and handles agreed mechanical chores when explicitly delegated.
 
 5. **delegated implementation** - Optional and explicit. If the human wants the agent to implement, the workflow can use `subagent-driven-development` or `executing-plans` with phase-based review gates. This is available, but not the default Softpowers path.
 
@@ -129,8 +129,8 @@ Start a new session in your chosen platform and ask for something that should tr
 - **verification-before-completion** - Ensure it's actually fixed
 
 **Collaboration** 
-- **brainstorming** - Socratic co-design and design refinement
-- **writing-plans** - Detailed co-planning for human-led or delegated implementation
+- **brainstorming** - Socratic co-design and design refinement; saves reusable HTML spec documents
+- **writing-plans** - Detailed co-planning for human-led or delegated implementation; produces HTML implementation playbooks with phase/task/step navigation
 - **softassist** - Human-led implementation with agent guidance, review, verification, research, and explicitly delegated mechanical help
 - **executing-plans** - Delegated inline phase execution with checkpoints
 - **dispatching-parallel-agents** - Concurrent subagent workflows
