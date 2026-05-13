@@ -10,7 +10,7 @@
  * Do not edit generated templates directly.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,7 +22,14 @@ const root = resolve(__dirname, '..');
 const uiDir = resolve(root, 'lib', 'html-ui');
 
 function readPart(name) {
-  return readFileSync(resolve(uiDir, name), 'utf8');
+  const filePath = resolve(uiDir, name);
+  try {
+    return readFileSync(filePath, 'utf8');
+  } catch (err) {
+    throw new Error(
+      `Failed to read source file "${name}" at "${filePath}" (uiDir: "${uiDir}"): ${err.message}`
+    );
+  }
 }
 
 const tokensCss = readPart('tokens.css');
@@ -30,7 +37,7 @@ const commonCss = readPart('common.css');
 const brainstormCss = readPart('brainstorm.css');
 const documentCss = readPart('document.css');
 const documentThemeJs = readPart('document-theme.js');
-const baseFrame = readFileSync(resolve(uiDir, 'base-frame.html'), 'utf8');
+const baseFrame = readPart('base-frame.html');
 
 // ===== Output definitions =====
 
@@ -156,8 +163,15 @@ function buildTemplate(def) {
 
 for (const def of outputs) {
   const outPath = resolve(root, def.out);
-  writeFileSync(outPath, buildTemplate(def), 'utf8');
-  console.log('Wrote: ' + def.out);
+  try {
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, buildTemplate(def), 'utf8');
+    console.log('Wrote: ' + def.out);
+  } catch (err) {
+    throw new Error(
+      `Failed to write output "${def.out}" at "${outPath}": ${err.message}`
+    );
+  }
 }
 
 console.log('Done.');
