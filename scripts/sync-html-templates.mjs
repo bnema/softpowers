@@ -95,8 +95,24 @@ function buildTemplate(def) {
 
   // The brainstorming server expects <!-- CONTENT --> (HTML comment), not {{CONTENT}}.
   // Additionally, the server test asserts id="claude-content" on the container.
-  // Spec/plan templates use {{CONTENT}} as a conventional mustache placeholder.
-  const contentPlaceholder = def.name === 'brainstorm' ? '<div id="claude-content"><!-- CONTENT --></div>' : '{{CONTENT}}';
+  // Spec templates use a pre-structured document shell with section placeholders.
+  // Plan templates use {{CONTENT}} as a conventional mustache placeholder.
+  let contentPlaceholder;
+  if (def.name === 'brainstorm') {
+    contentPlaceholder = '<div id="claude-content"><!-- CONTENT --></div>';
+  } else if (def.name === 'spec') {
+    contentPlaceholder = `<article class="sp-document sp-spec" data-doc-kind="spec" data-doc-version="1">
+  <header class="sp-doc-header">
+    <p class="sp-eyebrow">Softpowers Spec</p>
+    <h1 id="top">{{DOC_TITLE}}</h1>
+    <button id="theme-toggle" class="theme-toggle" type="button">Toggle theme</button>
+  </header>
+  <nav class="sp-toc" aria-label="Table of contents">{{TOC_ITEMS}}</nav>
+  <section id="overview" data-section="overview">{{OVERVIEW}}</section>
+</article>`;
+  } else {
+    contentPlaceholder = '{{CONTENT}}';
+  }
 
   let html = baseFrame
     .replace('{{DOC_TITLE}}', def.title)

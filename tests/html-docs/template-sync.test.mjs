@@ -35,9 +35,14 @@ assert(brainstormHtml.includes('claude-content'), 'Should have claude-content co
 assert(brainstormHtml.includes('indicator-bar'), 'Should have indicator-bar');
 assert(brainstormHtml.includes('indicator-text'), 'Should have indicator-text');
 assert(brainstormHtml.includes('Connected'), 'Should have Connected status');
-assert(specHtml.includes('{{CONTENT}}'));
-assert(planHtml.includes('{{CONTENT}}'));
+
+// Spec uses structured placeholders (not plain {{CONTENT}})
+assert(!specHtml.includes('{{CONTENT}}'), 'Spec should not use plain {{CONTENT}}');
+assert(specHtml.includes('{{TOC_ITEMS}}'));
+assert(specHtml.includes('{{OVERVIEW}}'));
 assert(specHtml.includes('{{DOC_TITLE}}'));
+
+assert(planHtml.includes('{{CONTENT}}'));
 assert(planHtml.includes('{{DOC_TITLE}}'));
 
 // Verify self-contained: no external stylesheet or script refs
@@ -52,5 +57,12 @@ assert(!brainstormHtml.includes('<script src='));
 assert(brainstormHtml.includes('data-template-kind="brainstorm"'));
 assert(specHtml.includes('data-template-kind="spec"'));
 assert(planHtml.includes('data-template-kind="plan"'));
+
+// Phase 2: spec-shell assertions
+assert(specHtml.includes('data-doc-kind="spec"'));
+assert(specHtml.includes('class="sp-toc"'));
+assert(specHtml.includes('theme-toggle'));
+assert(specHtml.includes('localStorage'));
+assert(specHtml.includes('id="overview"'));
 
 console.log('All template-sync tests passed.');

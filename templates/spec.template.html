@@ -12,8 +12,26 @@
  * Do not edit generated templates directly — run scripts/sync-html-templates.mjs.
  */
 
-/* ===== LIGHT THEME ===== */
+/* ===== DARK THEME (DEFAULT) ===== */
 :root {
+  --bg-primary: #1d1d1f;
+  --bg-secondary: #2d2d2f;
+  --bg-tertiary: #3d3d3f;
+  --border: #424245;
+  --text-primary: #f5f5f7;
+  --text-secondary: #86868b;
+  --text-tertiary: #636366;
+  --accent: #0a84ff;
+  --accent-hover: #409cff;
+  --success: #34c759;
+  --warning: #ff9f0a;
+  --error: #ff3b30;
+  --selected-bg: rgba(10, 132, 255, 0.15);
+  --selected-border: #0a84ff;
+}
+
+/* ===== LIGHT THEME ===== */
+:root[data-theme="light"] {
   --bg-primary: #f5f5f7;
   --bg-secondary: #ffffff;
   --bg-tertiary: #e5e5e7;
@@ -23,28 +41,8 @@
   --text-tertiary: #aeaeb2;
   --accent: #0071e3;
   --accent-hover: #0077ed;
-  --success: #34c759;
-  --warning: #ff9f0a;
-  --error: #ff3b30;
   --selected-bg: #e8f4fd;
   --selected-border: #0071e3;
-}
-
-/* ===== DARK THEME ===== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #1d1d1f;
-    --bg-secondary: #2d2d2f;
-    --bg-tertiary: #3d3d3f;
-    --border: #424245;
-    --text-primary: #f5f5f7;
-    --text-secondary: #86868b;
-    --text-tertiary: #636366;
-    --accent: #0a84ff;
-    --accent-hover: #409cff;
-    --selected-bg: rgba(10, 132, 255, 0.15);
-    --selected-border: #0a84ff;
-  }
 }
 
 
@@ -112,6 +110,51 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 
 /* ===== DOCUMENT LAYOUT ===== */
 .sp-doc { padding: 2rem; max-width: 800px; margin: 0 auto; }
+
+/* ===== DOCUMENT SHELL ===== */
+.sp-document { width: 100%; }
+.sp-document[data-doc-kind="spec"] { /* spec-specific shell styling */ }
+
+.sp-doc-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.sp-doc-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.sp-eyebrow {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* ===== THEME TOGGLE ===== */
+.theme-toggle {
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  background: var(--bg-tertiary);
+}
+.theme-toggle:active {
+  background: var(--border);
+}
 
 /* ===== TOC ===== */
 .sp-toc {
@@ -196,25 +239,41 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Spec</a></h1>
 </div>
-  <main class="sp-main">{{CONTENT}}</main>
+  <main class="sp-main"><article class="sp-document sp-spec" data-doc-kind="spec" data-doc-version="1">
+  <header class="sp-doc-header">
+    <p class="sp-eyebrow">Softpowers Spec</p>
+    <h1 id="top">{{DOC_TITLE}}</h1>
+    <button id="theme-toggle" class="theme-toggle" type="button">Toggle theme</button>
+  </header>
+  <nav class="sp-toc" aria-label="Table of contents">{{TOC_ITEMS}}</nav>
+  <section id="overview" data-section="overview">{{OVERVIEW}}</section>
+</article></main>
   
   <script>
 /*
  * DOCUMENT THEME HELPER
  *
- * Provides theme detection and switching for document templates.
+ * Provides theme persistence and switching for document templates.
+ * Dark mode is the default on first load.
  * Do not edit generated templates directly — run scripts/sync-html-templates.mjs.
  */
 (function () {
   'use strict';
 
-  // Detect OS theme preference
-  var darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  function updateTheme() {
-    document.documentElement.setAttribute('data-theme', darkQuery.matches ? 'dark' : 'light');
+  var storageKey = 'softpowers-doc-theme';
+  var root = document.documentElement;
+  var saved = localStorage.getItem(storageKey) || 'dark';
+  root.setAttribute('data-theme', saved);
+
+  var toggleBtn = document.getElementById('theme-toggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function () {
+      var current = root.getAttribute('data-theme');
+      var next = current === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem(storageKey, next);
+    });
   }
-  updateTheme();
-  darkQuery.addEventListener('change', updateTheme);
 })();
 
 </script>
