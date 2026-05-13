@@ -283,5 +283,6 @@ If the session used `--project-dir`, mockup files persist in `.softpowers/brains
 
 ## Reference
 
-- Frame template (CSS reference): `scripts/frame-template.html`
+- Frame template (generated output): `skills/brainstorming/scripts/frame-template.html`
+- Shared UI source: `lib/html-ui/`
 - Helper script (client-side): `scripts/helper.js`
