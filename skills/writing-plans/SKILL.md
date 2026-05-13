@@ -56,20 +56,20 @@ Every plan is an HTML document generated from the shared template at `templates/
 - `{{TOC_ITEMS}}` — ordered list of `<li><a href="#phase-N">Phase N: Title</a></li>` entries
 
 **Phase regions (copy the `<section class="sp-phase">` block for each phase):**
-- Set `data-phase-id="phase-N"` (sequential N starting at 1).
+- Set `id="phase-N"` and `data-phase-id="phase-N"` (sequential N starting at 1). The `id` is what TOC anchor links target (`href="#phase-N"`) so both must match.
 - Fill `{{PHASE_TITLE}}` and `{{PHASE_GOAL}}` in the phase header.
 - List files to create/modify/test inside the phase header.
 
 **Task regions (copy the `<article class="sp-task">` block for each sub-task):**
-- Set `data-task-id="task-N"` (within each phase, tasks are numbered sequentially).
-- Fill the task heading.
-- Copy the `<li class="sp-step">` block for each concrete step, filling data attributes and text as described below.
+- Set `id="task-N"` and `data-task-id="task-N"` (within each phase, tasks are numbered sequentially).
+- The task block has no stand-alone heading: its title lives in the `<h4>` heading of the first step (or the most representative step). Fill step-level headings instead.
+- Copy the `<li class="sp-step">` block for each concrete step, filling `id`, data attributes, and text as described below.
 
 ## Phase Structure
 
 Plans MUST be organized as 3-7 phases unless the work is tiny. Each phase should deliver a coherent, reviewable slice of the implementation. Put the two-stage review checkpoint at the end of the phase, after all sub-tasks in that phase are complete. The phase review checkpoint is not a sub-task and should not be assigned to an implementer subagent.
 
-Each `<li class="sp-step">` carries execution metadata in data attributes:
+Each `<li class="sp-step">` carries both an HTML `id` and execution metadata in data attributes. The `id` and `data-step-id` must agree (e.g. `id="step-1"` and `data-step-id="step-1"`):
 - `data-step-id` — unique identifier for this step (e.g. `step-1`)
 - `data-step-kind` — one of `implementation`, `test`, `verification`, `commit`, or `review`
 - `data-file` — path to the primary file touched (optional; omit for review/commit steps)

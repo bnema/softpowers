@@ -80,6 +80,7 @@ assert(planHtml.includes('data-phase-id="phase-1"'));
 assert(planHtml.includes('data-task-id="task-1"'));
 assert(planHtml.includes('data-step-id="step-1"'));
 assert(planHtml.includes('data-file="{{STEP_FILE}}"'));
+assert(planHtml.includes('data-lines="{{STEP_LINES}}"'));
 assert(planHtml.includes('data-command="{{VERIFY_COMMAND}}"'));
 assert(planHtml.includes('class="sp-phase"'));
 assert(planHtml.includes('class="sp-task"'));
