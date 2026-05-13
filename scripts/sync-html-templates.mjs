@@ -94,8 +94,9 @@ function buildTemplate(def) {
   const scriptBlock = def.scripts ? '<script>\n' + def.scripts + '\n</script>' : '';
 
   // The brainstorming server expects <!-- CONTENT --> (HTML comment), not {{CONTENT}}.
+  // Additionally, the server test asserts id="claude-content" on the container.
   // Spec/plan templates use {{CONTENT}} as a conventional mustache placeholder.
-  const contentPlaceholder = def.name === 'brainstorm' ? '<!-- CONTENT -->' : '{{CONTENT}}';
+  const contentPlaceholder = def.name === 'brainstorm' ? '<div id="claude-content"><!-- CONTENT --></div>' : '{{CONTENT}}';
 
   let html = baseFrame
     .replace('{{DOC_TITLE}}', def.title)

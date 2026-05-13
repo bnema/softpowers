@@ -110,6 +110,9 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
  * Do not edit generated templates directly — run scripts/sync-html-templates.mjs.
  */
 
+/* ===== CONTENT CONTAINER ===== */
+#claude-content { padding: 2rem; min-height: 100%; }
+
 /* ===== INDICATOR BAR ===== */
 .indicator-bar {
   background: var(--bg-secondary);
@@ -227,7 +230,7 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Brainstorming</a></h1>
   <div class="status">Connected</div>
 </div>
-  <main class="sp-main"><!-- CONTENT --></main>
+  <main class="sp-main"><div id="claude-content"><!-- CONTENT --></div></main>
   
 <div class="indicator-bar">
   <span id="indicator-text">Click an option above, then return to the terminal</span>

@@ -5,6 +5,9 @@
  * Do not edit generated templates directly — run scripts/sync-html-templates.mjs.
  */
 
+/* ===== CONTENT CONTAINER ===== */
+#claude-content { padding: 2rem; min-height: 100%; }
+
 /* ===== INDICATOR BAR ===== */
 .indicator-bar {
   background: var(--bg-secondary);
