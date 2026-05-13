@@ -1,0 +1,84 @@
+/*
+ * DOCUMENT TEMPLATE STYLES (SPEC / PLAN)
+ *
+ * Typography and layout for spec and plan documents.
+ * Do not edit generated templates directly — run scripts/sync-html-templates.mjs.
+ */
+
+/* ===== DOCUMENT LAYOUT ===== */
+.sp-doc { padding: 2rem; max-width: 800px; margin: 0 auto; }
+
+/* ===== TOC ===== */
+.sp-toc {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 2rem;
+}
+.sp-toc h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.sp-toc ol { padding-left: 1.25rem; }
+.sp-toc li { margin-bottom: 0.25rem; font-size: 0.9rem; }
+
+/* ===== HEADER HIERARCHY ===== */
+.sp-doc h2 { font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.5rem; }
+.sp-doc h3 { font-size: 1.1rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.25rem; }
+.sp-doc h4 { font-size: 0.95rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.25rem; }
+
+/* ===== BODY TEXT ===== */
+.sp-doc p { margin-bottom: 0.75rem; }
+.sp-doc ul, .sp-doc ol { margin-left: 1.25rem; margin-bottom: 0.75rem; }
+.sp-doc li { margin-bottom: 0.25rem; }
+
+/* ===== CODE ===== */
+.sp-doc code {
+  background: var(--bg-tertiary);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+}
+.sp-doc pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+.sp-doc pre code {
+  background: none;
+  padding: 0;
+}
+
+/* ===== TABLES ===== */
+.sp-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.sp-doc th {
+  background: var(--bg-secondary);
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.sp-doc td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+/* ===== METADATA BOX ===== */
+.sp-meta {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 2rem;
+}
+.sp-meta dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; }
+.sp-meta dt { font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); }
+.sp-meta dd { font-size: 0.85rem; }

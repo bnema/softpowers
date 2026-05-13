@@ -1,0 +1,53 @@
+/*
+ * SHARED BASE STYLES
+ *
+ * Common reset, typography, and layout used by all HTML templates.
+ * Do not edit generated templates directly — run scripts/sync-html-templates.mjs.
+ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+/* ===== FRAME STRUCTURE ===== */
+.sp-header {
+  background: var(--bg-secondary);
+  padding: 0.5rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sp-header h1 { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); }
+.sp-header .status { font-size: 0.7rem; color: var(--success); display: flex; align-items: center; gap: 0.4rem; }
+.sp-header .status::before { content: ''; width: 6px; height: 6px; background: var(--success); border-radius: 50%; }
+
+.sp-main { flex: 1; overflow-y: auto; }
+
+.sp-footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 0.5rem 1.5rem;
+  flex-shrink: 0;
+  text-align: center;
+}
+.sp-footer span {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ===== TYPOGRAPHY ===== */
+h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; }
+.section { margin-bottom: 2rem; }
+.label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
