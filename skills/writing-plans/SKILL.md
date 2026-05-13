@@ -15,7 +15,11 @@ Assume the human is a skilled developer, but may know almost nothing about our t
 
 **Context:** This should be run in an isolated workspace. A dedicated worktree is recommended, but a fresh branch in the current directory is also supported when the human chooses that workflow.
 
-**Save plans to:** `$PROJECTS_DOCS_PATH/{repoName}/plans/YYYY-MM-DD-<feature-name>.md` if `PROJECTS_DOCS_PATH` is set; otherwise use `docs/softpowers/plans/YYYY-MM-DD-<feature-name>.md`
+**Save plans to:** `$PROJECTS_DOCS_PATH/{repoName}/plans/YYYY-MM-DD-<feature-name>.html` if `PROJECTS_DOCS_PATH` is set; otherwise use `docs/softpowers/plans/YYYY-MM-DD-<feature-name>.html`
+
+- Copy `templates/plan.template.html` to the destination path.
+- Fill the existing phase/task/step regions instead of rebuilding the document shell.
+- Use small targeted snippets when they clarify a change; rely primarily on file refs, line refs, watch-outs, and verification blocks.
 
 ## Scope Check
 
@@ -34,83 +38,85 @@ This structure informs the phase decomposition. Each phase should produce a cohe
 
 ## Bite-Sized Sub-task Granularity
 
-Each phase contains sub-tasks. Each sub-task is a self-contained implementation unit small enough for one focused human implementer, with clear notes about any low-judgment mechanical work the agent may offer to handle. Inside each sub-task, keep checkbox steps concrete and short:
+Each phase contains sub-tasks. Each sub-task is a self-contained implementation unit small enough for one focused human implementer, with clear notes about any low-judgment mechanical work the agent may offer to handle. Inside each sub-task, keep steps concrete and short — each step maps to a `<li class="sp-step">` element with data attributes:
 - "Write the failing test" - step
 - "Run it to make sure it fails" - step
 - "Implement the minimal code to make the test pass" - step
 - "Run the tests and make sure they pass" - step
 - "Commit" - step
 
-## Plan Document Header
+## HTML Plan Template
 
-**Every plan MUST start with this header:**
+Every plan is an HTML document generated from the shared template at `templates/plan.template.html`. The template provides the full document shell (header, TOC, theme toggle, footer) and CSS. You fill the content into the existing placeholders and structural regions. Do not rewrite the document shell; copy the template then fill its placeholders.
 
-```markdown
-# [Feature Name] Implementation Plan
+**For Softpowers sessions:** Recommended implementation mode: use `softassist` so the human remains the primary implementer while the agent guides, verifies, reviews, researches, and handles explicitly delegated mechanical work. If the human explicitly chooses delegated implementation, use `subagent-driven-development` or `executing-plans` phase-by-phase. Each phase contains sub-tasks with `<li class="sp-step">` elements for tracking. Review gates happen at the end of each phase, not after every sub-task.
 
-> **For Softpowers sessions:** Recommended implementation mode: use `softassist` so the human remains the primary implementer while the agent guides, verifies, reviews, researches, and handles explicitly delegated mechanical work. If the human explicitly chooses delegated implementation, use `subagent-driven-development` or `executing-plans` phase-by-phase. Each phase contains sub-tasks with checkbox steps (`- [ ]`) for tracking. Review gates happen at the end of each phase, not after every sub-task.
+**Top-level placeholders (fill in the copy):**
+- `{{DOC_TITLE}}` — the feature name shown in `<title>` and `<h1>`
+- `{{TOC_ITEMS}}` — ordered list of `<li><a href="#phase-N">Phase N: Title</a></li>` entries
 
-**Goal:** [One sentence describing what this builds]
+**Phase regions (copy the `<section class="sp-phase">` block for each phase):**
+- Set `data-phase-id="phase-N"` (sequential N starting at 1).
+- Fill `{{PHASE_TITLE}}` and `{{PHASE_GOAL}}` in the phase header.
+- List files to create/modify/test inside the phase header.
 
-**Architecture:** [2-3 sentences about approach]
-
-**Tech Stack:** [Key technologies/libraries]
-
----
-```
+**Task regions (copy the `<article class="sp-task">` block for each sub-task):**
+- Set `data-task-id="task-N"` (within each phase, tasks are numbered sequentially).
+- Fill the task heading.
+- Copy the `<li class="sp-step">` block for each concrete step, filling data attributes and text as described below.
 
 ## Phase Structure
 
 Plans MUST be organized as 3-7 phases unless the work is tiny. Each phase should deliver a coherent, reviewable slice of the implementation. Put the two-stage review checkpoint at the end of the phase, after all sub-tasks in that phase are complete. The phase review checkpoint is not a sub-task and should not be assigned to an implementer subagent.
 
-````markdown
-### Phase N: [Reviewable Outcome]
+Each `<li class="sp-step">` carries execution metadata in data attributes:
+- `data-step-id` — unique identifier for this step (e.g. `step-1`)
+- `data-step-kind` — one of `implementation`, `test`, `verification`, `commit`, or `review`
+- `data-file` — path to the primary file touched (optional; omit for review/commit steps)
+- `data-lines` — affected line range (optional)
+- `data-command` — verification command to run (optional)
 
-**Goal:** [What works after this phase]
+**Implementation step example:**
 
-**Files:**
-- Create: `exact/path/to/file.py`
-- Modify: `exact/path/to/existing.py:123-145`
-- Test: `tests/exact/path/to/test.py`
-
-#### Sub-task 1: [Self-contained implementation unit]
-
-- [ ] **Step 1: Write the failing test**
-
-```python
-def test_specific_behavior():
-    result = function(input)
-    assert result == expected
+```html
+<li class="sp-step" data-step-id="step-1" data-step-kind="implementation" data-file="skills/softassist/SKILL.md" data-lines="21-31">
+  <h4>Teach softassist to treat HTML as the canonical plan format</h4>
+  <a class="sp-spec-link" href="../specs/YYYY-MM-DD-feature-design.html#section-3">See spec rationale</a>
+  <div class="sp-verify-block"><code>rtk node tests/html-docs/workflow-docs.test.mjs</code></div>
+  <div class="sp-watchouts">Watch: verify the saved path references .html, not .md</div>
+</li>
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+**Verification step example:**
 
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
-
-- [ ] **Step 3: Write minimal implementation**
-
-```python
-def function(input):
-    return expected
+```html
+<li class="sp-step" data-step-id="step-2" data-step-kind="verification" data-command="rtk node tests/html-docs/workflow-docs.test.mjs">
+  <h4>Run workflow-docs test to verify the html assertions</h4>
+  <div class="sp-verify-block"><code>rtk node tests/html-docs/workflow-docs.test.mjs</code></div>
+  <div class="sp-watchouts">Expected: all assertions pass</div>
+</li>
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+**Commit step example:**
 
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: PASS
-
-- [ ] **Step 5: Commit the sub-task work**
-
-```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
+```html
+<li class="sp-step" data-step-id="step-3" data-step-kind="commit">
+  <h4>Commit the sub-task work</h4>
+  <div class="sp-verify-block"><code>rtk git add skills/writing-plans/SKILL.md && rtk git commit -m "docs(writing-plans): switch plan output to html playbooks"</code></div>
+</li>
 ```
 
-**Phase review checkpoint:**
-- Spec compliance review for the full phase
-- Code quality review for the full phase, only after spec compliance passes
-````
+**Phase review checkpoint** (not a `<li class="sp-step">`, placed after all steps in the task):
+
+```html
+<div class="sp-review-checkpoint">
+  <p><strong>Phase review checkpoint:</strong></p>
+  <ul>
+    <li>Spec compliance review for the full phase</li>
+    <li>Code quality review for the full phase, only after spec compliance passes</li>
+  </ul>
+</div>
+```
 
 ## No Placeholders
 
