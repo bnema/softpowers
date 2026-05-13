@@ -13,3 +13,10 @@ assert(writingPlans.includes('templates/plan.template.html'));
 assert(writingPlans.includes('data-phase-id'));
 assert(writingPlans.includes('data-task-id'));
 assert(writingPlans.includes('targeted snippets'));
+
+const softassist = readFileSync('skills/softassist/SKILL.md', 'utf8');
+assert(softassist.includes('data-doc-kind="plan"'));
+assert(softassist.includes('data-phase-id'));
+assert(softassist.includes('data-task-id'));
+assert(softassist.includes('data-step-id'));
+assert(softassist.includes('HTML plan remains the canonical readable artifact'));
