@@ -117,7 +117,10 @@ digraph brainstorming {
 **Documentation:**
 
 - Write the validated design (spec) to `$PROJECTS_DOCS_PATH/{repoName}/specs/YYYY-MM-DD-<topic>-design.html` if `PROJECTS_DOCS_PATH` is set; otherwise use `docs/softpowers/specs/YYYY-MM-DD-<topic>-design.html`
-- Copy `templates/spec.template.html` to the target path, then fill the content placeholders instead of rewriting the shell.
+- Copy `templates/spec.template.html` to the target path, then fill the content placeholders instead of rewriting the shell:
+  - `{{DOC_TITLE}}` — the spec name shown in `<title>` and `<h1>`
+  - `{{TOC_ITEMS}}` — ordered list of `<li><a href="#section-id">Section Title</a></li>` entries
+  - `{{OVERVIEW}}` — the complete spec body (sections, code blocks, tables, etc.)
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
 
