@@ -139,7 +139,7 @@ node scripts/create-spec-doc.mjs \
   - `{{DOC_TITLE}}` — the spec name shown in `<title>` and `<h1>`
   - `{{TOC_ITEMS}}` — the full TOC block, typically `<h3>Table of contents</h3><ol>...</ol>`
   - `{{OVERVIEW}}` — the complete spec body (sections, code blocks, tables, etc.)
-- Validate the saved spec with `node scripts/validate-spec-doc.mjs <resolved-spec-path>`.
+- Validate the saved spec with `node scripts/validate-spec-doc.mjs <resolved-spec-path>`. **This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the reported issues, then re-run the validator before proceeding to the next step.
 - Use elements-of-style:writing-clearly-and-concisely skill if available.
 - Commit rule:
   - if the resolved spec path is inside the current project repo, commit it there

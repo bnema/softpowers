@@ -38,7 +38,16 @@ Notable differences in this fork:
 - Heavy workflows are opt-in: small or clearly scoped tasks can stay in direct execution.
 - Plan execution recommends `softassist`, where the human stays the primary implementer and the agent provides guidance, research, review, verification, and explicitly delegated mechanical help.
 - Fully delegated implementation remains available for cases where the human deliberately wants the agent to implement phases or sub-tasks.
-- Specs, plans, and design docs are saved as reusable HTML documents. `brainstorming` produces HTML spec documents; `writing-plans` produces HTML implementation playbooks with phase/task/step navigation; `softassist` reads HTML specs and implementation plans and guides one step at a time. When `PROJECTS_DOCS_PATH` is set, files go under `$PROJECTS_DOCS_PATH/{repoName}/plans` or `$PROJECTS_DOCS_PATH/{repoName}/specs`; when unset, Softpowers uses `docs/softpowers/` in the repo. Resolve the env explicitly with `printenv PROJECTS_DOCS_PATH`, derive `{repoName}` from the git top-level directory basename when possible, and do not create a second repo-local copy when the resolved docs path lives outside the project repo.
+- Specs, plans, and design docs are saved as reusable HTML documents. Both specs and implementation plans use the same HTML document approach:
+  - `brainstorming` produces HTML spec documents.
+  - `writing-plans` produces HTML implementation playbooks with phase/task/step navigation.
+  - `softassist` reads those HTML specs and plans, and guides step-by-step.
+  - Document storage resolves paths as follows:
+    - When `PROJECTS_DOCS_PATH` is set, files go under `$PROJECTS_DOCS_PATH/{repoName}/plans` or `$PROJECTS_DOCS_PATH/{repoName}/specs`.
+    - Otherwise, `docs/softpowers/` in the repo is used.
+    - Resolve the env variable explicitly with `printenv PROJECTS_DOCS_PATH`.
+    - Derive `{repoName}` from the git top-level directory basename when possible.
+    - Do not create a second repo-local copy when the resolved docs path lives outside the project repo.
 - Markdown-first spec authoring now has a helper flow: `node scripts/create-spec-doc.mjs --title "..." --slug ... --body /tmp/spec.md` generates the HTML spec shell, TOC, anchors, and validation result; `node scripts/validate-spec-doc.mjs <spec-path>` re-checks the output. See `examples/html-docs/canonical-spec.md` and `docs/softpowers/specs/2026-05-13-canonical-html-spec-workflow-design.html` for the canonical example.
 - The local branch review server is consumed through the `local-pr-review-server` package from `bnema/local-pr-review-server`.
 - The fast Claude Code skill test runner skips `test-subagent-driven-development.sh` in this fork because it requires a working Claude Code org/session in headless mode.

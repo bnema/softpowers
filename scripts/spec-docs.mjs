@@ -285,9 +285,9 @@ function pathInside(rootPath, targetPath) {
   return rel === '' || (!rel.startsWith('..') && rel !== '..' && !isAbsolute(rel));
 }
 
-function getGitTopLevel(projectDir) {
+function getGitTopLevelFrom(dir) {
   try {
-    const result = spawnSync('git', ['-C', projectDir, 'rev-parse', '--show-toplevel'], {
+    const result = spawnSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], {
       encoding: 'utf8',
     });
     if (result.status !== 0) {
@@ -299,18 +299,12 @@ function getGitTopLevel(projectDir) {
   }
 }
 
+function getGitTopLevel(projectDir) {
+  return getGitTopLevelFrom(projectDir);
+}
+
 function getGitRepoRoot(targetDir) {
-  try {
-    const result = spawnSync('git', ['-C', targetDir, 'rev-parse', '--show-toplevel'], {
-      encoding: 'utf8',
-    });
-    if (result.status !== 0) {
-      return null;
-    }
-    return result.stdout.trim();
-  } catch {
-    return null;
-  }
+  return getGitTopLevelFrom(targetDir);
 }
 
 export function resolveRepoName({ projectDir, repoName }) {
