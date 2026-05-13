@@ -167,6 +167,17 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 .sp-toc h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.5rem; }
 .sp-toc ol { padding-left: 1.25rem; }
 .sp-toc li { margin-bottom: 0.25rem; font-size: 0.9rem; }
+.sp-toc a,
+.sp-toc a:visited {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.sp-toc a:hover,
+.sp-toc a:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
 
 /* ===== HEADER HIERARCHY ===== */
 .sp-doc h2 { font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.5rem; }
