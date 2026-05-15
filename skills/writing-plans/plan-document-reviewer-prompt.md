@@ -2,18 +2,19 @@
 
 Use this template when dispatching a plan document reviewer subagent.
 
-**Purpose:** Verify the plan is complete, matches the spec, and has proper phase and sub-task decomposition.
+**Purpose:** Verify the plan markdown draft is complete, matches the spec, and has proper phase and sub-task decomposition.
 
-**Dispatch after:** The complete plan is written.
+**Dispatch after:** The plan markdown draft is written to a unique temporary path such as `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"`, after the controller has done its own self-review and before `node scripts/create-plan-doc.mjs ...` generates the final HTML.
 
-```
+```yaml
 Task tool (general-purpose):
-  description: "Review plan document"
+  description: "Review plan markdown draft"
   prompt: |
-    You are a plan document reviewer. Verify this plan is complete and ready for implementation.
+    You are a plan document reviewer. Verify this markdown draft is complete and ready for HTML generation and implementation.
 
-    **Plan to review:** [PLAN_FILE_PATH]
-    **Spec for reference:** [SPEC_FILE_PATH]
+    **Plan markdown draft to review:** [PLAN_DRAFT_PATH]
+    **Planned canonical HTML output:** [PLAN_HTML_PATH]
+    **Spec for reference:** [APPROVED_SPEC_HTML_PATH]
 
     ## What to Check
 
@@ -45,5 +46,7 @@ Task tool (general-purpose):
     **Recommendations (advisory, do not block approval):**
     - [suggestions for improvement]
 ```
+
+**After approval:** The controller generates the final HTML with `node scripts/create-plan-doc.mjs ...` and validates it with `node scripts/validate-plan-doc.mjs <plan-path>`.
 
 **Reviewer returns:** Status, Issues (if any), Recommendations
