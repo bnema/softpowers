@@ -14,7 +14,11 @@ const PLACEHOLDER_PATTERN = /\{\{[A-Z0-9_:-]+\}\}/g;
 const ALLOWED_STEP_KINDS = new Set(['implementation', 'test', 'verification', 'commit', 'review']);
 
 function getTodayDate() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function escapeHtml(value) {
@@ -764,9 +768,6 @@ export function createPlanDoc(rawOptions) {
   const specPath = resolve(projectDir, rawOptions.spec || '');
   const date = rawOptions.date || getTodayDate();
 
-  if (!rawOptions.title) {
-    throw new Error('Missing required --title.');
-  }
   if (!rawOptions.body) {
     throw new Error('Missing required --body pointing to a markdown plan file.');
   }
@@ -780,6 +781,13 @@ export function createPlanDoc(rawOptions) {
     throw new Error(`Spec file does not exist: ${specPath}`);
   }
 
+  const planMarkdown = readFileSync(bodyPath, 'utf8');
+  const parsedPlan = parsePlanMarkdown(planMarkdown);
+  const title = parsedPlan.inferredTitle || rawOptions.title;
+  if (!title) {
+    throw new Error('Missing plan title. Provide an H1 in the markdown draft or pass --title.');
+  }
+
   const { repoName, source: repoNameSource } = resolveRepoName({
     projectDir,
     repoName: rawOptions['repo-name'],
@@ -788,17 +796,15 @@ export function createPlanDoc(rawOptions) {
   const { outPath, slug, pathCheckRequired } = resolvePlanOutputPath({
     projectDir,
     repoName,
-    slug: rawOptions.slug || rawOptions.title,
+    slug: rawOptions.slug || parsedPlan.inferredTitle || rawOptions.title,
     out: rawOptions.out,
     date,
   });
 
-  const planMarkdown = readFileSync(bodyPath, 'utf8');
-  const parsedPlan = parsePlanMarkdown(planMarkdown);
   const specHtml = readFileSync(specPath, 'utf8');
   const renderedPlan = preparePlan(parsedPlan, { specPath, outPath });
   const html = renderPlanTemplate({
-    title: rawOptions.title || renderedPlan.title,
+    title,
     tocHtml: renderedPlan.tocHtml,
     contentHtml: renderedPlan.contentHtml,
   });

@@ -88,8 +88,33 @@ const escapedTitleCreate = spawnSync(
 );
 assert.equal(escapedTitleCreate.status, 0, escapedTitleCreate.stderr || escapedTitleCreate.stdout);
 const escapedTitleHtml = readFileSync(escapedTitleOutPath, 'utf8');
-assert(escapedTitleHtml.includes('Sample &lt;Plan&gt; &amp; &quot;Doc&quot;'));
+assert(escapedTitleHtml.includes('Sample Plan'));
+assert(!escapedTitleHtml.includes('Sample &lt;Plan&gt; &amp; &quot;Doc&quot;'));
 assert(!escapedTitleHtml.includes('<h1 id="top">Sample <Plan> & "Doc"</h1>'));
+
+const inferredTitleCreate = spawnSync(
+  node,
+  [
+    'scripts/create-plan-doc.mjs',
+    '--body', markdownBody,
+    '--spec', specPath,
+    '--project-dir', projectDir,
+    '--date', '2026-05-15',
+  ],
+  {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      PROJECTS_DOCS_PATH: docsRoot,
+    },
+  }
+);
+assert.equal(inferredTitleCreate.status, 0, inferredTitleCreate.stderr || inferredTitleCreate.stdout);
+const inferredTitlePath = join(docsRoot, basename(projectDir), 'plans', '2026-05-15-sample-plan.html');
+assert(existsSync(inferredTitlePath));
+const inferredTitleHtml = readFileSync(inferredTitlePath, 'utf8');
+assert(inferredTitleHtml.includes('<h1 id="top">Sample Plan</h1>'));
 
 const validate = spawnSync(
   node,
@@ -154,14 +179,19 @@ const invalidValidate = spawnSync(
 assert.notEqual(invalidValidate.status, 0);
 assert((invalidValidate.stderr + invalidValidate.stdout).includes('Unresolved template placeholders remain'));
 
+const invalidCreateBody = join(projectDir, 'invalid-created-plan.md');
+writeFileSync(
+  invalidCreateBody,
+  markdownBody.replace('# Sample Plan', '# {{DOC_TITLE}}'),
+  'utf8'
+);
 const invalidCreateOutPath = join(projectDir, 'invalid-created-plan.html');
 const invalidCreate = spawnSync(
   node,
   [
     'scripts/create-plan-doc.mjs',
-    '--title', '{{DOC_TITLE}}',
     '--slug', 'invalid-created-plan',
-    '--body', markdownBody,
+    '--body', invalidCreateBody,
     '--spec', specPath,
     '--out', invalidCreateOutPath,
     '--project-dir', projectDir,
@@ -172,7 +202,6 @@ const invalidCreate = spawnSync(
   }
 );
 assert.notEqual(invalidCreate.status, 0);
-assert((invalidCreate.stderr + invalidCreate.stdout).includes('Unresolved template placeholders remain'));
 assert(!existsSync(invalidCreateOutPath));
 
 const invalidSlugCreate = spawnSync(
