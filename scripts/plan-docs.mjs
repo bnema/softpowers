@@ -243,6 +243,9 @@ function parsePlanMarkdown(markdown) {
     if (!currentStep) {
       return;
     }
+    if (inStepCodeBlock) {
+      throw new Error(`Unterminated fenced code block in step "${currentStep.title}".`);
+    }
     currentStep.bodyHtml = renderMarkdownFragment(currentStepBody.join('\n').trim());
     currentStepBody = [];
 
@@ -562,6 +565,26 @@ function renderTask(task, specRelativePath) {
   return `    <article id="${escapeAttribute(task.id)}" class="sp-task" data-task-id="${escapeAttribute(task.dataTaskId)}">\n      <h3 class="sp-task-title">${formatInline(task.title)}</h3>\n      <ol class="sp-step-list">\n${stepsHtml}\n      </ol>\n    </article>`;
 }
 
+function validatePlanSpecReferences({ plan, specHtml }) {
+  const specIds = new Set([...specHtml.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]));
+  const errors = [];
+
+  for (const phase of plan.phases) {
+    for (const task of phase.tasks) {
+      for (const step of task.steps) {
+        if (!step.specSection) {
+          continue;
+        }
+        if (!specIds.has(step.specSection)) {
+          errors.push(`Spec section reference missing from approved spec HTML: #${step.specSection} (phase "${phase.title}", task "${task.title}", step "${step.title}")`);
+        }
+      }
+    }
+  }
+
+  return errors;
+}
+
 function renderPhase(phase, specRelativePath) {
   const tasksHtml = phase.tasks.map((task) => renderTask(task, specRelativePath)).join('\n');
   return `<section id="${escapeAttribute(phase.id)}" class="sp-phase" data-phase-id="${escapeAttribute(phase.dataPhaseId)}">\n    <header class="sp-phase-header">\n      <h2>${formatInline(phase.displayTitle)}</h2>\n      <p class="sp-phase-goal">${formatInline(phase.goal)}</p>${renderFilesBlock(phase.files)}\n    </header>\n${tasksHtml}\n    <div class="sp-review-checkpoint">\n      <p><strong>Phase review checkpoint:</strong></p>\n      <ul>\n        <li>Spec compliance review for the full phase</li>\n        <li>Code quality review for the full phase, only after spec compliance passes</li>\n      </ul>\n    </div>\n  </section>`;
@@ -680,12 +703,16 @@ export function validatePlanHtmlDocument({ html, filePath, projectDir, repoName,
   }
 
   const phaseIds = [...html.matchAll(/<section\b[^>]*\bid="(phase-\d+)"[^>]*\bdata-phase-id="([^"]+)"/g)];
+  const tocTargets = new Set(hrefTargets);
   if (!phaseIds.length) {
     errors.push('Plan must contain at least one phase section with matching id/data-phase-id.');
   }
   for (const [, id, dataId] of phaseIds) {
     if (id !== dataId) {
       errors.push(`Phase id mismatch: id="${id}" but data-phase-id="${dataId}".`);
+    }
+    if (!tocTargets.has(id)) {
+      errors.push(`Table of contents is missing a phase anchor for #${id}.`);
     }
   }
 
@@ -768,6 +795,7 @@ export function createPlanDoc(rawOptions) {
 
   const planMarkdown = readFileSync(bodyPath, 'utf8');
   const parsedPlan = parsePlanMarkdown(planMarkdown);
+  const specHtml = readFileSync(specPath, 'utf8');
   const renderedPlan = preparePlan(parsedPlan, { specPath, outPath });
   const html = renderPlanTemplate({
     title: rawOptions.title || renderedPlan.title,
@@ -775,13 +803,16 @@ export function createPlanDoc(rawOptions) {
     contentHtml: renderedPlan.contentHtml,
   });
 
-  const validationErrors = validatePlanHtmlDocument({
-    html,
-    filePath: outPath,
-    projectDir,
-    repoName,
-    skipPathCheck: rawOptions.skipPathCheck || !pathCheckRequired,
-  });
+  const validationErrors = [
+    ...validatePlanSpecReferences({ plan: parsedPlan, specHtml }),
+    ...validatePlanHtmlDocument({
+      html,
+      filePath: outPath,
+      projectDir,
+      repoName,
+      skipPathCheck: rawOptions.skipPathCheck || !pathCheckRequired,
+    }),
+  ];
   if (validationErrors.length) {
     throw new Error(validationErrors.join('\n'));
   }

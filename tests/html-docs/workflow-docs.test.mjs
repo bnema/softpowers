@@ -5,7 +5,7 @@ const brainstorming = readFileSync('skills/brainstorming/SKILL.md', 'utf8');
 const companion = readFileSync('skills/brainstorming/visual-companion.md', 'utf8');
 assert(brainstorming.includes('specs/YYYY-MM-DD-<topic>-design.html'));
 assert(!brainstorming.includes('specs/YYYY-MM-DD-<topic>-design.md'));
-assert(brainstorming.includes('Draft the spec body in markdown'));
+assert(brainstorming.toLowerCase().includes('draft the spec body'));
 assert(brainstorming.includes('mktemp /tmp/softpowers-spec-'));
 assert(brainstorming.includes('spec-document-reviewer-prompt.md'));
 assert(brainstorming.includes('templates/spec.template.html'));

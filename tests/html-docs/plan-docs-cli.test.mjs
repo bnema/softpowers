@@ -263,6 +263,23 @@ const invalidTocValidate = spawnSync(
 assert.notEqual(invalidTocValidate.status, 0);
 assert((invalidTocValidate.stderr + invalidTocValidate.stdout).includes('Table of contents does not contain any in-document anchors'));
 
+const missingPhaseTocPath = join(projectDir, 'missing-phase-toc-plan.html');
+writeFileSync(
+  missingPhaseTocPath,
+  twoPhaseHtml.replace('<li><a href="#phase-2">Phase 2: Follow-up</a></li>', ''),
+  'utf8'
+);
+const missingPhaseTocValidate = spawnSync(
+  node,
+  ['scripts/validate-plan-doc.mjs', missingPhaseTocPath, '--project-dir', projectDir, '--skip-path-check'],
+  {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  }
+);
+assert.notEqual(missingPhaseTocValidate.status, 0);
+assert((missingPhaseTocValidate.stderr + missingPhaseTocValidate.stdout).includes('Table of contents is missing a phase anchor for #phase-2'));
+
 const codeBlockMarkdownBody = join(projectDir, 'code-block-plan.md');
 writeFileSync(
   codeBlockMarkdownBody,
@@ -290,6 +307,54 @@ assert.equal(codeBlockCreate.status, 0, codeBlockCreate.stderr || codeBlockCreat
 const codeBlockHtml = readFileSync(codeBlockOutPath, 'utf8');
 assert.equal((codeBlockHtml.match(/class="sp-phase"/g) || []).length, 1);
 assert(codeBlockHtml.includes('## Not a real phase'));
+
+const invalidSpecSectionBody = join(projectDir, 'invalid-spec-section-plan.md');
+writeFileSync(
+  invalidSpecSectionBody,
+  `# Invalid Spec Section Plan\n\n## Phase 1: Foundation\nGoal: Reference a missing spec anchor.\n\n### Task 1: Broken spec link\n\n#### Step 1: Point to a missing section\nKind: implementation\nSpec section: missing-anchor\n\nThis should fail because the spec anchor does not exist.\n`,
+  'utf8'
+);
+const invalidSpecSectionCreate = spawnSync(
+  node,
+  [
+    'scripts/create-plan-doc.mjs',
+    '--title', 'Invalid Spec Section Plan',
+    '--slug', 'invalid-spec-section-plan',
+    '--body', invalidSpecSectionBody,
+    '--spec', specPath,
+    '--project-dir', projectDir,
+  ],
+  {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  }
+);
+assert.notEqual(invalidSpecSectionCreate.status, 0);
+assert((invalidSpecSectionCreate.stderr + invalidSpecSectionCreate.stdout).includes('Spec section reference missing from approved spec HTML: #missing-anchor'));
+
+const unterminatedCodeBlockBody = join(projectDir, 'unterminated-code-block-plan.md');
+writeFileSync(
+  unterminatedCodeBlockBody,
+  `# Unterminated Code Block Plan\n\n## Phase 1: Foundation\nGoal: Detect an unclosed fenced block.\n\n### Task 1: Broken code fence\n\n#### Step 1: Leave the fence open\nKind: implementation\nSpec section: problem-and-goals\n\n\`\`\`md\n## Missing closing fence\n`,
+  'utf8'
+);
+const unterminatedCodeBlockCreate = spawnSync(
+  node,
+  [
+    'scripts/create-plan-doc.mjs',
+    '--title', 'Unterminated Code Block Plan',
+    '--slug', 'unterminated-code-block-plan',
+    '--body', unterminatedCodeBlockBody,
+    '--spec', specPath,
+    '--project-dir', projectDir,
+  ],
+  {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  }
+);
+assert.notEqual(unterminatedCodeBlockCreate.status, 0);
+assert((unterminatedCodeBlockCreate.stderr + unterminatedCodeBlockCreate.stdout).includes('Unterminated fenced code block in step'));
 
 const malformedMarkdownBody = join(projectDir, 'bad-plan.md');
 writeFileSync(
