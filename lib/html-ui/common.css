@@ -6,9 +6,18 @@
  */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
+
+html {
+  height: 100%;
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -20,23 +29,42 @@ body {
 /* ===== FRAME STRUCTURE ===== */
 .sp-header {
   background: var(--bg-secondary);
-  padding: 0.5rem 1.5rem;
+  padding: 0.75rem clamp(0.9rem, 3vw, 1.5rem);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem 1rem;
+  flex-wrap: wrap;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.sp-header h1 { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); }
+.sp-header h1 {
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.sp-header h1 a {
+  color: inherit;
+  text-decoration: none;
+}
 .sp-header .status { font-size: 0.7rem; color: var(--success); display: flex; align-items: center; gap: 0.4rem; }
 .sp-header .status::before { content: ''; width: 6px; height: 6px; background: var(--success); border-radius: 50%; }
 
-.sp-main { flex: 1; overflow-y: auto; }
+.sp-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
+}
 
 .sp-footer {
   background: var(--bg-secondary);
   border-top: 1px solid var(--border);
-  padding: 0.5rem 1.5rem;
+  padding: 0.5rem clamp(0.9rem, 3vw, 1.5rem);
   flex-shrink: 0;
   text-align: center;
 }
@@ -45,9 +73,38 @@ body {
   color: var(--text-secondary);
 }
 
+/* ===== SHARED LINK STYLING ===== */
+.sp-main a,
+.sp-main a:visited {
+  color: var(--accent);
+  text-decoration-color: var(--link-underline);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.15em;
+}
+.sp-main a:hover,
+.sp-main a:focus-visible {
+  color: var(--accent-hover);
+  text-decoration-color: currentColor;
+}
+.sp-main a:focus-visible {
+  outline: 2px solid var(--selected-border);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
 /* ===== TYPOGRAPHY ===== */
 h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
 h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 .subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; }
 .section { margin-bottom: 2rem; }
 .label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+@media (max-width: 640px) {
+  .sp-header {
+    align-items: flex-start;
+  }
+
+  .sp-footer {
+    text-align: left;
+  }
+}

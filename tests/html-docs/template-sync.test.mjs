@@ -62,6 +62,14 @@ assert(!specHtml.includes('<script src='));
 assert(!planHtml.includes('<script src='));
 assert(!brainstormHtml.includes('<script src='));
 
+// Responsive shell + shared link styling should be baked into generated docs
+assert(specHtml.includes('name="viewport" content="width=device-width, initial-scale=1"'));
+assert(planHtml.includes('name="viewport" content="width=device-width, initial-scale=1"'));
+assert(specHtml.includes('min-height: 100dvh'));
+assert(planHtml.includes('scrollbar-gutter: stable both-edges'));
+assert(specHtml.includes('text-decoration-color: var(--link-underline)'));
+assert(planHtml.includes('justify-content: center'));
+
 // Verify template-kind attributes
 assert(brainstormHtml.includes('data-template-kind="brainstorm"'));
 assert(specHtml.includes('data-template-kind="spec"'));

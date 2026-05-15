@@ -7,6 +7,7 @@
 
 /* ===== DARK THEME (DEFAULT) ===== */
 :root {
+  color-scheme: dark;
   --bg-primary: #1d1d1f;
   --bg-secondary: #2d2d2f;
   --bg-tertiary: #3d3d3f;
@@ -16,6 +17,7 @@
   --text-tertiary: #636366;
   --accent: #0a84ff;
   --accent-hover: #409cff;
+  --link-underline: rgba(64, 156, 255, 0.35);
   --success: #34c759;
   --warning: #ff9f0a;
   --error: #ff3b30;
@@ -25,6 +27,7 @@
 
 /* ===== LIGHT THEME ===== */
 :root[data-theme="light"] {
+  color-scheme: light;
   --bg-primary: #f5f5f7;
   --bg-secondary: #ffffff;
   --bg-tertiary: #e5e5e7;
@@ -34,6 +37,7 @@
   --text-tertiary: #aeaeb2;
   --accent: #0071e3;
   --accent-hover: #0077ed;
+  --link-underline: rgba(0, 113, 227, 0.28);
   --selected-bg: #e8f4fd;
   --selected-border: #0071e3;
 }
