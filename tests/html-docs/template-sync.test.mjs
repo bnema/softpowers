@@ -69,6 +69,8 @@ assert(specHtml.includes('min-height: 100dvh'));
 assert(planHtml.includes('scrollbar-gutter: stable both-edges'));
 assert(specHtml.includes('text-decoration-color: var(--link-underline)'));
 assert(planHtml.includes('justify-content: center'));
+assert.match(specHtml, /\.sp-doc\s*\{[^}]*height:\s*100vh;[^}]*height:\s*100dvh;/s);
+assert.match(planHtml, /\.sp-doc\s*\{[^}]*height:\s*100vh;[^}]*height:\s*100dvh;/s);
 
 // Verify template-kind attributes
 assert(brainstormHtml.includes('data-template-kind="brainstorm"'));
