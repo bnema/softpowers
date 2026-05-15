@@ -137,23 +137,25 @@ digraph brainstorming {
 SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"
 ```
 
+- Softpowers doc helpers live in the Softpowers package, not in the project you are designing. Resolve `SOFTPOWERS_ROOT` to the package root that contains this `skills/` directory, then use absolute helper paths from there for every `scripts/`, `templates/`, `examples/`, and `docs/softpowers/` reference.
+- Do **not** run `node scripts/create-spec-doc.mjs` or `node scripts/validate-spec-doc.mjs` relative to the target project, and do **not** use `find` to hunt for those helpers. Resolve `SOFTPOWERS_ROOT` once from the skill/package path and reuse it.
 - After your self-review and before generating HTML, dispatch a reviewer subagent using `skills/brainstorming/spec-document-reviewer-prompt.md`. The reviewer should read the markdown draft, return `Approved` or `Issues Found`, and you should fix the markdown draft until it is approved.
 - Once the markdown draft is approved, generate the HTML shell and TOC with:
 
 ```bash
-node scripts/create-spec-doc.mjs \
+node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" \
   --title "<Spec title>" \
   --slug <topic-slug> \
   --body "$SPEC_DRAFT"
 ```
 
 - If you already have section fragments as HTML, pass `--body-format html` instead. Those fragments must contain `<section id="...">` blocks with `<h2>` headings.
-- The helper fills `templates/spec.template.html`, builds the TOC, validates the finished document, and prints the final path clearly.
+- The helper fills `$SOFTPOWERS_ROOT/templates/spec.template.html`, builds the TOC, validates the finished document, and prints the final path clearly.
 - If you must fill the template manually, keep the shell intact and replace:
   - `{{DOC_TITLE}}` — the spec name shown in `<title>` and `<h1>`
   - `{{TOC_ITEMS}}` — the full TOC block, typically `<h3>Table of contents</h3><ol>...</ol>`
   - `{{OVERVIEW}}` — the complete spec body (sections, code blocks, tables, etc.)
-- Validate the saved spec with `node scripts/validate-spec-doc.mjs <resolved-spec-path>`. **This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the reported issues, then re-run the validator before proceeding to the next step.
+- Validate the saved spec with `node "$SOFTPOWERS_ROOT/scripts/validate-spec-doc.mjs" <resolved-spec-path>`. **This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the reported issues, then re-run the validator before proceeding to the next step.
 - If the user wants changes after reading the generated HTML, edit the markdown draft first, re-run the markdown review loop if the change is material, then regenerate and re-validate the HTML.
 - Use elements-of-style:writing-clearly-and-concisely skill if available.
 - Commit rule:

@@ -4,7 +4,7 @@ Use this template when dispatching a spec document reviewer subagent.
 
 **Purpose:** Verify the markdown draft is complete, consistent, and ready to be turned into the canonical HTML spec.
 
-**Dispatch after:** The spec markdown draft is written to a unique temporary markdown path such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"`, and the controller has already done its own self-review. This review happens **before** `node scripts/create-spec-doc.mjs ...` generates the final HTML document.
+**Dispatch after:** The spec markdown draft is written to a unique temporary markdown path such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"`, and the controller has already done its own self-review. This review happens **before** `node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" ...` generates the final HTML document. The controller resolves `SOFTPOWERS_ROOT` from the Softpowers package that contains this prompt; never assume the target project contains these helper scripts.
 
 ```yaml
 Task tool (general-purpose):
@@ -47,6 +47,6 @@ Task tool (general-purpose):
     - [suggestions for improvement]
 ```
 
-**After approval:** The controller generates the final HTML with `node scripts/create-spec-doc.mjs ...` and validates it with `node scripts/validate-spec-doc.mjs <spec-path>`.
+**After approval:** The controller generates the final HTML with `node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" ...` and validates it with `node "$SOFTPOWERS_ROOT/scripts/validate-spec-doc.mjs" <spec-path>`.
 
 **Reviewer returns:** Status, Issues (if any), Recommendations

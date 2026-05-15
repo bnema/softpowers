@@ -441,7 +441,7 @@ function parseFlagArgs(argv) {
 
 export function createSpecDoc(rawOptions) {
   const projectDir = resolve(rawOptions['project-dir'] || process.cwd());
-  const bodyPath = resolve(process.cwd(), rawOptions.body || '');
+  const bodyPath = resolve(projectDir, rawOptions.body || '');
   const bodyFormat = rawOptions['body-format'] || 'markdown';
   const date = rawOptions.date || getTodayDate();
 
@@ -511,12 +511,12 @@ export function validateSpecDoc(rawOptions) {
     throw new Error('Missing spec file path. Usage: validate --file <path> or validate <path>.');
   }
 
-  const filePath = resolve(process.cwd(), fileArg);
+  const projectDir = resolve(rawOptions['project-dir'] || process.cwd());
+  const filePath = resolve(projectDir, fileArg);
   if (!existsSync(filePath)) {
     throw new Error(`Spec file does not exist: ${filePath}`);
   }
 
-  const projectDir = resolve(rawOptions['project-dir'] || process.cwd());
   const html = readFileSync(filePath, 'utf8');
   const errors = validateSpecHtmlDocument({
     html,

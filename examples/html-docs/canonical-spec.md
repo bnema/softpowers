@@ -21,20 +21,21 @@ This example covers the spec-writing workflow only.
 
 ## Happy path command
 
-Use the helper script instead of copying the template by hand:
+Use the helper script instead of copying the template by hand. The helper lives in the Softpowers package, not in the project being documented, so resolve `SOFTPOWERS_ROOT` once and use absolute helper paths from there:
 
 ```bash
 printenv PROJECTS_DOCS_PATH
-node scripts/create-spec-doc.mjs \
+SOFTPOWERS_ROOT="/absolute/path/to/the/softpowers/package"
+node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" \
   --title "Canonical HTML Spec Workflow Example" \
   --slug canonical-html-spec-workflow \
-  --body examples/html-docs/canonical-spec.md
+  --body "$SOFTPOWERS_ROOT/examples/html-docs/canonical-spec.md"
 ```
 
 Then validate the generated document. This checked-in example lives in the repo-local fallback docs root, so unset `PROJECTS_DOCS_PATH` while validating it:
 
 ```bash
-env -u PROJECTS_DOCS_PATH node scripts/validate-spec-doc.mjs docs/softpowers/specs/2026-05-13-canonical-html-spec-workflow-design.html
+env -u PROJECTS_DOCS_PATH node "$SOFTPOWERS_ROOT/scripts/validate-spec-doc.mjs" "$SOFTPOWERS_ROOT/docs/softpowers/specs/2026-05-13-canonical-html-spec-workflow-design.html"
 ```
 
 ## Path resolution rules

@@ -66,6 +66,34 @@ const validate = spawnSync(
 assert.equal(validate.status, 0, validate.stderr || validate.stdout);
 assert(validate.stdout.includes(`Spec validated: ${expectedHtmlPath}`));
 
+const absoluteScriptOutPath = join(projectDir, 'absolute-script-spec.html');
+const absoluteScriptCreate = spawnSync(
+  node,
+  [
+    join(repoRoot, 'scripts/create-spec-doc.mjs'),
+    '--title', 'Sample Spec',
+    '--body', 'spec.md',
+    '--out', 'absolute-script-spec.html',
+    '--project-dir', projectDir,
+    '--skip-path-check',
+  ],
+  {
+    cwd: tmpRoot,
+    encoding: 'utf8',
+  }
+);
+assert.equal(absoluteScriptCreate.status, 0, absoluteScriptCreate.stderr || absoluteScriptCreate.stdout);
+assert(existsSync(absoluteScriptOutPath));
+const absoluteScriptValidate = spawnSync(
+  node,
+  [join(repoRoot, 'scripts/validate-spec-doc.mjs'), 'absolute-script-spec.html', '--project-dir', projectDir, '--skip-path-check'],
+  {
+    cwd: tmpRoot,
+    encoding: 'utf8',
+  }
+);
+assert.equal(absoluteScriptValidate.status, 0, absoluteScriptValidate.stderr || absoluteScriptValidate.stdout);
+
 const htmlFragmentsPath = join(projectDir, 'spec-fragments.html');
 writeFileSync(
   htmlFragmentsPath,

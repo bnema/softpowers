@@ -4,7 +4,7 @@ Use this template when dispatching a plan document reviewer subagent.
 
 **Purpose:** Verify the plan markdown draft is complete, matches the spec, and has proper phase and sub-task decomposition.
 
-**Dispatch after:** The plan markdown draft is written to a unique temporary path such as `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"`, after the controller has done its own self-review and before `node scripts/create-plan-doc.mjs ...` generates the final HTML.
+**Dispatch after:** The plan markdown draft is written to a unique temporary path such as `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"`, after the controller has done its own self-review and before `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" ...` generates the final HTML. The controller resolves `SOFTPOWERS_ROOT` from the Softpowers package that contains this prompt; never assume the target project contains these helper scripts.
 
 ```yaml
 Task tool (general-purpose):
@@ -47,6 +47,6 @@ Task tool (general-purpose):
     - [suggestions for improvement]
 ```
 
-**After approval:** The controller generates the final HTML with `node scripts/create-plan-doc.mjs ...` and validates it with `node scripts/validate-plan-doc.mjs <plan-path>`.
+**After approval:** The controller generates the final HTML with `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" ...` and validates it with `node "$SOFTPOWERS_ROOT/scripts/validate-plan-doc.mjs" <plan-path>`.
 
 **Reviewer returns:** Status, Issues (if any), Recommendations

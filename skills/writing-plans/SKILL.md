@@ -23,8 +23,10 @@ Assume the human is a skilled developer, but may know almost nothing about our t
   - no git repo: use the current project directory basename
   - project not on disk yet / slug still ambiguous: ask the human once and use that slug
 - Author the plan in markdown first at a unique temporary path such as `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"`.
-- After the markdown draft is approved, generate the final HTML with `node scripts/create-plan-doc.mjs ...`.
-- The helper fills `templates/plan.template.html`, builds the full TOC block, maps markdown structure into phase/task/step HTML, validates the finished document, and prints the final path clearly.
+- Softpowers doc helpers live in the Softpowers package, not in the repo being planned. Resolve `SOFTPOWERS_ROOT` to the package root that contains this `skills/` directory, then use absolute helper paths from there for every `scripts/`, `templates/`, `examples/`, and `docs/softpowers/` reference.
+- Do **not** run `node scripts/create-plan-doc.mjs` or `node scripts/validate-plan-doc.mjs` relative to the target project, and do **not** use `find` to hunt for those helpers. Resolve `SOFTPOWERS_ROOT` once from the skill/package path and reuse it.
+- After the markdown draft is approved, generate the final HTML with `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" ...`.
+- The helper fills `$SOFTPOWERS_ROOT/templates/plan.template.html`, builds the full TOC block, maps markdown structure into phase/task/step HTML, validates the finished document, and prints the final path clearly.
 - Use small targeted snippets when they clarify a change; rely primarily on file refs, line refs, watch-outs, and verification blocks.
 - Commit rule:
   - if the resolved plan path is inside the current project repo, commit it there
@@ -171,7 +173,7 @@ The markdown draft must be reviewed before HTML generation.
 After the markdown review loop passes, generate the final plan HTML with:
 
 ```bash
-node scripts/create-plan-doc.mjs \
+node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" \
   --title "<Plan title>" \
   --slug <feature-slug> \
   --spec <resolved-spec-path> \
@@ -181,7 +183,7 @@ node scripts/create-plan-doc.mjs \
 Then validate the output:
 
 ```bash
-node scripts/validate-plan-doc.mjs <resolved-plan-path>
+node "$SOFTPOWERS_ROOT/scripts/validate-plan-doc.mjs" <resolved-plan-path>
 ```
 
 **This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the markdown draft only, then regenerate and re-run the validator before proceeding.
