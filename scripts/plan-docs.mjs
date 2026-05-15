@@ -29,6 +29,27 @@ function escapeAttribute(value) {
   return escapeHtml(value).replaceAll("'", '&#39;');
 }
 
+function sanitizeHref(href) {
+  const value = String(href).trim();
+  if (!value) {
+    return '#';
+  }
+
+  if (/^(https?|mailto|tel):/i.test(value)) {
+    return value;
+  }
+
+  if (/^(#|\/|\.\.?(?:\/|$)|\?)/.test(value)) {
+    return value;
+  }
+
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(value)) {
+    return value;
+  }
+
+  return '#';
+}
+
 function slugify(value) {
   return String(value)
     .toLowerCase()
@@ -54,7 +75,8 @@ function formatInline(text) {
   }, tokens);
 
   value = tokenizeInline(value, /\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
-    return `<a href="${escapeAttribute(href)}">${escapeHtml(label)}</a>`;
+    const safeHref = sanitizeHref(href);
+    return `<a href="${escapeAttribute(safeHref)}">${escapeHtml(label)}</a>`;
   }, tokens);
 
   value = escapeHtml(value);
@@ -196,7 +218,8 @@ function parseStepMetadata(step, trimmed) {
   for (const [key, pattern] of metadata) {
     const match = trimmed.match(pattern);
     if (match) {
-      step[key] = match[1].trim();
+      const value = match[1].trim();
+      step[key] = key === 'kind' ? value.toLowerCase() : value;
       return true;
     }
   }
@@ -743,9 +766,6 @@ export function createPlanDoc(rawOptions) {
     contentHtml: renderedPlan.contentHtml,
   });
 
-  mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, html, 'utf8');
-
   const validationErrors = validatePlanHtmlDocument({
     html,
     filePath: outPath,
@@ -756,6 +776,9 @@ export function createPlanDoc(rawOptions) {
   if (validationErrors.length) {
     throw new Error(validationErrors.join('\n'));
   }
+
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, html, 'utf8');
 
   return {
     projectDir,

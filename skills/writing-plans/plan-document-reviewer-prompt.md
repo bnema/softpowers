@@ -6,7 +6,7 @@ Use this template when dispatching a plan document reviewer subagent.
 
 **Dispatch after:** The plan markdown draft is written to a unique temporary path such as `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"`, after the controller has done its own self-review and before `node scripts/create-plan-doc.mjs ...` generates the final HTML.
 
-```
+```yaml
 Task tool (general-purpose):
   description: "Review plan markdown draft"
   prompt: |

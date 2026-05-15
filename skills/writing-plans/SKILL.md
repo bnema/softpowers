@@ -145,7 +145,7 @@ Every sub-task and step must contain the actual content an engineer needs. These
 
 ## Self-Review
 
-After writing the complete markdown draft, look at the spec with fresh eyes and check the plan against it. This is a checklist you run yourself before involving the reviewer subagent.
+After writing the complete markdown draft, look at the plan draft with fresh eyes and check the plan against it. This is a checklist you run yourself before involving the reviewer subagent.
 
 **1. Spec coverage:** Skim each section/requirement in the spec. Can you point to a phase/sub-task that implements it? List any gaps.
 

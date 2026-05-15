@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const node = process.execPath;
-const repoRoot = resolve('.');
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const tmpRoot = mkdtempSync(join(tmpdir(), 'softpowers-plan-docs-'));
 const projectDir = join(tmpRoot, 'brand-new-project');
 const docsRoot = join(tmpRoot, 'projects-docs');
@@ -22,7 +23,7 @@ writeFileSync(
 );
 
 const markdownBody = join(projectDir, 'plan.md');
-writeFileSync(markdownBody, `# Sample Plan\n\n## Phase 1: Foundation\nGoal: Build the plan HTML tooling.\n\nFiles:\n- Create \`scripts/plan-docs.mjs\`\n- Create \`scripts/create-plan-doc.mjs\`\n\n### Task 1: Add CLI coverage\n\n#### Step 1: Add plan doc CLI tests\nKind: test\nFile: tests/html-docs/plan-docs-cli.test.mjs\nLines: 1-120\nCommand: node tests/html-docs/plan-docs-cli.test.mjs\nSpec section: problem-and-goals\nWatchouts: Keep the temp directories isolated.\n\nWrite the failing test for the markdown-first workflow.\n\n#### Step 2: Run the failing test\nKind: verification\nCommand: node tests/html-docs/plan-docs-cli.test.mjs\nWatchouts: Expect the command to fail before implementation.\n\nRun the targeted test and capture the failure.\n`, 'utf8');
+writeFileSync(markdownBody, `# Sample Plan\n\n## Phase 1: Foundation\nGoal: Build the plan HTML tooling.\n\nFiles:\n- Create \`scripts/plan-docs.mjs\`\n- Create \`scripts/create-plan-doc.mjs\`\n\n### Task 1: Add CLI coverage\n\n#### Step 1: Add plan doc CLI tests\nKind: Test\nFile: tests/html-docs/plan-docs-cli.test.mjs\nLines: 1-120\nCommand: node tests/html-docs/plan-docs-cli.test.mjs\nSpec section: problem-and-goals\nWatchouts: Keep the temp directories isolated.\n\nWrite the failing test for the markdown-first workflow. See [unsafe link](javascript:alert(1)).\n\n#### Step 2: Run the failing test\nKind: verification\nCommand: node tests/html-docs/plan-docs-cli.test.mjs\nWatchouts: Expect the command to fail before implementation.\n\nRun the targeted test and capture the failure.\n`, 'utf8');
 
 const create = spawnSync(
   node,
@@ -61,6 +62,8 @@ assert(generatedHtml.includes('data-step-id="step-1"'));
 assert(generatedHtml.includes('data-step-kind="test"'));
 assert(generatedHtml.includes('../specs/2026-05-15-sample-spec-design.html#problem-and-goals'));
 assert(generatedHtml.includes('Write the failing test for the markdown-first workflow.'));
+assert(generatedHtml.includes('href="#">unsafe link</a>'));
+assert(!generatedHtml.includes('href="javascript:alert(1)"'));
 assert(generatedHtml.includes('class="sp-review-checkpoint"'));
 assert(!generatedHtml.includes('{{PHASE_TITLE}}'));
 assert(!generatedHtml.includes('{{STEP_TITLE}}'));
@@ -118,6 +121,27 @@ const invalidValidate = spawnSync(
 );
 assert.notEqual(invalidValidate.status, 0);
 assert((invalidValidate.stderr + invalidValidate.stdout).includes('Unresolved template placeholders remain'));
+
+const invalidCreateOutPath = join(projectDir, 'invalid-created-plan.html');
+const invalidCreate = spawnSync(
+  node,
+  [
+    'scripts/create-plan-doc.mjs',
+    '--title', '{{DOC_TITLE}}',
+    '--slug', 'invalid-created-plan',
+    '--body', markdownBody,
+    '--spec', specPath,
+    '--out', invalidCreateOutPath,
+    '--project-dir', projectDir,
+  ],
+  {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  }
+);
+assert.notEqual(invalidCreate.status, 0);
+assert((invalidCreate.stderr + invalidCreate.stdout).includes('Unresolved template placeholders remain'));
+assert(!existsSync(invalidCreateOutPath));
 
 const invalidSlugCreate = spawnSync(
   node,

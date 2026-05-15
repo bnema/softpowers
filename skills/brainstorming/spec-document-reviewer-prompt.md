@@ -6,7 +6,7 @@ Use this template when dispatching a spec document reviewer subagent.
 
 **Dispatch after:** The spec markdown draft is written to a unique temporary markdown path such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"`, and the controller has already done its own self-review. This review happens **before** `node scripts/create-spec-doc.mjs ...` generates the final HTML document.
 
-```
+```yaml
 Task tool (general-purpose):
   description: "Review spec markdown draft"
   prompt: |

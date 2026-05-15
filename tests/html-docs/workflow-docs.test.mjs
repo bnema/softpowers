@@ -44,12 +44,14 @@ assert(softassist.includes('HTML plan remains the canonical readable artifact'))
 
 const reviewerPrompt = readFileSync('skills/brainstorming/spec-document-reviewer-prompt.md', 'utf8');
 assert(reviewerPrompt.includes('markdown draft'));
+assert(reviewerPrompt.includes('```yaml'));
 assert(reviewerPrompt.includes('scripts/create-spec-doc.mjs'));
 assert(reviewerPrompt.includes('scripts/validate-spec-doc.mjs'));
 assert(reviewerPrompt.includes('unreplaced `{{...}}` placeholders'));
 
 const planReviewerPrompt = readFileSync('skills/writing-plans/plan-document-reviewer-prompt.md', 'utf8');
 assert(planReviewerPrompt.includes('markdown draft'));
+assert(planReviewerPrompt.includes('```yaml'));
 assert(planReviewerPrompt.includes('Spec for reference'));
 assert(planReviewerPrompt.includes('scripts/create-plan-doc.mjs'));
 assert(planReviewerPrompt.includes('scripts/validate-plan-doc.mjs'));
@@ -65,4 +67,7 @@ assert(readme.includes('scripts/create-plan-doc.mjs'));
 assert(readme.includes('scripts/validate-plan-doc.mjs'));
 assert(readme.includes('mktemp /tmp/softpowers-spec-'));
 assert(readme.includes('mktemp /tmp/softpowers-plan-'));
+assert(readme.includes('reviewer-subagent approval gates'));
+assert(readme.includes('skills/brainstorming/'));
+assert(readme.includes('skills/writing-plans/'));
 assert(readme.includes('canonical-html-spec-workflow-design.html'));
