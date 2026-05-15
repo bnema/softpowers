@@ -2,23 +2,24 @@
 
 Use this template when dispatching a spec document reviewer subagent.
 
-**Purpose:** Verify the spec is complete, consistent, and ready for implementation planning.
+**Purpose:** Verify the markdown draft is complete, consistent, and ready to be turned into the canonical HTML spec.
 
-**Dispatch after:** Spec document is written to its resolved location: `$PROJECTS_DOCS_PATH/{repoName}/specs/...` when set, otherwise `docs/softpowers/specs/...`, and `node scripts/validate-spec-doc.mjs <spec-path>` has passed (or `--skip-path-check` was used intentionally for a checked-in example outside the canonical docs root)
+**Dispatch after:** The spec markdown draft is written to a unique temporary markdown path such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"`, and the controller has already done its own self-review. This review happens **before** `node scripts/create-spec-doc.mjs ...` generates the final HTML document.
 
 ```
 Task tool (general-purpose):
-  description: "Review spec document"
+  description: "Review spec markdown draft"
   prompt: |
-    You are a spec document reviewer. Verify this spec is complete and ready for planning.
+    You are a spec document reviewer. Verify this markdown draft is complete and ready for HTML generation and implementation planning.
 
-    **Spec to review:** [SPEC_FILE_PATH]
+    **Spec markdown draft to review:** [SPEC_DRAFT_PATH]
+    **Planned canonical HTML output:** [SPEC_HTML_PATH]
 
     ## What to Check
 
     | Category | What to Look For |
     |----------|------------------|
-    | Completeness | TODOs, unreplaced `{{...}}` placeholders outside code samples, "TBD", incomplete sections |
+    | Completeness | TODOs, unreplaced `{{...}}` placeholders copied into the draft, "TBD", incomplete sections |
     | Consistency | Internal contradictions, conflicting requirements |
     | Clarity | Requirements ambiguous enough to cause someone to build the wrong thing |
     | Scope | Focused enough for a single plan: not covering multiple independent subsystems |
@@ -45,5 +46,7 @@ Task tool (general-purpose):
     **Recommendations (advisory, do not block approval):**
     - [suggestions for improvement]
 ```
+
+**After approval:** The controller generates the final HTML with `node scripts/create-spec-doc.mjs ...` and validates it with `node scripts/validate-spec-doc.mjs <spec-path>`.
 
 **Reviewer returns:** Status, Issues (if any), Recommendations

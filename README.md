@@ -48,7 +48,7 @@ Notable differences in this fork:
     - Resolve the env variable explicitly with `printenv PROJECTS_DOCS_PATH`.
     - Derive `{repoName}` from the git top-level directory basename when possible.
     - Do not create a second repo-local copy when the resolved docs path lives outside the project repo.
-- Markdown-first spec authoring now has a helper flow: `node scripts/create-spec-doc.mjs --title "..." --slug ... --body /tmp/spec.md` generates the HTML spec shell, TOC, anchors, and validation result; `node scripts/validate-spec-doc.mjs <spec-path>` re-checks the output. See `examples/html-docs/canonical-spec.md` and `docs/softpowers/specs/2026-05-13-canonical-html-spec-workflow-design.html` for the canonical example.
+- Markdown-first doc authoring now has helper flows. Start from unique temp drafts such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"` and `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"` so concurrent agents do not collide. Then use `node scripts/create-spec-doc.mjs --title "..." --slug ... --body "$SPEC_DRAFT"` for specs and `node scripts/create-plan-doc.mjs --title "..." --slug ... --spec <spec-path> --body "$PLAN_DRAFT"` for plans. `node scripts/validate-spec-doc.mjs <spec-path>` and `node scripts/validate-plan-doc.mjs <plan-path>` re-check the generated HTML. See `examples/html-docs/canonical-spec.md` and `docs/softpowers/specs/2026-05-13-canonical-html-spec-workflow-design.html` for the canonical spec example.
 - The local branch review server is consumed through the `local-pr-review-server` package from `bnema/local-pr-review-server`.
 - The fast Claude Code skill test runner skips `test-subagent-driven-development.sh` in this fork because it requires a working Claude Code org/session in headless mode.
 
