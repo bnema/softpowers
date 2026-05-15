@@ -236,6 +236,7 @@ function parsePlanMarkdown(markdown) {
   let currentStepBody = [];
   let filesMode = false;
   let stepMetadataMode = false;
+  let inStepCodeBlock = false;
   let title = null;
 
   function flushStep() {
@@ -255,6 +256,7 @@ function parsePlanMarkdown(markdown) {
     currentTask.steps.push(currentStep);
     currentStep = null;
     stepMetadataMode = false;
+    inStepCodeBlock = false;
   }
 
   function flushTask() {
@@ -287,7 +289,12 @@ function parsePlanMarkdown(markdown) {
 
   for (const rawLine of lines) {
     const trimmed = rawLine.trim();
-    const headingMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
+
+    if (currentStep && /^```/.test(trimmed)) {
+      inStepCodeBlock = !inStepCodeBlock;
+    }
+
+    const headingMatch = !inStepCodeBlock && trimmed.match(/^(#{1,4})\s+(.*)$/);
 
     if (headingMatch) {
       filesMode = false;
@@ -339,6 +346,7 @@ function parsePlanMarkdown(markdown) {
         };
         currentStepBody = [];
         stepMetadataMode = true;
+        inStepCodeBlock = false;
         continue;
       }
     }
@@ -551,7 +559,7 @@ function renderStep(step, specRelativePath) {
 
 function renderTask(task, specRelativePath) {
   const stepsHtml = task.steps.map((step) => renderStep(step, specRelativePath)).join('\n');
-  return `    <article id="${escapeAttribute(task.id)}" class="sp-task" data-task-id="${escapeAttribute(task.dataTaskId)}">\n      <ol class="sp-step-list">\n${stepsHtml}\n      </ol>\n    </article>`;
+  return `    <article id="${escapeAttribute(task.id)}" class="sp-task" data-task-id="${escapeAttribute(task.dataTaskId)}">\n      <h3 class="sp-task-title">${formatInline(task.title)}</h3>\n      <ol class="sp-step-list">\n${stepsHtml}\n      </ol>\n    </article>`;
 }
 
 function renderPhase(phase, specRelativePath) {
@@ -658,7 +666,8 @@ export function validatePlanHtmlDocument({ html, filePath, projectDir, repoName,
     errors.push('Table of contents nav (.sp-toc) is missing.');
   }
 
-  const hrefTargets = [...html.matchAll(/href="#([^"]+)"/g)].map((match) => match[1]);
+  const tocHtml = tocMatch ? tocMatch[1] : '';
+  const hrefTargets = [...tocHtml.matchAll(/href="#([^"]+)"/g)].map((match) => match[1]);
   if (!hrefTargets.length) {
     errors.push('Table of contents does not contain any in-document anchors.');
   }
@@ -724,8 +733,8 @@ export function validatePlanHtmlDocument({ html, filePath, projectDir, repoName,
 
 export function createPlanDoc(rawOptions) {
   const projectDir = resolve(rawOptions['project-dir'] || process.cwd());
-  const bodyPath = resolve(process.cwd(), rawOptions.body || '');
-  const specPath = resolve(process.cwd(), rawOptions.spec || '');
+  const bodyPath = resolve(projectDir, rawOptions.body || '');
+  const specPath = resolve(projectDir, rawOptions.spec || '');
   const date = rawOptions.date || getTodayDate();
 
   if (!rawOptions.title) {
@@ -800,12 +809,11 @@ export function validatePlanDoc(rawOptions) {
     throw new Error('Missing plan file path. Usage: validate --file <path> or validate <path>.');
   }
 
-  const filePath = resolve(process.cwd(), fileArg);
+  const projectDir = resolve(rawOptions['project-dir'] || process.cwd());
+  const filePath = resolve(projectDir, fileArg);
   if (!existsSync(filePath)) {
     throw new Error(`Plan file does not exist: ${filePath}`);
   }
-
-  const projectDir = resolve(rawOptions['project-dir'] || process.cwd());
   const html = readFileSync(filePath, 'utf8');
   const errors = validatePlanHtmlDocument({
     html,

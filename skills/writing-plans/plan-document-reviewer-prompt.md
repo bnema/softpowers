@@ -14,7 +14,7 @@ Task tool (general-purpose):
 
     **Plan markdown draft to review:** [PLAN_DRAFT_PATH]
     **Planned canonical HTML output:** [PLAN_HTML_PATH]
-    **Spec for reference:** [SPEC_FILE_PATH]
+    **Spec for reference:** [APPROVED_SPEC_HTML_PATH]
 
     ## What to Check
 

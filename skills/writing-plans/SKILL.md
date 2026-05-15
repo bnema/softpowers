@@ -145,7 +145,7 @@ Every sub-task and step must contain the actual content an engineer needs. These
 
 ## Self-Review
 
-After writing the complete markdown draft, look at the plan draft with fresh eyes and check the plan against it. This is a checklist you run yourself before involving the reviewer subagent.
+After writing the complete markdown draft, look at the plan draft with fresh eyes and check the plan against the approved spec. This is a checklist you run yourself before involving the reviewer subagent.
 
 **1. Spec coverage:** Skim each section/requirement in the spec. Can you point to a phase/sub-task that implements it? List any gaps.
 
@@ -184,9 +184,9 @@ Then validate the output:
 node scripts/validate-plan-doc.mjs <resolved-plan-path>
 ```
 
-**This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the markdown draft or generated output, then regenerate and re-run the validator before proceeding.
+**This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the markdown draft only, then regenerate and re-run the validator before proceeding.
 
-If the user wants changes after reading the generated HTML, edit the markdown draft first, re-run the markdown review loop if the change is material, then regenerate and re-validate the HTML.
+If the user wants changes after reading the generated HTML, make every edit in the markdown draft, re-run the markdown review loop if the change is material, then regenerate and re-validate the HTML.
 
 ## Execution Handoff
 

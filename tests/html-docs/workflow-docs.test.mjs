@@ -53,6 +53,7 @@ const planReviewerPrompt = readFileSync('skills/writing-plans/plan-document-revi
 assert(planReviewerPrompt.includes('markdown draft'));
 assert(planReviewerPrompt.includes('```yaml'));
 assert(planReviewerPrompt.includes('Spec for reference'));
+assert(planReviewerPrompt.includes('[APPROVED_SPEC_HTML_PATH]'));
 assert(planReviewerPrompt.includes('scripts/create-plan-doc.mjs'));
 assert(planReviewerPrompt.includes('scripts/validate-plan-doc.mjs'));
 

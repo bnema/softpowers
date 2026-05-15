@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
@@ -58,6 +58,7 @@ assert(generatedHtml.includes('<h3>Table of contents</h3>'));
 assert(generatedHtml.includes('href="#phase-1"'));
 assert(generatedHtml.includes('<section id="phase-1" class="sp-phase" data-phase-id="phase-1">'));
 assert(generatedHtml.includes('<article id="task-1" class="sp-task" data-task-id="task-1">'));
+assert(generatedHtml.includes('<h3 class="sp-task-title">Add CLI coverage</h3>'));
 assert(generatedHtml.includes('data-step-id="step-1"'));
 assert(generatedHtml.includes('data-step-kind="test"'));
 assert(generatedHtml.includes('../specs/2026-05-15-sample-spec-design.html#problem-and-goals'));
@@ -104,6 +105,37 @@ const validate = spawnSync(
 );
 assert.equal(validate.status, 0, validate.stderr || validate.stdout);
 assert(validate.stdout.includes(`Plan validated: ${expectedHtmlPath}`));
+
+const relativeCreateOutPath = join(projectDir, 'relative-plan.html');
+const relativeCreate = spawnSync(
+  node,
+  [
+    join(repoRoot, 'scripts/create-plan-doc.mjs'),
+    '--title', 'Relative Path Plan',
+    '--slug', 'relative-path-plan',
+    '--body', 'plan.md',
+    '--spec', relative(projectDir, specPath),
+    '--out', 'relative-plan.html',
+    '--project-dir', projectDir,
+  ],
+  {
+    cwd: tmpRoot,
+    encoding: 'utf8',
+  }
+);
+assert.equal(relativeCreate.status, 0, relativeCreate.stderr || relativeCreate.stdout);
+assert(existsSync(relativeCreateOutPath));
+
+const relativeValidate = spawnSync(
+  node,
+  [join(repoRoot, 'scripts/validate-plan-doc.mjs'), 'relative-plan.html', '--project-dir', projectDir, '--skip-path-check'],
+  {
+    cwd: tmpRoot,
+    encoding: 'utf8',
+  }
+);
+assert.equal(relativeValidate.status, 0, relativeValidate.stderr || relativeValidate.stdout);
+assert(relativeValidate.stdout.includes(`Plan validated: ${relativeCreateOutPath}`));
 
 const invalidHtmlPath = join(docsRoot, basename(projectDir), 'plans', '2026-05-15-invalid-plan.html');
 writeFileSync(invalidHtmlPath, generatedHtml.replace('Sample Plan', '{{DOC_TITLE}}'), 'utf8');
@@ -211,6 +243,53 @@ const invalidCheckpointValidate = spawnSync(
 );
 assert.notEqual(invalidCheckpointValidate.status, 0);
 assert((invalidCheckpointValidate.stderr + invalidCheckpointValidate.stdout).includes('Each phase should have exactly one review checkpoint'));
+
+const invalidTocPath = join(projectDir, 'invalid-toc-plan.html');
+writeFileSync(
+  invalidTocPath,
+  generatedHtml
+    .replace('<li><a href="#phase-1">Phase 1: Foundation</a></li>', '<li>Phase 1: Foundation</li>')
+    .replace('Write the failing test for the markdown-first workflow.', 'Write the failing test for the markdown-first workflow. <a href="#phase-1">phase link</a>'),
+  'utf8'
+);
+const invalidTocValidate = spawnSync(
+  node,
+  ['scripts/validate-plan-doc.mjs', invalidTocPath, '--project-dir', projectDir, '--skip-path-check'],
+  {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  }
+);
+assert.notEqual(invalidTocValidate.status, 0);
+assert((invalidTocValidate.stderr + invalidTocValidate.stdout).includes('Table of contents does not contain any in-document anchors'));
+
+const codeBlockMarkdownBody = join(projectDir, 'code-block-plan.md');
+writeFileSync(
+  codeBlockMarkdownBody,
+  `# Code Block Plan\n\n## Phase 1: Foundation\nGoal: Verify fenced blocks stay inside the step body.\n\n### Task 1: Preserve code blocks\n\n#### Step 1: Keep headings inside fences literal\nKind: implementation\nSpec section: problem-and-goals\n\n\`\`\`md\n## Not a real phase\n### Not a real task\n#### Not a real step\n\`\`\`\n`,
+  'utf8'
+);
+const codeBlockOutPath = join(projectDir, 'code-block-plan.html');
+const codeBlockCreate = spawnSync(
+  node,
+  [
+    'scripts/create-plan-doc.mjs',
+    '--title', 'Code Block Plan',
+    '--slug', 'code-block-plan',
+    '--body', codeBlockMarkdownBody,
+    '--spec', specPath,
+    '--out', codeBlockOutPath,
+    '--project-dir', projectDir,
+  ],
+  {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  }
+);
+assert.equal(codeBlockCreate.status, 0, codeBlockCreate.stderr || codeBlockCreate.stdout);
+const codeBlockHtml = readFileSync(codeBlockOutPath, 'utf8');
+assert.equal((codeBlockHtml.match(/class="sp-phase"/g) || []).length, 1);
+assert(codeBlockHtml.includes('## Not a real phase'));
 
 const malformedMarkdownBody = join(projectDir, 'bad-plan.md');
 writeFileSync(
