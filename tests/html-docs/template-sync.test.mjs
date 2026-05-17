@@ -71,6 +71,10 @@ assert(specHtml.includes('text-decoration-color: var(--link-underline)'));
 assert(planHtml.includes('justify-content: center'));
 assert.match(specHtml, /\.sp-doc\s*\{[^}]*height:\s*100vh;[^}]*height:\s*100dvh;/s);
 assert.match(planHtml, /\.sp-doc\s*\{[^}]*height:\s*100vh;[^}]*height:\s*100dvh;/s);
+assert.match(specHtml, /\.sp-doc\s*\{[^}]*overflow:\s*auto;[^}]*display:\s*block;/s);
+assert.match(planHtml, /\.sp-doc\s*\{[^}]*overflow:\s*auto;[^}]*display:\s*block;/s);
+assert.match(specHtml, /\.sp-doc \.sp-main\s*\{[^}]*overflow:\s*visible;/s);
+assert.match(planHtml, /\.sp-doc \.sp-main\s*\{[^}]*overflow:\s*visible;/s);
 
 // Verify template-kind attributes
 assert(brainstormHtml.includes('data-template-kind="brainstorm"'));
