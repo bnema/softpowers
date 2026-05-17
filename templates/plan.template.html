@@ -185,40 +185,43 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: clamp(0.875rem, 3vw, 1.75rem);
+  padding: clamp(0.75rem, 2.4vw, 1.35rem);
   min-height: auto;
   overflow: visible;
 }
 
 .sp-document {
   width: 100%;
-  max-width: 56rem;
+  max-width: 60rem;
   margin: 0 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(1rem, 3vw, 1.5rem);
+  gap: clamp(0.75rem, 2vw, 1.1rem);
 }
 .sp-document[data-doc-kind="spec"] {
-  max-width: 56rem;
+  max-width: 60rem;
 }
 .sp-document[data-doc-kind="plan"] {
-  max-width: 64rem;
+  max-width: 68rem;
 }
 
 /* ===== DOCUMENT SHELL ===== */
 .sp-doc-header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.45rem 1rem;
   margin-bottom: 0;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
+  padding: clamp(0.85rem, 2vw, 1.15rem);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 .sp-doc-header h1 {
-  font-size: clamp(1.55rem, 1.1rem + 1.8vw, 2.4rem);
-  line-height: 1.15;
+  grid-column: 1 / -1;
+  font-size: clamp(1.35rem, 1.05rem + 1.35vw, 2rem);
+  line-height: 1.12;
   font-weight: 700;
   margin-bottom: 0;
   overflow-wrap: anywhere;
@@ -235,9 +238,11 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 
 /* ===== THEME TOGGLE ===== */
 .theme-toggle {
-  margin-top: 0.25rem;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.82rem;
+  grid-column: 2;
+  grid-row: 1;
+  margin-top: 0;
+  padding: 0.38rem 0.75rem;
+  font-size: 0.78rem;
   font-family: inherit;
   display: inline-flex;
   align-items: center;
@@ -264,16 +269,16 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 .sp-toc {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: clamp(0.9rem, 2.5vw, 1.25rem);
+  border-radius: 10px;
+  padding: clamp(0.7rem, 1.8vw, 0.95rem);
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
-.sp-toc h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0; }
-.sp-toc ol { padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; }
-.sp-toc li { margin-bottom: 0; font-size: 0.92rem; }
+.sp-toc h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 0; }
+.sp-toc ol { padding-left: 1.05rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.25rem 1rem; list-style-position: inside; }
+.sp-toc li { margin-bottom: 0; font-size: 0.86rem; }
 .sp-toc a,
 .sp-toc a:visited {
   color: var(--text-primary);
@@ -291,30 +296,30 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
   overflow-wrap: anywhere;
 }
 .sp-doc h2 {
-  font-size: clamp(1.3rem, 1.05rem + 0.9vw, 1.65rem);
+  font-size: clamp(1.15rem, 1rem + 0.65vw, 1.45rem);
   line-height: 1.2;
   font-weight: 600;
-  margin-top: clamp(1.5rem, 4vw, 2rem);
-  margin-bottom: 0.5rem;
+  margin-top: clamp(1rem, 2.6vw, 1.45rem);
+  margin-bottom: 0.45rem;
   text-wrap: balance;
 }
 .sp-doc h3 {
-  font-size: clamp(1rem, 0.92rem + 0.4vw, 1.15rem);
-  font-weight: 600;
-  margin-top: 1.35rem;
-  margin-bottom: 0.25rem;
-}
-.sp-doc h4 {
-  font-size: clamp(0.92rem, 0.88rem + 0.2vw, 1rem);
+  font-size: clamp(0.98rem, 0.92rem + 0.25vw, 1.08rem);
   font-weight: 600;
   margin-top: 1rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
+}
+.sp-doc h4 {
+  font-size: clamp(0.9rem, 0.86rem + 0.18vw, 0.98rem);
+  font-weight: 600;
+  margin-top: 0.8rem;
+  margin-bottom: 0.2rem;
 }
 
 /* ===== BODY TEXT ===== */
-.sp-doc p { margin-bottom: 0.85rem; }
-.sp-doc ul, .sp-doc ol { margin-left: 1.25rem; margin-bottom: 0.85rem; }
-.sp-doc li { margin-bottom: 0.3rem; }
+.sp-doc p { margin-bottom: 0.65rem; }
+.sp-doc ul, .sp-doc ol { margin-left: 1.15rem; margin-bottom: 0.65rem; }
+.sp-doc li { margin-bottom: 0.22rem; }
 .sp-doc img,
 .sp-doc svg,
 .sp-doc video,
@@ -338,16 +343,19 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 }
 .sp-doc pre {
   max-width: 100%;
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.75rem;
   overflow-x: auto;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .sp-doc pre code {
   background: none;
   padding: 0;
+  line-height: 1.45;
+  white-space: pre;
 }
 
 /* ===== TABLES ===== */
@@ -393,40 +401,53 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 .sp-document[data-doc-kind="spec"] > #overview {
   display: flex;
   flex-direction: column;
-  gap: clamp(1rem, 3vw, 1.5rem);
+  gap: clamp(0.75rem, 2vw, 1rem);
 }
 .sp-document[data-doc-kind="spec"] > #overview > section {
   min-width: 0;
+  padding: clamp(0.85rem, 2vw, 1.1rem);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+}
+.sp-document[data-doc-kind="spec"] > #overview > section > h2:first-child {
+  margin-top: 0;
 }
 
 .sp-phase {
   margin-bottom: 0;
+  padding: clamp(0.85rem, 2vw, 1.15rem);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 .sp-phase-header {
   margin-bottom: 0;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.6rem;
   border-bottom: 1px solid var(--border);
 }
 .sp-phase-header h2 {
   margin-top: 0;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.18rem;
 }
 .sp-phase-goal {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin-bottom: 0;
 }
 
 .sp-task {
   margin-bottom: 0;
-  padding-left: clamp(0.9rem, 2.2vw, 1.5rem);
-  border-left: 3px solid var(--border);
+  padding-left: clamp(0.75rem, 1.8vw, 1.1rem);
+  border-left: 2px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 .sp-step-list {
   list-style: none;
@@ -435,12 +456,12 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 .sp-step {
   margin-bottom: 0;
-  padding: clamp(0.75rem, 2vw, 1rem);
-  background: var(--bg-secondary);
+  padding: clamp(0.65rem, 1.5vw, 0.85rem);
+  background: color-mix(in srgb, var(--bg-secondary) 88%, var(--bg-primary) 12%);
   border: 1px solid var(--border);
   border-radius: 8px;
   display: flex;
@@ -448,10 +469,10 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
   min-width: 0;
 }
 .sp-step h4 {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
 /* ===== CROSS-LINKS & VERIFICATION ===== */
@@ -460,16 +481,16 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
   align-items: center;
   flex-wrap: wrap;
   gap: 0.35rem;
-  font-size: 0.82rem;
-  margin-bottom: 0.75rem;
+  font-size: 0.78rem;
+  margin-bottom: 0.55rem;
 }
 .sp-verify-block {
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.85rem;
+  padding: 0.42rem 0.6rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
   overflow-x: auto;
 }
 .sp-verify-block code {
@@ -509,7 +530,13 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
     grid-template-columns: 1fr;
   }
 
+  .sp-doc-header {
+    grid-template-columns: 1fr;
+  }
+
   .theme-toggle {
+    grid-column: 1;
+    grid-row: auto;
     width: 100%;
   }
 
@@ -553,6 +580,243 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
   
   <script>
 /*
+ * microlight.js
+ * MIT License
+ *
+ * Copyright (c) 2016 asvd
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * @fileoverview microlight - syntax highlightning library
+ * @version 0.0.7
+ *
+ * @license MIT, see http://github.com/asvd/microlight
+ * @copyright 2016 asvd <heliosframework@gmail.com>
+ *
+ * Code structure aims at minimizing the compressed library size
+ */
+
+
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        factory((root.microlight = {}));
+    }
+}(this, function (exports) {
+    // for better compression
+    var _window       = window,
+        _document     = document,
+        appendChild   = 'appendChild',
+        test          = 'test',
+        // style and color templates
+        textShadow    = ';text-shadow:',
+        opacity       = 'opacity:.',
+        _0px_0px      = ' 0px 0px ',
+        _3px_0px_5    = '3px 0px 5',
+        brace         = ')',
+
+        i,
+        microlighted,
+        el;  // current microlighted element to run through
+
+
+    
+    var reset = function(cls) {
+        // nodes to highlight
+        microlighted = _document.getElementsByClassName(cls||'microlight');
+
+        for (i = 0; el = microlighted[i++];) {
+            var text  = el.textContent,
+                pos   = 0,       // current position
+                next1 = text[0], // next character
+                chr   = 1,       // current character
+                prev1,           // previous character
+                prev2,           // the one before the previous
+                token =          // current token content
+                el.innerHTML = '',  // (and cleaning the node)
+                
+                // current token type:
+                //  0: anything else (whitespaces / newlines)
+                //  1: operator or brace
+                //  2: closing braces (after which '/' is division not regex)
+                //  3: (key)word
+                //  4: regex
+                //  5: string starting with "
+                //  6: string starting with '
+                //  7: xml comment  <!-- -->
+                //  8: multiline comment /* */
+                //  9: single-line comment starting with two slashes //
+                // 10: single-line comment starting with hash #
+                tokenType = 0,
+
+                // kept to determine between regex and division
+                lastTokenType,
+                // flag determining if token is multi-character
+                multichar,
+                node,
+
+                // calculating the colors for the style templates
+                colorArr = /(\d*\, \d*\, \d*)(, ([.\d]*))?/g.exec(
+                    _window.getComputedStyle(el).color
+                ),
+                pxColor = 'px rgba('+colorArr[1]+',',
+                alpha = colorArr[3]||1;
+
+            // running through characters and highlighting
+            while (prev2 = prev1,
+                   // escaping if needed (with except for comments)
+                   // pervious character will not be therefore
+                   // recognized as a token finalize condition
+                   prev1 = tokenType < 7 && prev1 == '\\' ? 1 : chr
+            ) {
+                chr = next1;
+                next1=text[++pos];
+                multichar = token.length > 1;
+
+                // checking if current token should be finalized
+                if (!chr  || // end of content
+                    // types 9-10 (single-line comments) end with a
+                    // newline
+                    (tokenType > 8 && chr == '\n') ||
+                    [ // finalize conditions for other token types
+                        // 0: whitespaces
+                        /\S/[test](chr),  // merged together
+                        // 1: operators
+                        1,                // consist of a single character
+                        // 2: braces
+                        1,                // consist of a single character
+                        // 3: (key)word
+                        !/[$\w]/[test](chr),
+                        // 4: regex
+                        (prev1 == '/' || prev1 == '\n') && multichar,
+                        // 5: string with "
+                        prev1 == '"' && multichar,
+                        // 6: string with '
+                        prev1 == "'" && multichar,
+                        // 7: xml comment
+                        text[pos-4]+prev2+prev1 == '-->',
+                        // 8: multiline comment
+                        prev2+prev1 == '*/'
+                    ][tokenType]
+                ) {
+                    // appending the token to the result
+                    if (token) {
+                        // remapping token type into style
+                        // (some types are highlighted similarly)
+                        el[appendChild](
+                            node = _document.createElement('span')
+                        ).setAttribute('style', [
+                            // 0: not formatted
+                            '',
+                            // 1: keywords
+                            textShadow + _0px_0px+9+pxColor + alpha * .7 + '),' +
+                                         _0px_0px+2+pxColor + alpha * .4 + brace,
+                            // 2: punctuation
+                            opacity + 6 +
+                            textShadow + _0px_0px+7+pxColor + alpha / 4 + '),' +
+                                         _0px_0px+3+pxColor + alpha / 4 + brace,
+                            // 3: strings and regexps
+                            opacity + 7 +
+                            textShadow + _3px_0px_5+pxColor + alpha / 5 + '),-' +
+                                         _3px_0px_5+pxColor + alpha / 5 + brace,
+                            // 4: comments
+                            'font-style:italic;'+
+                            opacity + 5 +
+                            textShadow + _3px_0px_5+pxColor + alpha / 4 + '),-' +
+                                         _3px_0px_5+pxColor + alpha / 4 + brace
+                        ][
+                            // not formatted
+                            !tokenType ? 0 :
+                            // punctuation
+                            tokenType < 3 ? 2 :
+                            // comments
+                            tokenType > 6 ? 4 :
+                            // regex and strings
+                            tokenType > 3 ? 3 :
+                            // otherwise tokenType == 3, (key)word
+                            // (1 if regexp matches, 0 otherwise)
+                            + /^(a(bstract|lias|nd|rguments|rray|s(m|sert)?|uto)|b(ase|egin|ool(ean)?|reak|yte)|c(ase|atch|har|hecked|lass|lone|ompl|onst|ontinue)|de(bugger|cimal|clare|f(ault|er)?|init|l(egate|ete)?)|do|double|e(cho|ls?if|lse(if)?|nd|nsure|num|vent|x(cept|ec|p(licit|ort)|te(nds|nsion|rn)))|f(allthrough|alse|inal(ly)?|ixed|loat|or(each)?|riend|rom|unc(tion)?)|global|goto|guard|i(f|mp(lements|licit|ort)|n(it|clude(_once)?|line|out|stanceof|t(erface|ernal)?)?|s)|l(ambda|et|ock|ong)|m(icrolight|odule|utable)|NaN|n(amespace|ative|ext|ew|il|ot|ull)|o(bject|perator|r|ut|verride)|p(ackage|arams|rivate|rotected|rotocol|ublic)|r(aise|e(adonly|do|f|gister|peat|quire(_once)?|scue|strict|try|turn))|s(byte|ealed|elf|hort|igned|izeof|tatic|tring|truct|ubscript|uper|ynchronized|witch)|t(emplate|hen|his|hrows?|ransient|rue|ry|ype(alias|def|id|name|of))|u(n(checked|def(ined)?|ion|less|signed|til)|se|sing)|v(ar|irtual|oid|olatile)|w(char_t|hen|here|hile|ith)|xor|yield)$/[test](token)
+                        ]);
+
+                        node[appendChild](_document.createTextNode(token));
+                    }
+
+                    // saving the previous token type
+                    // (skipping whitespaces and comments)
+                    lastTokenType =
+                        (tokenType && tokenType < 7) ?
+                        tokenType : lastTokenType;
+
+                    // initializing a new token
+                    token = '';
+
+                    // determining the new token type (going up the
+                    // list until matching a token type start
+                    // condition)
+                    tokenType = 11;
+                    while (![
+                        1,                   //  0: whitespace
+                                             //  1: operator or braces
+                        /[\/{}[(\-+*=<>:;|\\.,?!&@~]/[test](chr),
+                        /[\])]/[test](chr),  //  2: closing brace
+                        /[$\w]/[test](chr),  //  3: (key)word
+                        chr == '/' &&        //  4: regex
+                            // previous token was an
+                            // opening brace or an
+                            // operator (otherwise
+                            // division, not a regex)
+                            (lastTokenType < 2) &&
+                            // workaround for xml
+                            // closing tags
+                            prev1 != '<',
+                        chr == '"',          //  5: string with "
+                        chr == "'",          //  6: string with '
+                                             //  7: xml comment
+                        chr+next1+text[pos+1]+text[pos+2] == '<!--',
+                        chr+next1 == '/*',   //  8: multiline comment
+                        chr+next1 == '//',   //  9: single-line comment
+                        chr == '#'           // 10: hash-style comment
+                    ][--tokenType]);
+                }
+
+                token += chr;
+            }
+        }
+    }
+
+    exports.reset = reset;
+
+    if (_document.readyState == 'complete') {
+        reset();
+    } else {
+        _window.addEventListener('load', function(){reset()}, 0);
+    }
+}));
+
+
+
+/*
  * DOCUMENT THEME HELPER
  *
  * Provides theme persistence and switching for document templates.
@@ -576,6 +840,12 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
       localStorage.setItem(storageKey, next);
     });
   }
+
+  var codeBlocks = document.querySelectorAll('.sp-doc pre code');
+  for (var i = 0; i < codeBlocks.length; i += 1) {
+    codeBlocks[i].classList.add('microlight');
+  }
+
 })();
 
 </script>
