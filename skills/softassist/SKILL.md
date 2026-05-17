@@ -57,7 +57,7 @@ Before the first implementation step, read the plan and propose a split like thi
 ### Shared
 - Debugging failures
 - Reviewing diffs
-- Simplifying after tests are green
+- Simplifying after tests are green: reuse, quality, and efficiency pass over the diff
 - Deciding whether the plan needs adjustment
 ```
 
@@ -78,6 +78,7 @@ Do not start implementation guidance until the human approves or adjusts the spl
    - run read-only or verification commands
    - fetch docs
    - inspect code changes
+   - run a simplification review after tests are green, checking reuse, quality, and efficiency
    - prepare boilerplate or repetitive edits that were approved in the ownership split
    - handle setup or generators only if the user explicitly asks first
 7. Wait for the user's update.
@@ -146,7 +147,7 @@ If verification fails, stay on the current step and help diagnose the problem.
 
 When the plan is complete and the work is verified:
 
-1. Hand off to `softpowers:requesting-code-review` for a final review.
+1. Hand off to `softpowers:requesting-code-review` for a final simplification/code-quality review. For large or risky diffs, use its parallel reuse/quality/efficiency reviewer option.
 2. After review feedback is resolved, hand off to `softpowers:finishing-a-development-branch` to complete the repo workflow.
 
 Do not stop at "implementation finished." Route the work through review and branch completion.

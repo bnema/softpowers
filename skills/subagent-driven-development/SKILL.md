@@ -5,13 +5,13 @@ description: Use when executing phased implementation plans with sub-tasks in th
 
 # Subagent-Driven Development
 
-Execute phased plans by dispatching fresh subagents for sub-tasks, with two-stage review at the end of each phase: spec compliance review first, then code quality review.
+Execute phased plans by dispatching fresh subagents for sub-tasks, with two-stage review at the end of each phase: spec compliance review first, then simplification/code-quality review.
 
 This is Softpowers' delegated implementation mode. Use it only when the human explicitly chooses to have agents implement the plan. For the default human-led path, use `softassist` instead.
 
 **Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history. You construct exactly what they need. This also preserves your own context for coordination work.
 
-**Core principle:** Fresh subagent per sub-task + two-stage review at phase boundaries (spec then quality) = high quality without review spam. Track task completion as work progresses, but dispatch external reviewers only at the end of the phase, not after every task/sub-task.
+**Core principle:** Fresh subagent per sub-task + two-stage review at phase boundaries (spec then simplification/quality) = high quality without review spam. Track task completion as work progresses, but dispatch external reviewers only at the end of the phase, not after every task/sub-task.
 
 ## When to Use
 
@@ -36,7 +36,7 @@ digraph when_to_use {
 **vs. Executing Plans (parallel session):**
 - Same session (no context switch)
 - Fresh subagent per sub-task (no context pollution)
-- Two-stage review after each phase: spec compliance first, then code quality
+- Two-stage review after each phase: spec compliance first, then simplification/code quality
 - No reviewer dispatch after individual sub-tasks unless a sub-task is explicitly its own phase
 - Faster iteration with fewer reviewer invocations than per-task review
 
@@ -58,8 +58,8 @@ digraph process {
         "Dispatch spec reviewer subagent for full phase (./spec-reviewer-prompt.md)" [shape=box];
         "Spec reviewer subagent confirms phase matches spec?" [shape=diamond];
         "Dispatch fix subagent for phase spec gaps" [shape=box];
-        "Dispatch code quality reviewer subagent for full phase (./code-quality-reviewer-prompt.md)" [shape=box];
-        "Code quality reviewer approves phase?" [shape=diamond];
+        "Dispatch simplification/code-quality reviewer subagent for full phase (./code-quality-reviewer-prompt.md)" [shape=box];
+        "Simplification/code-quality reviewer approves phase?" [shape=diamond];
         "Dispatch fix subagent for phase quality issues" [shape=box];
         "Mark phase complete in TodoWrite" [shape=box];
     }
@@ -84,11 +84,11 @@ digraph process {
     "Dispatch spec reviewer subagent for full phase (./spec-reviewer-prompt.md)" -> "Spec reviewer subagent confirms phase matches spec?";
     "Spec reviewer subagent confirms phase matches spec?" -> "Dispatch fix subagent for phase spec gaps" [label="no"];
     "Dispatch fix subagent for phase spec gaps" -> "Dispatch spec reviewer subagent for full phase (./spec-reviewer-prompt.md)" [label="re-review"];
-    "Spec reviewer subagent confirms phase matches spec?" -> "Dispatch code quality reviewer subagent for full phase (./code-quality-reviewer-prompt.md)" [label="yes"];
-    "Dispatch code quality reviewer subagent for full phase (./code-quality-reviewer-prompt.md)" -> "Code quality reviewer approves phase?";
-    "Code quality reviewer approves phase?" -> "Dispatch fix subagent for phase quality issues" [label="no"];
-    "Dispatch fix subagent for phase quality issues" -> "Dispatch code quality reviewer subagent for full phase (./code-quality-reviewer-prompt.md)" [label="re-review"];
-    "Code quality reviewer approves phase?" -> "Mark phase complete in TodoWrite" [label="yes"];
+    "Spec reviewer subagent confirms phase matches spec?" -> "Dispatch simplification/code-quality reviewer subagent for full phase (./code-quality-reviewer-prompt.md)" [label="yes"];
+    "Dispatch simplification/code-quality reviewer subagent for full phase (./code-quality-reviewer-prompt.md)" -> "Simplification/code-quality reviewer approves phase?";
+    "Simplification/code-quality reviewer approves phase?" -> "Dispatch fix subagent for phase quality issues" [label="no"];
+    "Dispatch fix subagent for phase quality issues" -> "Dispatch simplification/code-quality reviewer subagent for full phase (./code-quality-reviewer-prompt.md)" [label="re-review"];
+    "Simplification/code-quality reviewer approves phase?" -> "Mark phase complete in TodoWrite" [label="yes"];
     "Mark phase complete in TodoWrite" -> "More phases remain?";
     "More phases remain?" -> "Start next phase" [label="yes"];
     "More phases remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
@@ -152,7 +152,7 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 - `./implementer-prompt.md` - Dispatch implementer subagent
 - `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent
-- `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
+- `./code-quality-reviewer-prompt.md` - Dispatch simplification/code-quality reviewer subagent
 - `./phase-fix-prompt.md` - Dispatch fix subagent for phase review findings
 
 ## Example Workflow
@@ -211,7 +211,7 @@ Fix subagent: Removed --json flag, added progress reporting
 [Spec reviewer reviews Phase 1 again]
 Spec reviewer: ✅ Phase spec compliant now
 
-[Get git SHAs for full phase, dispatch code quality reviewer]
+[Get git SHAs for full phase, dispatch simplification/code-quality reviewer]
 Code reviewer: Strengths: Solid. Issues (Important): Magic number (100)
 
 [Dispatch fix subagent with ./phase-fix-prompt.md, Phase 1 requirements + quality review findings]
@@ -253,7 +253,7 @@ Done!
 
 **Quality gates:**
 - Self-review catches issues before handoff
-- Two-stage review: spec compliance, then code quality
+- Two-stage review: spec compliance, then simplification/code quality
 - Review loops ensure fixes actually work
 - Spec compliance prevents over/under-building
 - Code quality ensures implementation is well-built
@@ -269,7 +269,7 @@ Done!
 
 **Never:**
 - Start implementation on main/master branch without explicit user consent
-- Skip reviews (spec compliance OR code quality)
+- Skip reviews (spec compliance OR simplification/code quality)
 - Proceed with unfixed issues
 - Dispatch multiple implementation subagents in parallel (conflicts)
 - Make subagent read plan file (provide full text instead)
@@ -278,9 +278,9 @@ Done!
 - Accept "close enough" on spec compliance (spec reviewer found issues = not done)
 - Skip review loops (reviewer found issues = phase fix subagent fixes = review again)
 - Let implementer self-review replace actual review (both are needed)
-- **Start code quality review before spec compliance is ✅** (wrong order)
+- **Start simplification/code-quality review before spec compliance is ✅** (wrong order)
 - Move to the next phase while either phase review has open issues
-- Dispatch spec or code quality reviewers after every task/sub-task unless the plan explicitly defines that task as its own phase
+- Dispatch spec or simplification/code-quality reviewers after every task/sub-task unless the plan explicitly defines that task as its own phase
 
 **If subagent asks questions:**
 - Answer clearly and completely

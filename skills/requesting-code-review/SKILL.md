@@ -7,7 +7,7 @@ description: Use when completing phases, implementing major features, or before 
 
 Dispatch softpowers:code-reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation: never your session's history. This keeps the reviewer focused on the work product, not your thought process, and preserves your own context for continued work.
 
-**Core principle:** Review at meaningful checkpoints before issues cascade. In phased plan execution, that means end-of-phase review gates, not reviewer dispatch after every task/sub-task.
+**Core principle:** Review at meaningful checkpoints before issues cascade. In phased plan execution, that means end-of-phase review gates, not reviewer dispatch after every task/sub-task. Run spec compliance first; only then run simplification/code-quality review.
 
 ## When to Request Review
 
@@ -78,12 +78,23 @@ You: [Fix progress indicators]
 [Continue to Phase 3]
 ```
 
+## Simplification Review
+
+Use this as the standard code-quality review rubric after spec compliance passes and verification is green.
+
+**Default:** one reviewer checks all three lenses:
+- **Reuse:** existing utilities/helpers/patterns that should replace new code; duplicated functionality; hand-rolled string/path/env/type-guard logic.
+- **Quality:** redundant state, parameter sprawl, copy-paste variation, leaky abstractions, stringly typed code, unnecessary wrappers, comments that explain WHAT or narrate the task instead of non-obvious WHY.
+- **Efficiency:** redundant work, missed safe concurrency, hot-path bloat, recurring no-op updates, TOCTOU existence checks, leaks/unbounded data, overly broad reads/loads.
+
+**Escalate to parallel focused reviewers** for large diffs, risky refactors, performance-sensitive work, or final pre-merge review: dispatch reuse, quality, and efficiency reviewers concurrently against the same git range, then aggregate findings.
+
 ## Integration with Workflows
 
 **Subagent-Driven Development:**
 - Review after EACH phase, not after each task/sub-task
 - First run phase spec compliance review
-- Then run this code quality review only after spec compliance passes
+- Then run simplification/code-quality review only after spec compliance passes and verification is green
 - Catch issues before they compound across phases
 - Fix before moving to next phase
 

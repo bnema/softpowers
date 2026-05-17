@@ -45,7 +45,7 @@ For each phase:
 1. Mark the phase as in_progress
 2. Follow each sub-task exactly (plan has bite-sized sub-tasks)
 3. Run verifications as specified
-4. At the phase checkpoint, run the two-stage review: spec compliance first, then code quality only after spec compliance passes. Do not dispatch reviewers after individual sub-tasks unless the plan defines that sub-task as its own phase.
+4. At the phase checkpoint, run the two-stage review: spec compliance first, then simplification/code quality only after spec compliance passes and verification is green. Do not dispatch reviewers after individual sub-tasks unless the plan defines that sub-task as its own phase.
 5. Fix review findings and re-review until both phase reviews pass
 6. Mark the phase as completed
 

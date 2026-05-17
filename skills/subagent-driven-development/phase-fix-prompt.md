@@ -18,7 +18,7 @@ Task tool (general-purpose):
 
     ## Review Findings to Fix
 
-    [Paste the exact spec compliance or code quality findings]
+    [Paste the exact spec compliance or simplification/code-quality findings]
 
     ## Your Job
 
