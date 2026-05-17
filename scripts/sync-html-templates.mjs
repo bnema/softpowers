@@ -36,6 +36,7 @@ const tokensCss = readPart('tokens.css');
 const commonCss = readPart('common.css');
 const brainstormCss = readPart('brainstorm.css');
 const documentCss = readPart('document.css');
+const microlightJs = readPart('microlight.js');
 const documentThemeJs = readPart('document-theme.js');
 const baseFrame = readPart('base-frame.html');
 
@@ -69,7 +70,7 @@ const outputs = [
     bodyClass: 'sp-doc',
     title: '{{DOC_TITLE}}',
     styles: [tokensCss, commonCss, documentCss],
-    scripts: documentThemeJs,
+    scripts: [microlightJs, documentThemeJs].join('\n\n'),
     header: `
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Spec</a></h1>
@@ -83,7 +84,7 @@ const outputs = [
     bodyClass: 'sp-doc',
     title: '{{DOC_TITLE}}',
     styles: [tokensCss, commonCss, documentCss],
-    scripts: documentThemeJs,
+    scripts: [microlightJs, documentThemeJs].join('\n\n'),
     header: `
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Plan</a></h1>
