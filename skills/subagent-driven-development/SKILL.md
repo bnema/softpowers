@@ -9,7 +9,7 @@ Execute plan by dispatching fresh subagent per task, with two-stage review after
 
 **Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history — you construct exactly what they need. This also preserves your own context for coordination work.
 
-**Core principle:** Fresh subagent per task + two-stage review (spec then simplification/quality) = high quality, fast iteration
+**Core principle:** Fresh subagent per task + two-stage review (spec then simplification/code-quality review) = high quality, fast iteration
 
 **Continuous execution:** Do not pause to check in with your human partner between tasks. Execute all tasks from the plan without stopping. The only reasons to stop are: BLOCKED status you cannot resolve, ambiguity that genuinely prevents progress, or all tasks complete. "Should I continue?" prompts and progress summaries waste their time — they asked you to execute the plan, so execute it.
 
@@ -36,7 +36,7 @@ digraph when_to_use {
 **vs. Executing Plans (parallel session):**
 - Same session (no context switch)
 - Fresh subagent per task (no context pollution)
-- Two-stage review after each task: spec compliance first, then simplification/code quality
+- Two-stage review after each task: spec compliance first, then simplification/code-quality
 - Faster iteration (no human-in-loop between tasks)
 
 ## The Process
@@ -222,7 +222,7 @@ Done!
 
 **Quality gates:**
 - Self-review catches issues before handoff
-- Two-stage review: spec compliance, then simplification/code quality
+- Two-stage review: spec compliance, then simplification/code-quality
 - Review loops ensure fixes actually work
 - Spec compliance prevents over/under-building
 - Code quality ensures implementation is well-built
@@ -237,7 +237,7 @@ Done!
 
 **Never:**
 - Start implementation on main/master branch without explicit user consent
-- Skip reviews (spec compliance OR simplification/code quality)
+- Skip reviews (spec compliance OR simplification/code-quality)
 - Proceed with unfixed issues
 - Dispatch multiple implementation subagents in parallel (conflicts)
 - Make subagent read plan file (provide full text instead)
