@@ -12,6 +12,8 @@
   height: 100dvh;
   margin: 0;
   padding: 0;
+  overflow: auto;
+  display: block;
 }
 
 .sp-doc .sp-main {
@@ -19,6 +21,8 @@
   align-items: flex-start;
   justify-content: center;
   padding: clamp(0.875rem, 3vw, 1.75rem);
+  min-height: auto;
+  overflow: visible;
 }
 
 .sp-document {
