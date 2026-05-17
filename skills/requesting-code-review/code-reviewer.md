@@ -29,11 +29,13 @@ git diff {BASE_SHA}..{HEAD_SHA}
 
 ## Review Checklist
 
-**Code Quality:**
+**Simplification / Code Quality:**
+- Reuse: existing utilities/helpers/patterns instead of duplicated or hand-rolled code?
+- Quality: no redundant state, parameter sprawl, copy-paste variation, leaky abstractions, stringly typing, unnecessary wrappers, or low-value comments?
+- Efficiency: no redundant work, missed safe concurrency, hot-path bloat, no-op update churn, TOCTOU checks, leaks, or overly broad reads/loads?
 - Clean separation of concerns?
 - Proper error handling?
 - Type safety (if applicable)?
-- DRY principle followed?
 - Edge cases handled?
 
 **Architecture:**
