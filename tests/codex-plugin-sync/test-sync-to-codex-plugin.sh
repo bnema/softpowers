@@ -373,6 +373,13 @@ run_help() {
     PATH="$fake_bin:$PATH" "$BASH_UNDER_TEST" "$upstream/scripts/sync-to-codex-plugin.sh" --help 2>&1
 }
 
+run_nonlocal_without_fork() {
+    local upstream="$1"
+    local fake_bin="$2"
+
+    PATH="$fake_bin:$PATH" "$BASH_UNDER_TEST" "$upstream/scripts/sync-to-codex-plugin.sh" -n 2>&1
+}
+
 write_bootstrap_destination_fixture() {
     local repo="$1"
 
@@ -412,6 +419,8 @@ main() {
     local dirty_apply_output
     local noop_apply_status
     local noop_apply_output
+    local missing_fork_status
+    local missing_fork_output
     local help_output
     local script_source
     local dirty_skill_path
@@ -482,6 +491,8 @@ main() {
     dirty_apply_status=$?
     noop_apply_output="$(run_apply "$upstream" "$noop_apply_dest" "$fake_bin")"
     noop_apply_status=$?
+    missing_fork_output="$(run_nonlocal_without_fork "$upstream" "$fake_bin")"
+    missing_fork_status=$?
     missing_manifest_output="$(run_preview_without_manifest "$upstream" "$dest" "$fake_bin")"
     missing_manifest_status=$?
     set -e
@@ -551,6 +562,11 @@ Locally modified fixture content." "Dirty local apply preserves tracked working-
     echo ""
     echo "Help assertions..."
     assert_not_contains "$help_output" "--assets-src" "Help omits --assets-src"
+
+    echo ""
+    echo "Remote safety assertions..."
+    assert_equals "$missing_fork_status" "1" "Non-local run without CODEX_PLUGINS_FORK exits with failure"
+    assert_contains "$missing_fork_output" "ERROR: CODEX_PLUGINS_FORK is required for non-local runs" "Non-local run without fork reports explicit configuration"
 
     echo ""
     echo "Source assertions..."

@@ -19,6 +19,9 @@
 #   ./scripts/sync-to-codex-plugin.sh --base BRANCH                # default: main
 #   ./scripts/sync-to-codex-plugin.sh --bootstrap                  # create plugin dir if missing
 #
+# Set CODEX_PLUGINS_FORK=owner/repo for full runs that clone, push, and open a PR.
+# --local runs do not need CODEX_PLUGINS_FORK.
+#
 # Bootstrap mode: skips the "plugin must exist on base" requirement and creates
 # plugins/softpowers/ when absent, then copies the tracked plugin files from
 # upstream just like a normal sync.
@@ -31,7 +34,7 @@ set -euo pipefail
 # Config — edit as upstream or canonical plugin shape evolves
 # =============================================================================
 
-FORK="${CODEX_PLUGINS_FORK:-bnema/openai-codex-plugins}"
+FORK="${CODEX_PLUGINS_FORK:-}"
 DEFAULT_BASE="main"
 DEST_REL="${CODEX_PLUGIN_DEST_REL:-plugins/softpowers}"
 
@@ -170,6 +173,10 @@ gh auth status >/dev/null 2>&1 || die "gh not authenticated — run 'gh auth log
 
 [[ -d "$UPSTREAM/.git" ]]         || die "upstream '$UPSTREAM' is not a git checkout"
 [[ -f "$UPSTREAM/.codex-plugin/plugin.json" ]] || die "committed Codex manifest missing at $UPSTREAM/.codex-plugin/plugin.json"
+
+if [[ -z "$LOCAL_CHECKOUT" && -z "$FORK" ]]; then
+  die "CODEX_PLUGINS_FORK is required for non-local runs, e.g. CODEX_PLUGINS_FORK=bnema/openai-codex-plugins"
+fi
 
 # Read the upstream version from the committed Codex manifest.
 UPSTREAM_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$UPSTREAM/.codex-plugin/plugin.json")"

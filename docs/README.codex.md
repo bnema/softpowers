@@ -5,12 +5,14 @@ manifest for local/plugin-based installs.
 
 ## Recommended Local Install
 
-Clone this fork and symlink its skills into Codex's shared skill directory:
+Clone this fork and symlink each skill into Codex's shared skill directory:
 
 ```bash
 git clone https://github.com/bnema/softpowers.git ~/.codex/softpowers
 mkdir -p ~/.agents/skills
-ln -s ~/.codex/softpowers/skills ~/.agents/skills/softpowers
+for skill in ~/.codex/softpowers/skills/*; do
+  ln -sfn "$skill" ~/.agents/skills/"$(basename "$skill")"
+done
 ```
 
 On Windows PowerShell:
@@ -18,7 +20,11 @@ On Windows PowerShell:
 ```powershell
 git clone https://github.com/bnema/softpowers.git "$env:USERPROFILE\.codex\softpowers"
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.agents\skills"
-cmd /c mklink /J "$env:USERPROFILE\.agents\skills\softpowers" "$env:USERPROFILE\.codex\softpowers\skills"
+Get-ChildItem "$env:USERPROFILE\.codex\softpowers\skills" -Directory | ForEach-Object {
+    $target = Join-Path "$env:USERPROFILE\.agents\skills" $_.Name
+    if (Test-Path $target) { Remove-Item $target -Force -Recurse }
+    cmd /c mklink /J "$target" $_.FullName
+}
 ```
 
 Restart Codex after installing so it can discover the skills.
@@ -41,7 +47,7 @@ Do not rely on alternate filenames as default Codex discovery files.
 
 ```bash
 codex --version
-ls -la ~/.agents/skills/softpowers
+ls -la ~/.agents/skills/using-softpowers
 ```
 
 Then open a new Codex session and ask for something skill-shaped:
