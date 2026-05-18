@@ -2,9 +2,9 @@
 #
 # sync-to-codex-plugin.sh
 #
-# Sync this superpowers checkout → prime-radiant-inc/openai-codex-plugins.
+# Sync this softpowers checkout → a Codex plugins repository.
 # Clones the fork fresh into a temp dir, rsyncs tracked upstream plugin content
-# (including committed Codex files under .codex-plugin/ and assets/), commits,
+# (including committed Codex files under .codex-plugin/ and any assets/), commits,
 # pushes a sync branch, and opens a PR.
 # Path/user agnostic — auto-detects upstream from script location.
 #
@@ -20,7 +20,7 @@
 #   ./scripts/sync-to-codex-plugin.sh --bootstrap                  # create plugin dir if missing
 #
 # Bootstrap mode: skips the "plugin must exist on base" requirement and creates
-# plugins/superpowers/ when absent, then copies the tracked plugin files from
+# plugins/softpowers/ when absent, then copies the tracked plugin files from
 # upstream just like a normal sync.
 #
 # Requires: bash, rsync, git, gh (authenticated), python3.
@@ -31,9 +31,9 @@ set -euo pipefail
 # Config — edit as upstream or canonical plugin shape evolves
 # =============================================================================
 
-FORK="prime-radiant-inc/openai-codex-plugins"
+FORK="${CODEX_PLUGINS_FORK:-bnema/openai-codex-plugins}"
 DEFAULT_BASE="main"
-DEST_REL="plugins/superpowers"
+DEST_REL="${CODEX_PLUGIN_DEST_REL:-plugins/softpowers}"
 
 # Paths in upstream that should NOT land in the embedded plugin.
 # All patterns use a leading "/" to anchor them to the source root.
@@ -216,7 +216,7 @@ if [[ -n "$LOCAL_CHECKOUT" ]]; then
 else
   echo "Cloning $FORK..."
   CLEANUP_DIR="$(mktemp -d)"
-  DEST_REPO="$CLEANUP_DIR/openai-codex-plugins"
+  DEST_REPO="$CLEANUP_DIR/codex-plugins"
   gh repo clone "$FORK" "$DEST_REPO" >/dev/null
 fi
 
@@ -302,9 +302,9 @@ prepare_preview_checkout
 
 TIMESTAMP="$(date -u +%Y%m%d-%H%M%S)"
 if [[ $BOOTSTRAP -eq 1 ]]; then
-  SYNC_BRANCH="bootstrap/superpowers-${UPSTREAM_SHORT}-${TIMESTAMP}"
+  SYNC_BRANCH="bootstrap/softpowers-${UPSTREAM_SHORT}-${TIMESTAMP}"
 else
-  SYNC_BRANCH="sync/superpowers-${UPSTREAM_SHORT}-${TIMESTAMP}"
+  SYNC_BRANCH="sync/softpowers-${UPSTREAM_SHORT}-${TIMESTAMP}"
 fi
 
 # =============================================================================
@@ -327,7 +327,7 @@ echo "Fork:     $FORK"
 echo "Base:     $BASE"
 echo "Branch:   $SYNC_BRANCH"
 if [[ $BOOTSTRAP -eq 1 ]]; then
-  echo "Mode:     BOOTSTRAP (creating plugins/superpowers/ when absent)"
+  echo "Mode:     BOOTSTRAP (creating $DEST_REL/ when absent)"
 fi
 echo ""
 echo "=== Preview (rsync --dry-run) ==="
@@ -384,23 +384,23 @@ fi
 git add "$DEST_REL"
 
 if [[ $BOOTSTRAP -eq 1 ]]; then
-  COMMIT_TITLE="bootstrap superpowers v$UPSTREAM_VERSION from upstream main @ $UPSTREAM_SHORT"
-  PR_BODY="Initial bootstrap of the superpowers plugin from upstream \`main\` @ \`$UPSTREAM_SHORT\` (v$UPSTREAM_VERSION).
+  COMMIT_TITLE="bootstrap softpowers v$UPSTREAM_VERSION from upstream main @ $UPSTREAM_SHORT"
+  PR_BODY="Initial bootstrap of the softpowers plugin from upstream \`main\` @ \`$UPSTREAM_SHORT\` (v$UPSTREAM_VERSION).
 
-Creates \`plugins/superpowers/\` by copying the tracked plugin files from upstream, including \`.codex-plugin/plugin.json\` and \`assets/\`.
+Creates \`$DEST_REL/\` by copying the tracked plugin files from upstream, including \`.codex-plugin/plugin.json\` and any tracked \`assets/\`.
 
 Run via: \`scripts/sync-to-codex-plugin.sh --bootstrap\`
-Upstream commit: https://github.com/obra/superpowers/commit/$UPSTREAM_SHA
+Upstream commit: https://github.com/bnema/softpowers/commit/$UPSTREAM_SHA
 
 This is a one-time bootstrap. Subsequent syncs will be normal (non-bootstrap) runs using the same tracked upstream plugin files."
 else
-  COMMIT_TITLE="sync superpowers v$UPSTREAM_VERSION from upstream main @ $UPSTREAM_SHORT"
-  PR_BODY="Automated sync from superpowers upstream \`main\` @ \`$UPSTREAM_SHORT\` (v$UPSTREAM_VERSION).
+  COMMIT_TITLE="sync softpowers v$UPSTREAM_VERSION from upstream main @ $UPSTREAM_SHORT"
+  PR_BODY="Automated sync from softpowers upstream \`main\` @ \`$UPSTREAM_SHORT\` (v$UPSTREAM_VERSION).
 
-Copies the tracked plugin files from upstream, including the committed Codex manifest and assets.
+Copies the tracked plugin files from upstream, including the committed Codex manifest and any tracked assets.
 
 Run via: \`scripts/sync-to-codex-plugin.sh\`
-Upstream commit: https://github.com/obra/superpowers/commit/$UPSTREAM_SHA
+Upstream commit: https://github.com/bnema/softpowers/commit/$UPSTREAM_SHA
 
 Running the sync tool again against the same upstream SHA should produce a PR with an identical diff — use that to verify the tool is behaving."
 fi
@@ -408,7 +408,7 @@ fi
 git commit --quiet -m "$COMMIT_TITLE
 
 Automated sync via scripts/sync-to-codex-plugin.sh
-Upstream: https://github.com/obra/superpowers/commit/$UPSTREAM_SHA
+Upstream: https://github.com/bnema/softpowers/commit/$UPSTREAM_SHA
 Branch:   $SYNC_BRANCH"
 
 echo "Pushing $SYNC_BRANCH to $FORK..."

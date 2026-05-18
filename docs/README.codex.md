@@ -69,7 +69,5 @@ updated. Restart Codex if skill metadata appears stale.
   workflows.
 - `skills/using-softpowers/references/codex-tools.md` is the compatibility map
   for translating Claude Code-oriented skill instructions into Codex tools.
-- Upstream Superpowers has a `scripts/sync-to-codex-plugin.sh` workflow for
-  mirroring into `openai-codex-plugins`. This fork should not copy that script
-  verbatim unless the destination repository and branding are deliberately
-  changed.
+- The sync workflow was adapted from upstream Superpowers and now targets the
+  Softpowers plugin path by default.
