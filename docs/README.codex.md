@@ -25,19 +25,17 @@ Restart Codex after installing so it can discover the skills.
 
 ## Repository Instructions
 
-Codex automatically reads `AGENTS.md` from the repository root. This fork also
-includes `CODEX.md` as a Codex-specific human guide, but Codex does not
-auto-discover that filename by default.
+Codex automatically reads `AGENTS.md` from the repository root. Keep that file
+as the primary project instruction file for Codex and other agent harnesses.
 
-If you want Codex to treat `CODEX.md` as a project instruction file, add it as a
-fallback filename in `~/.codex/config.toml`:
+If you want Codex to treat another filename as a project instruction file, add
+it as a fallback filename in `~/.codex/config.toml`:
 
 ```toml
-project_doc_fallback_filenames = ["CODEX.md"]
+project_doc_fallback_filenames = ["TEAM_GUIDE.md"]
 ```
 
-Keep `AGENTS.md` as the primary portable instruction file unless you have a
-specific reason to customize Codex discovery locally.
+Do not rely on `CODEX.md` as a default Codex discovery file.
 
 ## Verify
 
