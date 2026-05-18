@@ -3,6 +3,9 @@
 .claude/
 .softpowers/
 docs/
+!docs/
+docs/*
+!docs/README.codex.md
 .DS_Store
 node_modules/
 inspo

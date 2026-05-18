@@ -1,0 +1,45 @@
+{
+  "name": "softpowers",
+  "version": "5.0.7",
+  "description": "A human-led software development workflow for coding agents: planning, TDD, debugging, review, and verification without silent over-delegation.",
+  "author": {
+    "name": "Brice Nema",
+    "url": "https://github.com/bnema"
+  },
+  "homepage": "https://github.com/bnema/softpowers",
+  "repository": "https://github.com/bnema/softpowers",
+  "license": "MIT",
+  "keywords": [
+    "softpowers",
+    "skills",
+    "planning",
+    "tdd",
+    "debugging",
+    "code-review",
+    "human-led",
+    "workflow"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Softpowers",
+    "shortDescription": "Human-led planning, TDD, debugging, review, and verification workflows",
+    "longDescription": "Use Softpowers to guide Codex through human-led software workflows: lightweight task handling, brainstorming, implementation planning, test-driven development, systematic debugging, code review, verification, and explicit delegation when useful.",
+    "developerName": "Brice Nema",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Help me plan this feature.",
+      "Let's debug this issue systematically.",
+      "Review this branch before I merge it."
+    ],
+    "websiteURL": "https://github.com/bnema/softpowers",
+    "privacyPolicyURL": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+    "termsOfServiceURL": "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
+    "brandColor": "#0F766E",
+    "screenshots": []
+  }
+}
