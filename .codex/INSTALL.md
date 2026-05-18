@@ -1,6 +1,7 @@
 # Installing Softpowers for Codex
 
-Enable softpowers skills in Codex via native skill discovery. Just clone and symlink.
+Enable softpowers skills in Codex via native skill discovery. Clone the repo and
+symlink each skill directory into Codex's shared skill directory.
 
 ## Prerequisites
 
@@ -13,16 +14,22 @@ Enable softpowers skills in Codex via native skill discovery. Just clone and sym
    git clone https://github.com/bnema/softpowers.git ~/.codex/softpowers
    ```
 
-2. **Create the skills symlink:**
+2. **Create the skill symlinks:**
    ```bash
    mkdir -p ~/.agents/skills
-   ln -s ~/.codex/softpowers/skills ~/.agents/skills/softpowers
+   for skill in ~/.codex/softpowers/skills/*; do
+     ln -sfn "$skill" ~/.agents/skills/"$(basename "$skill")"
+   done
    ```
 
    **Windows (PowerShell):**
    ```powershell
    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.agents\skills"
-   cmd /c mklink /J "$env:USERPROFILE\.agents\skills\softpowers" "$env:USERPROFILE\.codex\softpowers\skills"
+   Get-ChildItem "$env:USERPROFILE\.codex\softpowers\skills" -Directory | ForEach-Object {
+       $target = Join-Path "$env:USERPROFILE\.agents\skills" $_.Name
+       if (Test-Path $target) { Remove-Item $target -Force -Recurse }
+       cmd /c mklink /J "$target" $_.FullName
+   }
    ```
 
 3. **Restart Codex** (quit and relaunch the CLI) to discover the skills.
@@ -36,7 +43,7 @@ If you installed softpowers before native skill discovery, you need to:
    cd ~/.codex/softpowers && git pull
    ```
 
-2. **Create the skills symlink** (step 2 above). This is the new discovery mechanism.
+2. **Create the skill symlinks** (step 2 above). This is the new discovery mechanism.
 
 3. **Remove the old bootstrap block** from `~/.codex/AGENTS.md`. Any block referencing `softpowers-codex bootstrap` is no longer needed.
 
@@ -45,10 +52,11 @@ If you installed softpowers before native skill discovery, you need to:
 ## Verify
 
 ```bash
-ls -la ~/.agents/skills/softpowers
+ls -la ~/.agents/skills/using-softpowers
 ```
 
-You should see a symlink (or junction on Windows) pointing to your softpowers skills directory.
+You should see a symlink (or junction on Windows) pointing to the
+`using-softpowers` skill directory.
 
 ## Updating
 
@@ -56,12 +64,12 @@ You should see a symlink (or junction on Windows) pointing to your softpowers sk
 cd ~/.codex/softpowers && git pull
 ```
 
-Skills update instantly through the symlink.
+Skills update instantly through the symlinks.
 
 ## Uninstalling
 
 ```bash
-rm ~/.agents/skills/softpowers
+find ~/.codex/softpowers/skills -mindepth 1 -maxdepth 1 -type d -exec sh -c 'rm -f "$HOME/.agents/skills/$(basename "$1")"' _ {} \;
 ```
 
 Optionally delete the clone: `rm -rf ~/.codex/softpowers`.
