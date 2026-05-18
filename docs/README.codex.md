@@ -35,7 +35,7 @@ it as a fallback filename in `~/.codex/config.toml`:
 project_doc_fallback_filenames = ["TEAM_GUIDE.md"]
 ```
 
-Do not rely on `CODEX.md` as a default Codex discovery file.
+Do not rely on alternate filenames as default Codex discovery files.
 
 ## Verify
 

@@ -56,7 +56,7 @@ of human involvement will be closed without review.
      runner), you MUST include a session transcript proving the
      integration actually works.
 
-     A real integration loads the `using-superpowers` bootstrap at session
+     A real integration loads the `using-softpowers` bootstrap at session
      start. The bootstrap is what causes skills to auto-trigger. Without
      it, the skills are dead weight — present on disk but never invoked
      at the right moments.
