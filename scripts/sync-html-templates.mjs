@@ -36,8 +36,8 @@ const tokensCss = readPart('tokens.css');
 const commonCss = readPart('common.css');
 const brainstormCss = readPart('brainstorm.css');
 const documentCss = readPart('document.css');
-const microlightJs = readPart('microlight.js');
 const documentThemeJs = readPart('document-theme.js');
+const shikiHighlightJs = readPart('shiki-highlight.js');
 const baseFrame = readPart('base-frame.html');
 
 // ===== Output definitions =====
@@ -70,7 +70,7 @@ const outputs = [
     bodyClass: 'sp-doc',
     title: '{{DOC_TITLE}}',
     styles: [tokensCss, commonCss, documentCss],
-    scripts: [microlightJs, documentThemeJs].join('\n\n'),
+    scripts: [documentThemeJs, shikiHighlightJs].join('\n\n'),
     header: `
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Spec</a></h1>
@@ -84,7 +84,7 @@ const outputs = [
     bodyClass: 'sp-doc',
     title: '{{DOC_TITLE}}',
     styles: [tokensCss, commonCss, documentCss],
-    scripts: [microlightJs, documentThemeJs].join('\n\n'),
+    scripts: [documentThemeJs, shikiHighlightJs].join('\n\n'),
     header: `
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Plan</a></h1>
