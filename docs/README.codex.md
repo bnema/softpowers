@@ -1,33 +1,117 @@
 # Softpowers for Codex
 
-Softpowers supports Codex through native skill discovery plus a Codex plugin
-manifest for local/plugin-based installs.
+Softpowers supports Codex as a local plugin. The plugin manifest keeps the
+skills grouped and namespaced as `softpowers:*`, while a reusable local
+marketplace lets Codex install and enable this plugin without publishing this
+fork to a public marketplace.
 
 ## Recommended Local Install
 
-Clone this fork and symlink each skill into Codex's shared skill directory:
+Clone this fork into Codex's plugin area:
 
 ```bash
-git clone https://github.com/bnema/softpowers.git ~/.codex/softpowers
-mkdir -p ~/.agents/skills
-for skill in ~/.codex/softpowers/skills/*; do
-  ln -sfn "$skill" ~/.agents/skills/"$(basename "$skill")"
-done
+git clone https://github.com/bnema/softpowers.git ~/.codex/plugins/softpowers
 ```
 
-On Windows PowerShell:
+Create or update a local marketplace that points at the plugin:
+
+```bash
+mkdir -p ~/.codex/marketplaces/local/.agents/plugins
+mkdir -p ~/.codex/marketplaces/local/plugins
+ln -sfn ~/.codex/plugins/softpowers ~/.codex/marketplaces/local/plugins/softpowers
+
+cat > ~/.codex/marketplaces/local/.agents/plugins/marketplace.json <<'JSON'
+{
+  "name": "local-codex",
+  "interface": {
+    "displayName": "Local Codex Plugins"
+  },
+  "plugins": [
+    {
+      "name": "softpowers",
+      "source": {
+        "source": "local",
+        "path": "./plugins/softpowers"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    }
+  ]
+}
+JSON
+```
+
+Register the marketplace:
+
+```bash
+codex plugin marketplace add ~/.codex/marketplaces/local
+```
+
+In the Codex app or TUI, the same value goes in the **Add marketplace** prompt.
+If `~` is not expanded there, enter the absolute path to your home directory's
+`.codex/marketplaces/local` folder.
+
+This marketplace is intentionally plugin-agnostic. You can add more local
+plugins later by adding entries to the same `plugins` array and placing each
+plugin under `~/.codex/marketplaces/local/plugins/`.
+
+Then open Codex, run `/plugins`, choose **Local Codex Plugins**, and install and
+enable **Softpowers**. Restart Codex after enabling the plugin so new sessions
+load the skills.
+
+If you prefer direct config, add:
+
+```toml
+[plugins."softpowers@local-codex"]
+enabled = true
+```
+
+### Windows PowerShell
 
 ```powershell
-git clone https://github.com/bnema/softpowers.git "$env:USERPROFILE\.codex\softpowers"
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.agents\skills"
-Get-ChildItem "$env:USERPROFILE\.codex\softpowers\skills" -Directory | ForEach-Object {
-    $target = Join-Path "$env:USERPROFILE\.agents\skills" $_.Name
-    if (Test-Path $target) { Remove-Item $target -Force -Recurse }
-    cmd /c mklink /J "$target" $_.FullName
+git clone https://github.com/bnema/softpowers.git "$env:USERPROFILE\.codex\plugins\softpowers"
+
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.codex\marketplaces\local\.agents\plugins"
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.codex\marketplaces\local\plugins"
+
+$pluginLink = "$env:USERPROFILE\.codex\marketplaces\local\plugins\softpowers"
+if (Test-Path $pluginLink) { Remove-Item $pluginLink -Force -Recurse }
+cmd /c mklink /J "$pluginLink" "$env:USERPROFILE\.codex\plugins\softpowers"
+
+$marketplaceJson = @'
+{
+  "name": "local-codex",
+  "interface": {
+    "displayName": "Local Codex Plugins"
+  },
+  "plugins": [
+    {
+      "name": "softpowers",
+      "source": {
+        "source": "local",
+        "path": "./plugins/softpowers"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    }
+  ]
 }
+'@
+
+$marketplacePath = "$env:USERPROFILE\.codex\marketplaces\local\.agents\plugins\marketplace.json"
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($marketplacePath, $marketplaceJson, $utf8NoBom)
+
+codex plugin marketplace add "$env:USERPROFILE\.codex\marketplaces\local"
 ```
 
-Restart Codex after installing so it can discover the skills.
+Then install and enable **Softpowers** from `/plugins`.
 
 ## Repository Instructions
 
@@ -47,7 +131,7 @@ Do not rely on alternate filenames as default Codex discovery files.
 
 ```bash
 codex --version
-ls -la ~/.agents/skills/using-softpowers
+codex debug prompt-input "help me plan this feature" | grep "softpowers:using-softpowers"
 ```
 
 Then open a new Codex session and ask for something skill-shaped:
@@ -56,18 +140,32 @@ Then open a new Codex session and ask for something skill-shaped:
 help me plan this feature
 ```
 
-Codex should discover the Softpowers skills and use `using-softpowers` to decide
-between direct execution, light guidance, and the full Softpowers workflow.
+Codex should list **Softpowers** as an enabled plugin and expose skills such as
+`softpowers:using-softpowers`, `softpowers:brainstorming`, and
+`softpowers:test-driven-development`.
 
 ## Updating
 
 ```bash
-cd ~/.codex/softpowers
+cd ~/.codex/plugins/softpowers
 git pull
 ```
 
-Because the install uses a symlink, skills update as soon as the checkout is
-updated. Restart Codex if skill metadata appears stale.
+Restart Codex after updating. If plugin metadata appears stale, open `/plugins`,
+reinstall or toggle **Softpowers**, then restart Codex again.
+
+## Why a Local Marketplace?
+
+Codex can read standalone skills from `.agents/skills` and `~/.agents/skills`,
+but Softpowers is a bundle of related skills with a `.codex-plugin/plugin.json`
+manifest. Installing it as a plugin keeps the skills grouped under the
+`softpowers:` namespace and matches how Codex presents plugin capabilities in
+the app and CLI.
+
+The local marketplace is only a small manifest that tells Codex where local
+plugin checkouts live. It should stay plugin-agnostic: Softpowers is one entry
+inside the marketplace, not the marketplace itself. The plugin content remains a
+Git checkout under `~/.codex/plugins/softpowers`, so updating stays simple.
 
 ## Notes for Maintainers
 
