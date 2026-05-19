@@ -227,26 +227,6 @@
   line-height: 1.45;
   white-space: pre;
 }
-.sp-doc pre.shiki {
-  background: var(--bg-primary) !important;
-}
-.sp-doc pre.shiki,
-.sp-doc pre.shiki code {
-  color: inherit;
-}
-html[data-theme="dark"] .sp-doc pre.shiki,
-html[data-theme="dark"] .sp-doc pre.shiki span {
-  color: var(--shiki-dark, inherit) !important;
-  font-style: var(--shiki-dark-font-style, inherit) !important;
-  font-weight: var(--shiki-dark-font-weight, inherit) !important;
-  text-decoration: var(--shiki-dark-text-decoration, inherit) !important;
-}
-html[data-theme="dark"] .sp-doc pre.shiki {
-  background-color: var(--bg-primary) !important;
-}
-html[data-theme="dark"] .sp-doc pre.shiki span {
-  background-color: transparent !important;
-}
 .sp-doc pre.sp-code-fallback code {
   color: inherit;
 }

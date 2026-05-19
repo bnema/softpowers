@@ -4,9 +4,9 @@
  * sync-html-templates.mjs
  *
  * Reads shared CSS/JS/HTML sources from lib/html-ui/ and generates
- * generated template files. All templates are deterministic:
- * same sources produce identical output. Spec/plan documents may include
- * explicitly configured external runtime enhancements.
+ * template files. All templates are deterministic: same sources produce
+ * identical output. Runtime behavior stays local; shared font links are
+ * declared in the base frame for visual consistency.
  *
  * Do not edit generated templates directly.
  */
@@ -40,11 +40,6 @@ const documentCss = readPart('document.css');
 const documentThemeJs = readPart('document-theme.js');
 const shikiHighlightJs = readPart('shiki-highlight.js');
 const baseFrame = readPart('base-frame.html');
-const sourceSansHeadExtras = [
-  '<link rel="preconnect" href="https://fonts.googleapis.com">',
-  '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-  '<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@600;700&display=swap" rel="stylesheet">',
-].join('\n  ');
 
 // ===== Output definitions =====
 
@@ -77,7 +72,6 @@ const outputs = [
     title: '{{DOC_TITLE}}',
     styles: [tokensCss, commonCss, documentCss],
     scripts: [documentThemeJs, shikiHighlightJs].join('\n\n'),
-    headExtras: sourceSansHeadExtras,
     header: `
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Spec</a></h1>
@@ -92,7 +86,6 @@ const outputs = [
     title: '{{DOC_TITLE}}',
     styles: [tokensCss, commonCss, documentCss],
     scripts: [documentThemeJs, shikiHighlightJs].join('\n\n'),
-    headExtras: sourceSansHeadExtras,
     header: `
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Plan</a></h1>

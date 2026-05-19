@@ -5,6 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{DOC_TITLE}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@600;700&display=swap" rel="stylesheet">
   <style>
 /*
  * SHARED DESIGN TOKENS
@@ -395,26 +398,6 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
   line-height: 1.45;
   white-space: pre;
 }
-.sp-doc pre.shiki {
-  background: var(--bg-primary) !important;
-}
-.sp-doc pre.shiki,
-.sp-doc pre.shiki code {
-  color: inherit;
-}
-html[data-theme="dark"] .sp-doc pre.shiki,
-html[data-theme="dark"] .sp-doc pre.shiki span {
-  color: var(--shiki-dark, inherit) !important;
-  font-style: var(--shiki-dark-font-style, inherit) !important;
-  font-weight: var(--shiki-dark-font-weight, inherit) !important;
-  text-decoration: var(--shiki-dark-text-decoration, inherit) !important;
-}
-html[data-theme="dark"] .sp-doc pre.shiki {
-  background-color: var(--bg-primary) !important;
-}
-html[data-theme="dark"] .sp-doc pre.shiki span {
-  background-color: transparent !important;
-}
 .sp-doc pre.sp-code-fallback code {
   color: inherit;
 }
@@ -670,9 +653,7 @@ html[data-theme="dark"] .sp-doc pre.shiki span {
 }
 
 </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@600;700&display=swap" rel="stylesheet">
+
 </head>
 <body class="sp-doc" data-template-kind="spec">
   
@@ -752,42 +733,15 @@ html[data-theme="dark"] .sp-doc pre.shiki span {
 
 
 /*
- * SHIKI HIGHLIGHT HELPER
+ * CODE BLOCK HELPER
  *
- * Highlights generated document code blocks in the browser using Shiki's CDN
- * build. The import is version-pinned so generated documents are deterministic
- * about the highlighter API they load.
+ * Adds copy buttons and offline-safe code block shells for generated
+ * documents. Keep this helper self-contained so file:// previews work.
  */
 (function () {
   'use strict';
 
-  var shikiUrl = 'https://esm.sh/shiki@4.0.2';
   var didStart = false;
-  var languageAliases = {
-    bash: 'bash',
-    shell: 'bash',
-    sh: 'bash',
-    js: 'javascript',
-    jsx: 'javascript',
-    ts: 'typescript',
-    tsx: 'typescript',
-    md: 'markdown',
-    markdown: 'markdown',
-    txt: 'text',
-    text: 'text',
-    html: 'html',
-    css: 'css',
-    json: 'json',
-    yaml: 'yaml',
-    yml: 'yaml',
-  };
-
-  function detectLanguage(codeEl) {
-    var className = codeEl.getAttribute('class') || '';
-    var match = className.match(/(?:^|\s)language-([^\s]+)/);
-    var lang = match ? match[1].toLowerCase() : 'text';
-    return languageAliases[lang] || lang;
-  }
 
   function copyText(value) {
     if (navigator.clipboard && window.isSecureContext) {
@@ -857,71 +811,12 @@ html[data-theme="dark"] .sp-doc pre.shiki span {
   function wrapExistingPre(pre, source) {
     var shell = createCodeShell(source);
     pre.replaceWith(shell);
+    pre.classList.add('sp-code-fallback');
     shell.appendChild(pre);
     return shell;
   }
 
-  function replaceWithHighlightedBlock(originalPre, source, highlightedHtml, lang) {
-    var container = document.createElement('div');
-    container.innerHTML = highlightedHtml;
-    var highlightedPre = container.querySelector('pre');
-
-    if (!highlightedPre) {
-      throw new Error('Shiki did not return a pre element.');
-    }
-
-    highlightedPre.classList.add('sp-shiki');
-    highlightedPre.setAttribute('data-language', lang);
-    if (originalPre.parentElement && originalPre.parentElement.classList.contains('sp-code-shell')) {
-      originalPre.replaceWith(highlightedPre);
-      return;
-    }
-
-    var shell = createCodeShell(source);
-    originalPre.replaceWith(shell);
-    shell.appendChild(highlightedPre);
-  }
-
-  function markFallback(pre, source) {
-    pre.classList.add('sp-code-fallback');
-    if (!pre.parentElement || pre.parentElement.classList.contains('sp-code-shell')) {
-      return;
-    }
-    wrapExistingPre(pre, source);
-  }
-
-  function highlightBlock(codeToHtml, block) {
-    return codeToHtml(block.source, {
-      lang: block.lang,
-      themes: {
-        light: 'github-light',
-        dark: 'github-dark',
-      },
-      defaultColor: 'light',
-    }).then(function (html) {
-      replaceWithHighlightedBlock(block.pre, block.source, html, block.lang);
-    }).catch(function () {
-      if (block.lang === 'text') {
-        markFallback(block.pre, block.source);
-        return;
-      }
-
-      return codeToHtml(block.source, {
-        lang: 'text',
-        themes: {
-          light: 'github-light',
-          dark: 'github-dark',
-        },
-        defaultColor: 'light',
-      }).then(function (html) {
-        replaceWithHighlightedBlock(block.pre, block.source, html, 'text');
-      }).catch(function () {
-        markFallback(block.pre, block.source);
-      });
-    });
-  }
-
-  function highlightDocument() {
+  function setupCodeBlocks() {
     if (didStart) {
       return;
     }
@@ -932,34 +827,20 @@ html[data-theme="dark"] .sp-doc pre.shiki span {
       return;
     }
 
-    var blocks = codeBlocks.map(function (codeEl) {
+    codeBlocks.forEach(function (codeEl) {
       var pre = codeEl.parentElement;
       var source = codeEl.textContent || '';
 
       if (!pre.parentElement || !pre.parentElement.classList.contains('sp-code-shell')) {
         wrapExistingPre(pre, source);
+      } else {
+        pre.classList.add('sp-code-fallback');
       }
-
-      return {
-        pre: pre,
-        source: source,
-        lang: detectLanguage(codeEl),
-      };
-    });
-
-    import(shikiUrl).then(function (shiki) {
-      return Promise.all(blocks.map(function (block) {
-        return highlightBlock(shiki.codeToHtml, block);
-      }));
-    }).catch(function () {
-      blocks.forEach(function (block) {
-        markFallback(block.pre, block.source);
-      });
     });
   }
 
-  highlightDocument();
-  document.addEventListener('DOMContentLoaded', highlightDocument);
+  setupCodeBlocks();
+  document.addEventListener('DOMContentLoaded', setupCodeBlocks);
 })();
 
 </script>
