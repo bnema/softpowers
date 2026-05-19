@@ -4,8 +4,9 @@
  * sync-html-templates.mjs
  *
  * Reads shared CSS/JS/HTML sources from lib/html-ui/ and generates
- * self-contained template files. All templates are deterministic:
- * same sources produce identical output.
+ * template files. All templates are deterministic: same sources produce
+ * identical output. Runtime behavior stays local; shared font links are
+ * declared in the base frame for visual consistency.
  *
  * Do not edit generated templates directly.
  */
@@ -36,8 +37,8 @@ const tokensCss = readPart('tokens.css');
 const commonCss = readPart('common.css');
 const brainstormCss = readPart('brainstorm.css');
 const documentCss = readPart('document.css');
-const microlightJs = readPart('microlight.js');
 const documentThemeJs = readPart('document-theme.js');
+const shikiHighlightJs = readPart('shiki-highlight.js');
 const baseFrame = readPart('base-frame.html');
 
 // ===== Output definitions =====
@@ -70,7 +71,7 @@ const outputs = [
     bodyClass: 'sp-doc',
     title: '{{DOC_TITLE}}',
     styles: [tokensCss, commonCss, documentCss],
-    scripts: [microlightJs, documentThemeJs].join('\n\n'),
+    scripts: [documentThemeJs, shikiHighlightJs].join('\n\n'),
     header: `
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Spec</a></h1>
@@ -84,7 +85,7 @@ const outputs = [
     bodyClass: 'sp-doc',
     title: '{{DOC_TITLE}}',
     styles: [tokensCss, commonCss, documentCss],
-    scripts: [microlightJs, documentThemeJs].join('\n\n'),
+    scripts: [documentThemeJs, shikiHighlightJs].join('\n\n'),
     header: `
 <div class="sp-header">
   <h1><a href="https://github.com/bnema/softpowers" style="color: inherit; text-decoration: none;">Softpowers Plan</a></h1>
@@ -149,7 +150,7 @@ function buildTemplate(def) {
   let html = baseFrame
     .replace('{{DOC_TITLE}}', def.title)
     .replace('{{STYLES}}', styleBlock)
-    .replace('{{HEAD_EXTRAS}}', '')
+    .replace('{{HEAD_EXTRAS}}', def.headExtras || '')
     .replace('{{BODY_CLASS}}', def.bodyClass)
     .replace('{{TEMPLATE_KIND}}', def.templateKind)
     .replace('{{HEADER}}', def.header)

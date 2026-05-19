@@ -54,13 +54,27 @@ assert(planHtml.includes('{{STEP_WATCHOUTS}}'));
 assert(planHtml.includes('{{SPEC_PATH}}'));
 assert(planHtml.includes('{{SPEC_SECTION}}'));
 
-// Verify self-contained: no external stylesheet or script refs
+// All frames share the same optional font for visual consistency.
 assert(!specHtml.includes('<link rel="stylesheet"'));
 assert(!planHtml.includes('<link rel="stylesheet"'));
 assert(!brainstormHtml.includes('<link rel="stylesheet"'));
 assert(!specHtml.includes('<script src='));
 assert(!planHtml.includes('<script src='));
 assert(!brainstormHtml.includes('<script src='));
+assert(specHtml.includes('https://fonts.googleapis.com/css2?family=Source+Sans+3'));
+assert(planHtml.includes('https://fonts.googleapis.com/css2?family=Source+Sans+3'));
+assert(brainstormHtml.includes('https://fonts.googleapis.com/css2?family=Source+Sans+3'));
+assert(!brainstormHtml.includes('https://esm.sh'));
+
+// Code block behavior must remain local so file:// and offline previews work.
+assert(!specHtml.includes('https://esm.sh'));
+assert(!planHtml.includes('https://esm.sh'));
+assert(!specHtml.includes('import('));
+assert(!planHtml.includes('import('));
+assert(specHtml.includes('sp-code-copy'));
+assert(planHtml.includes('sp-code-copy'));
+assert(specHtml.includes('sp-code-fallback'));
+assert(planHtml.includes('sp-code-fallback'));
 
 // Responsive shell + shared link styling should be baked into generated docs
 assert(specHtml.includes('name="viewport" content="width=device-width, initial-scale=1"'));
