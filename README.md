@@ -61,7 +61,8 @@ These changes are fork-specific unless and until they are merged upstream.
 
 ### Codex CLI / Codex App
 
-For this fork, use the local/manual install path rather than the upstream Softpowers marketplace listing:
+For this fork, install Softpowers as a local Codex plugin through a local
+marketplace rather than using an upstream marketplace listing:
 
 ```
 Fetch and follow instructions from https://raw.githubusercontent.com/bnema/softpowers/refs/heads/main/.codex/INSTALL.md
