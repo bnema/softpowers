@@ -54,13 +54,24 @@ assert(planHtml.includes('{{STEP_WATCHOUTS}}'));
 assert(planHtml.includes('{{SPEC_PATH}}'));
 assert(planHtml.includes('{{SPEC_SECTION}}'));
 
-// Verify self-contained: no external stylesheet or script refs
+// Brainstorming frame stays fully local: it is an interactive local companion,
+// not a generated document preview.
 assert(!specHtml.includes('<link rel="stylesheet"'));
 assert(!planHtml.includes('<link rel="stylesheet"'));
 assert(!brainstormHtml.includes('<link rel="stylesheet"'));
 assert(!specHtml.includes('<script src='));
 assert(!planHtml.includes('<script src='));
 assert(!brainstormHtml.includes('<script src='));
+assert(!brainstormHtml.includes('https://fonts.googleapis.com'));
+assert(!brainstormHtml.includes('https://fonts.gstatic.com'));
+assert(!brainstormHtml.includes('https://esm.sh'));
+
+// Spec/plan documents intentionally load optional visual enhancements from
+// pinned CDN URLs. The copy-button fallback remains local if those requests fail.
+assert(specHtml.includes('https://fonts.googleapis.com/css2?family=Source+Sans+3'));
+assert(planHtml.includes('https://fonts.googleapis.com/css2?family=Source+Sans+3'));
+assert(specHtml.includes("https://esm.sh/shiki@4.0.2"));
+assert(planHtml.includes("https://esm.sh/shiki@4.0.2"));
 
 // Responsive shell + shared link styling should be baked into generated docs
 assert(specHtml.includes('name="viewport" content="width=device-width, initial-scale=1"'));
