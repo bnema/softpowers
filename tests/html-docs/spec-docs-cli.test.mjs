@@ -14,7 +14,7 @@ mkdirSync(projectDir, { recursive: true });
 mkdirSync(docsRoot, { recursive: true });
 
 const markdownBody = join(projectDir, 'spec.md');
-writeFileSync(markdownBody, `# Sample Spec\n\n## Problem and goals\n\nThis workflow should start from markdown.\n\n- Generate HTML\n- Generate a TOC\n\n## Chosen solution\n\nUse the helper scripts.\n\n\`\`\`bash\nnode scripts/create-spec-doc.mjs --title \"Sample Spec\" --body spec.md\n\`\`\`\n`, 'utf8');
+writeFileSync(markdownBody, `# Sample Spec\n\n## Problem and goals\n\nThis workflow should start from markdown.\n\n- Generate HTML\n- Generate a TOC\n\n## Chosen solution\n\nUse the helper scripts.\n\n\`\`\`bash\nnode scripts/create-spec-doc.mjs --title \"Sample Spec\" --body spec.md\n\`\`\`\n\n\`\`\`json\n{\n  "enabled": true,\n  "count": 2\n}\n\`\`\`\n`, 'utf8');
 
 const create = spawnSync(
   node,
@@ -48,6 +48,10 @@ assert(generatedHtml.includes('<h3>Table of contents</h3>'));
 assert(generatedHtml.includes('href="#problem-and-goals"'));
 assert(generatedHtml.includes('<section id="problem-and-goals" data-section="problem-and-goals">'));
 assert(generatedHtml.includes('<pre><code class="language-bash">'));
+assert(generatedHtml.includes('<pre><code class="language-json sp-code-highlighted">'));
+assert(generatedHtml.includes('<span class="sp-token-key">&quot;enabled&quot;</span>'));
+assert(generatedHtml.includes('<span class="sp-token-boolean">true</span>'));
+assert(generatedHtml.includes('<span class="sp-token-number">2</span>'));
 assert(!generatedHtml.includes('{{OVERVIEW}}'));
 assert(!generatedHtml.includes('{{TOC_ITEMS}}'));
 
