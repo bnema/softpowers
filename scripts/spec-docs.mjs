@@ -5,6 +5,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { renderHighlightedCode } from './html-code-highlight.mjs';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const SPEC_TEMPLATE_PATH = resolve(root, 'templates', 'spec.template.html');
@@ -73,8 +75,17 @@ function formatInline(text) {
 }
 
 function renderCodeBlock(language, lines) {
-  const langAttr = language ? ` class="language-${escapeAttribute(language)}"` : '';
-  return `<pre><code${langAttr}>${escapeHtml(lines.join('\n'))}</code></pre>`;
+  const source = lines.join('\n');
+  const highlighted = renderHighlightedCode(language, source);
+  const classes = [];
+  if (language) {
+    classes.push(`language-${escapeAttribute(language)}`);
+  }
+  if (highlighted.highlighted) {
+    classes.push('sp-code-highlighted');
+  }
+  const classAttr = classes.length ? ` class="${classes.join(' ')}"` : '';
+  return `<pre><code${classAttr}>${highlighted.html}</code></pre>`;
 }
 
 function parseMarkdownBody(markdown) {

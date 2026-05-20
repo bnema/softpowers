@@ -401,6 +401,21 @@ h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
 .sp-doc pre.sp-code-fallback code {
   color: inherit;
 }
+.sp-doc code.sp-code-highlighted {
+  color: var(--text-primary);
+}
+.sp-token-key { color: #7dd3fc; }
+.sp-token-string { color: #86efac; }
+.sp-token-number { color: #fbbf24; }
+.sp-token-boolean,
+.sp-token-null { color: #c4b5fd; }
+.sp-token-punctuation { color: var(--text-secondary); }
+:root[data-theme="light"] .sp-token-key { color: #0369a1; }
+:root[data-theme="light"] .sp-token-string { color: #15803d; }
+:root[data-theme="light"] .sp-token-number { color: #a16207; }
+:root[data-theme="light"] .sp-token-boolean,
+:root[data-theme="light"] .sp-token-null { color: #7c3aed; }
+:root[data-theme="light"] .sp-token-punctuation { color: #6b7280; }
 
 /* ===== TABLES ===== */
 .sp-doc table {
