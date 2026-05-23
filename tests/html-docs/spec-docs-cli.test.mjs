@@ -98,6 +98,52 @@ const absoluteScriptValidate = spawnSync(
 );
 assert.equal(absoluteScriptValidate.status, 0, absoluteScriptValidate.stderr || absoluteScriptValidate.stdout);
 
+const createHelp = spawnSync(node, ['scripts/create-spec-doc.mjs', '--help'], {
+  cwd: repoRoot,
+  encoding: 'utf8',
+});
+assert.equal(createHelp.status, 0, createHelp.stderr || createHelp.stdout);
+assert((createHelp.stderr + createHelp.stdout).includes('Usage:'));
+assert((createHelp.stderr + createHelp.stdout).includes('create-spec-doc.mjs'));
+assert((createHelp.stderr + createHelp.stdout).includes('create --title <title> --body <file>'));
+
+const createShortHelp = spawnSync(node, ['scripts/create-spec-doc.mjs', '-h'], {
+  cwd: repoRoot,
+  encoding: 'utf8',
+});
+assert.equal(createShortHelp.status, 0, createShortHelp.stderr || createShortHelp.stdout);
+assert((createShortHelp.stderr + createShortHelp.stdout).includes('Usage:'));
+
+const createDashHelp = spawnSync(node, ['scripts/create-spec-doc.mjs', '-help'], {
+  cwd: repoRoot,
+  encoding: 'utf8',
+});
+assert.equal(createDashHelp.status, 0, createDashHelp.stderr || createDashHelp.stdout);
+assert((createDashHelp.stderr + createDashHelp.stdout).includes('Usage:'));
+
+const validateHelp = spawnSync(node, ['scripts/validate-spec-doc.mjs', '--help'], {
+  cwd: repoRoot,
+  encoding: 'utf8',
+});
+assert.equal(validateHelp.status, 0, validateHelp.stderr || validateHelp.stdout);
+assert((validateHelp.stderr + validateHelp.stdout).includes('Usage:'));
+assert((validateHelp.stderr + validateHelp.stdout).includes('validate-spec-doc.mjs'));
+assert((validateHelp.stderr + validateHelp.stdout).includes('validate <path>'));
+
+const validateShortHelp = spawnSync(node, ['scripts/validate-spec-doc.mjs', '-h'], {
+  cwd: repoRoot,
+  encoding: 'utf8',
+});
+assert.equal(validateShortHelp.status, 0, validateShortHelp.stderr || validateShortHelp.stdout);
+assert((validateShortHelp.stderr + validateShortHelp.stdout).includes('Usage:'));
+
+const validateDashHelp = spawnSync(node, ['scripts/validate-spec-doc.mjs', '-help'], {
+  cwd: repoRoot,
+  encoding: 'utf8',
+});
+assert.equal(validateDashHelp.status, 0, validateDashHelp.stderr || validateDashHelp.stdout);
+assert((validateDashHelp.stderr + validateDashHelp.stdout).includes('Usage:'));
+
 const htmlFragmentsPath = join(projectDir, 'spec-fragments.html');
 writeFileSync(
   htmlFragmentsPath,

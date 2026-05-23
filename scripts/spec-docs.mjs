@@ -11,6 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const SPEC_TEMPLATE_PATH = resolve(root, 'templates', 'spec.template.html');
 const PLACEHOLDER_PATTERN = /\{\{[A-Z0-9_:-]+\}\}/g;
+const HELP_FLAGS = new Set(['--help', '-h', '-help']);
 
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
@@ -450,6 +451,29 @@ function parseFlagArgs(argv) {
   return options;
 }
 
+function isHelpFlag(value) {
+  return HELP_FLAGS.has(value);
+}
+
+function formatUsage(command) {
+  const createLines = [
+    '  node scripts/create-spec-doc.mjs --title <title> --body <file> [--slug <slug>] [--repo-name <name>] [--project-dir <dir>] [--date YYYY-MM-DD] [--out <path>] [--body-format markdown|html] [--skip-path-check]',
+    '  node scripts/spec-docs.mjs create --title <title> --body <file> [--slug <slug>] [--repo-name <name>] [--project-dir <dir>] [--date YYYY-MM-DD] [--out <path>] [--body-format markdown|html] [--skip-path-check]',
+  ];
+  const validateLines = [
+    '  node scripts/validate-spec-doc.mjs <path> [--project-dir <dir>] [--repo-name <name>] [--skip-path-check]',
+    '  node scripts/spec-docs.mjs validate <path> [--project-dir <dir>] [--repo-name <name>] [--skip-path-check]',
+  ];
+
+  if (command === 'create') {
+    return `Usage:\n${createLines.join('\n')}`;
+  }
+  if (command === 'validate') {
+    return `Usage:\n${validateLines.join('\n')}`;
+  }
+  return `Usage:\n${createLines.join('\n')}\n${validateLines.join('\n')}`;
+}
+
 export function createSpecDoc(rawOptions) {
   const projectDir = resolve(rawOptions['project-dir'] || process.cwd());
   const bodyPath = resolve(projectDir, rawOptions.body || '');
@@ -560,13 +584,22 @@ function printValidateResult(result) {
 
 export async function runCli(argv = process.argv.slice(2)) {
   const [command, ...rest] = argv;
-  if (!command || command === '--help' || command === 'help') {
-    console.log(`Usage:\n  node scripts/spec-docs.mjs create --title <title> --body <file> [--slug <slug>] [--repo-name <name>] [--project-dir <dir>] [--date YYYY-MM-DD] [--out <path>] [--body-format markdown|html]\n  node scripts/spec-docs.mjs validate <path> [--project-dir <dir>] [--repo-name <name>] [--skip-path-check]`);
+  if (!command || isHelpFlag(command)) {
+    console.log(formatUsage());
+    return;
+  }
+
+  if (command === 'help') {
+    console.log(formatUsage(rest[0]));
     return;
   }
 
   try {
     if (command === 'create') {
+      if (rest.some(isHelpFlag)) {
+        console.log(formatUsage('create'));
+        return;
+      }
       const options = parseFlagArgs(rest);
       const result = createSpecDoc(options);
       printCreateResult(result);
@@ -574,6 +607,10 @@ export async function runCli(argv = process.argv.slice(2)) {
     }
 
     if (command === 'validate') {
+      if (rest.some(isHelpFlag)) {
+        console.log(formatUsage('validate'));
+        return;
+      }
       let validateArgs = rest;
       if (rest[0] && !rest[0].startsWith('--')) {
         validateArgs = ['--file', rest[0], ...rest.slice(1)];
