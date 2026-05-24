@@ -199,11 +199,11 @@ else
     exit 1
 fi
 
-if grep -q "parallel session" "$SDD_DIR/SKILL.md"; then
+if grep -E -q 'executing-plans.*parallel session|parallel session.*executing-plans' "$SDD_DIR/SKILL.md"; then
     echo "  [FAIL] subagent-driven-development should not describe executing-plans as a parallel-session fallback"
     exit 1
 else
-    echo "  [PASS] Fallback wording avoids stale parallel-session language"
+    echo "  [PASS] Fallback wording avoids stale executing-plans parallel-session fallback language"
 fi
 
 if grep -q "Parallel Execution Boundaries" "$SDD_DIR/implementer-prompt.md" && grep -q "Do not edit outside your claimed scope" "$SDD_DIR/implementer-prompt.md"; then

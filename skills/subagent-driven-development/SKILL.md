@@ -221,6 +221,8 @@ Implementer: "Before I begin - should the hook be installed at user or system le
 
 You: "User level (~/.config/softpowers/hooks/)"
 
+[Controller continues collecting questions from parallel subagents as they arrive; only tasks whose questions are resolved proceed.]
+
 Implementer: "Got it. Implementing now..."
 [Later] Implementer:
   - Implemented install-hook command
@@ -319,10 +321,6 @@ Done!
 - Start implementation on main/master branch without explicit user consent
 - Skip reviews (spec compliance OR simplification/code quality)
 - Proceed with unfixed issues
-- Dispatch implementation subagents before discovering session tool/subagent capabilities
-- Dispatch multiple implementation subagents in parallel without an internal dependency/conflict analysis
-- Dispatch multiple implementation subagents in parallel against the same files, generated artifacts, migrations, lockfiles, or global config
-- Rewrite the canonical plan just to match your internal parallel schedule
 - Make subagent read plan file (provide full text instead)
 - Skip scene-setting context (subagent needs to understand where task fits)
 - Ignore subagent questions (answer before letting them proceed)
@@ -330,7 +328,6 @@ Done!
 - Skip review loops (reviewer found issues = phase fix subagent fixes = review again)
 - Let implementer self-review replace actual review (both are needed)
 - **Start simplification/code-quality review before spec compliance is ✅** (wrong order)
-- Unblock dependent waves while either slice review has open issues
 - Dispatch spec or simplification/code-quality reviewers after every task/sub-task unless the task is its own reviewable slice
 
 **If subagent asks questions:**

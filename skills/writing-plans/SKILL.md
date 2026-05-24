@@ -124,7 +124,7 @@ The final plan is still an HTML document generated from `templates/plan.template
 - Use `data-file`, `data-lines`, and `data-command` metadata whenever they are available
 - Include the phase review checkpoint after all tasks in the phase
 
-**For Softpowers sessions:** Recommended implementation mode: use `softassist` so the human remains the primary implementer while the agent guides, verifies, reviews, researches, and handles explicitly delegated mechanical work. If the human explicitly chooses delegated implementation, use `subagent-driven-development` when subagent dispatch is available; the controller may derive an internal dependency schedule from the plan without rewriting the plan and run independent work in parallel when supported. Use `executing-plans` only when subagents are unavailable or the human explicitly chooses inline execution.
+**For Softpowers sessions:** Recommended implementation mode: use `softassist` so the human remains the primary implementer while the agent guides, verifies, reviews, researches, and handles explicitly delegated mechanical work. If the human explicitly chooses delegated implementation, use `subagent-driven-development` or `executing-plans` phase-by-phase.
 
 ## No Placeholders
 
@@ -198,7 +198,7 @@ After saving the validated HTML plan, offer execution choice:
 
 **1. Softassist (recommended)** - You remain the primary implementer. I guide one step at a time, propose an ownership split, fetch docs, review changes, run verification, and handle explicitly delegated mechanical chores.
 
-**2. Delegated implementation** - I implement the plan using subagents when available, internally scheduling independent work in parallel when supported without rewriting the plan, or inline phase execution otherwise, with review gates at reviewable boundaries.
+**2. Delegated implementation** - I implement the plan using subagents when available, or inline phase execution otherwise, with review gates at the end of each phase.
 
 **3. Pause at planning** - Stop here; you can use the spec and plan later.
 
@@ -212,10 +212,9 @@ After saving the validated HTML plan, offer execution choice:
 - Offer to do low-value mechanical chores, verification commands, documentation lookup, and targeted edits only when explicitly delegated
 
 **If Delegated implementation chosen:**
-- Prefer `subagent-driven-development` when subagent dispatch is available
-- In `subagent-driven-development`, discover session tool capabilities and internally schedule independent tasks in parallel when supported without rewriting the plan
+- Prefer `subagent-driven-development` when subagents are available
 - Use `executing-plans` as the fallback when subagents are unavailable or when the human explicitly chooses inline execution
-- Run execution with checkpoints for reviewable slices or phases
+- Run phase execution with checkpoints for review
 
 **If Delegated implementation is chosen:**
 - Ask one more workspace question before implementation starts.
