@@ -4,21 +4,23 @@ Use this template when dispatching the post-spec-compliance quality reviewer.
 
 **Purpose:** Verify implementation is well-built: reusable, clean, tested, maintainable, and efficient.
 
-**Only dispatch after the phase spec compliance review passes and verification is green.**
+**Only dispatch after the reviewable slice's spec compliance review passes and verification is green.**
+
+A reviewable slice may be an original plan phase, part of a phase, or independent tasks from multiple phases selected by the controller's internal execution schedule.
 
 ## Default: One Reviewer, Three Lenses
 
-For normal phase-sized changes, dispatch one `softpowers:code-reviewer` subagent and explicitly ask it to review the diff through all three simplification lenses: reuse, quality, and efficiency.
+For normal slice-sized changes, dispatch one `softpowers:code-reviewer` subagent and explicitly ask it to review the diff through all three simplification lenses: reuse, quality, and efficiency.
 
 ```
 Task tool (softpowers:code-reviewer):
   Use template at requesting-code-review/code-reviewer.md
 
-  WHAT_WAS_IMPLEMENTED: [combined reports from all sub-task implementers and any phase-fix subagents]
-  PLAN_OR_REQUIREMENTS: Phase N from [plan-file]
-  BASE_SHA: [commit before phase]
+  WHAT_WAS_IMPLEMENTED: [combined reports from all sub-task implementers and any slice-fix subagents]
+  PLAN_OR_REQUIREMENTS: [reviewable slice name] from [plan-file], including relevant phase/task text and explicitly excluded scope
+  BASE_SHA: [commit before slice]
   HEAD_SHA: [current commit]
-  DESCRIPTION: [phase summary]
+  DESCRIPTION: [slice summary]
 
   EXTRA REVIEW FOCUS:
   Run a simplification review through these lenses:
@@ -30,7 +32,7 @@ Task tool (softpowers:code-reviewer):
 **In addition to the simplification lenses, the reviewer should check:**
 - Does each file have one clear responsibility with a well-defined interface?
 - Are units decomposed so they can be understood and tested independently?
-- Is the implementation following the file structure from the phase plan?
+- Is the implementation following the file structure from the relevant plan phases/tasks?
 - Did this implementation create new files that are already large, or significantly grow existing files? (Don't flag pre-existing file sizes: focus on what this change contributed.)
 
 ## Escalation: Parallel Focused Reviewers

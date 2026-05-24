@@ -13,7 +13,7 @@ This is a delegated implementation mode. Use it only when the human explicitly c
 
 **Announce at start:** "I'm using the executing-plans skill as delegated implementation for this plan."
 
-**Note:** This is the inline fallback for delegated implementation. If the human chose delegated implementation and subagents are available, prefer `softpowers:subagent-driven-development`. If the human wants to stay the primary implementer, use `softassist` instead.
+**Note:** This is the inline fallback for delegated implementation. If the human chose delegated implementation, first inspect the session's subagent and workflow tools. If subagent dispatch is available, prefer `softpowers:subagent-driven-development`, where the controller builds an internal dependency schedule from the plan without rewriting it and uses parallel waves when the harness supports them. If subagents are unavailable, use this skill. If the human wants to stay the primary implementer, use `softassist` instead.
 
 ## The Process
 

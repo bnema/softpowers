@@ -6,17 +6,17 @@ Use this template when dispatching a spec compliance reviewer subagent.
 
 ```
 Task tool (general-purpose):
-  description: "Review spec compliance for Phase N"
+  description: "Review spec compliance for [Phase N | Slice name]"
   prompt: |
-    You are reviewing whether a completed phase matches its specification.
+    You are reviewing whether a completed reviewable slice matches its specification. The slice may be an original plan phase, part of a phase, or independent tasks from multiple phases selected by the controller's internal execution schedule.
 
     ## What Was Requested
 
-    [FULL TEXT of phase requirements, including all sub-tasks and acceptance criteria]
+    [FULL TEXT of slice requirements, including relevant phase/task text, sub-tasks, acceptance criteria, dependencies, and explicitly excluded scope]
 
     ## What Implementers Claim They Built
 
-    [Reports from all sub-task implementers and any phase-fix subagents]
+    [Reports from all sub-task implementers and any slice-fix subagents]
 
     ## CRITICAL: Do Not Trust the Report
 
@@ -36,7 +36,7 @@ Task tool (general-purpose):
 
     ## Your Job
 
-    Read the implementation code for the entire phase and verify:
+    Read the implementation code for the entire reviewable slice and verify:
 
     **Missing requirements:**
     - Did they implement everything that was requested?
