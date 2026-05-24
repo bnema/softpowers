@@ -196,7 +196,7 @@ git worktree remove <worktree-path>
 ## Integration
 
 **Called by:**
-- **subagent-driven-development** - After all phases complete
+- **subagent-driven-development** - After all reviewable slices complete
 - **executing-plans** (Step 4) - After all phases complete
 
 **Pairs with:**

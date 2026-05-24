@@ -12,13 +12,21 @@ Task tool (general-purpose):
 
     [FULL TEXT of sub-task from plan - paste it here, don't make subagent read file]
 
-    ## Phase Context
+    ## Slice Context
 
-    [Phase goal, files, previous completed sub-tasks in this phase, and acceptance criteria for the phase]
+    [Reviewable slice goal, relevant original phase/task text, files, previous completed prerequisites, and acceptance criteria for this slice]
 
     ## Context
 
     [Scene-setting: where this fits, dependencies, architectural context]
+
+    ## Parallel Execution Boundaries
+
+    [Claimed files/scope for this sub-task]
+    [Known conflict boundaries: files, generated artifacts, migrations, lockfiles, snapshots, global config, or shared exports that this sub-task must not touch]
+    [Other parallel work currently in flight, if relevant]
+
+    Do not edit outside your claimed scope without asking first. If you discover that the sub-task requires touching a conflict boundary or shared artifact, stop and report NEEDS_CONTEXT before making that change.
 
     ## Before You Begin
 
@@ -26,7 +34,7 @@ Task tool (general-purpose):
     - The requirements or acceptance criteria
     - The approach or implementation strategy
     - Dependencies or assumptions
-    - Anything unclear in the sub-task description or phase context
+    - Anything unclear in the sub-task description or slice context
 
     **Ask them now.** Raise any concerns before starting work.
 
@@ -49,7 +57,7 @@ Task tool (general-purpose):
 
     You reason best about code you can hold in context at once, and your edits are more
     reliable when files are focused. Keep this in mind:
-    - Follow the file structure defined in the phase plan
+    - Follow the file structure defined in the relevant plan phases/tasks
     - Each file should have one clear responsibility with a well-defined interface
     - If a file you're creating is growing beyond the plan's intent, stop and report
       it as DONE_WITH_CONCERNS: don't split files on your own without plan guidance
@@ -57,6 +65,9 @@ Task tool (general-purpose):
       and note it as a concern in your report
     - In existing codebases, follow established patterns. Improve code you're touching
       the way a good developer would, but don't restructure things outside your sub-task.
+    - Respect the parallel execution boundaries. Do not edit files, generated artifacts,
+      migrations, lockfiles, snapshots, global config, or shared exports outside your
+      claimed scope unless the controller explicitly approves it.
 
     ## When You're in Over Your Head
 

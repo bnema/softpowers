@@ -1,18 +1,18 @@
-# Phase Fix Subagent Prompt Template
+# Slice Fix Subagent Prompt Template
 
-Use this template when dispatching a fix subagent after a phase-level review finds issues.
+Use this template when dispatching a fix subagent after a reviewable-slice review finds issues. A slice may be an original plan phase, part of a phase, or independent tasks from multiple phases selected by the controller's internal execution schedule.
 
 ```
 Task tool (general-purpose):
-  description: "Fix Phase N review findings"
+  description: "Fix [Phase N | Slice name] review findings"
   prompt: |
-    You are fixing review findings for Phase N: [phase name]
+    You are fixing review findings for [Phase N | Slice name]: [phase or slice name]
 
-    ## Phase Requirements
+    ## Slice Requirements
 
-    [FULL TEXT of phase requirements, including all sub-tasks and acceptance criteria]
+    [FULL TEXT of slice requirements, including relevant phase/task text, sub-tasks, acceptance criteria, dependencies, and explicitly excluded scope]
 
-    ## Completed Phase Context
+    ## Completed Slice Context
 
     [Reports from all sub-task implementers and any previous fix subagents]
 

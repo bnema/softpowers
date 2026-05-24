@@ -7,16 +7,16 @@ description: Use when completing phases, implementing major features, or before 
 
 Dispatch softpowers:code-reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation: never your session's history. This keeps the reviewer focused on the work product, not your thought process, and preserves your own context for continued work.
 
-**Core principle:** Review at meaningful checkpoints before issues cascade. In phased plan execution, that means end-of-phase review gates, not reviewer dispatch after every task/sub-task. Run spec compliance first; only then run simplification/code-quality review.
+**Core principle:** Review at meaningful checkpoints before issues cascade. In phased plan execution, that usually means end-of-phase review gates; in delegated subagent execution it may mean reviewable slices derived from the internal dependency schedule. Do not dispatch reviewers after every task/sub-task. Run spec compliance first; only then run simplification/code-quality review.
 
 ## When to Request Review
 
 **Mandatory:**
-- At the end of each phase in subagent-driven development and executing-plans workflows
+- At the end of each reviewable slice in subagent-driven development, and at the end of each phase in executing-plans workflows
 - After completing major feature
 - Before merge to main
 
-Do not request external code review after every individual task/sub-task unless that task is explicitly the whole phase.
+Do not request external code review after every individual task/sub-task unless that task is explicitly the whole reviewable slice or phase.
 
 **Optional but valuable:**
 - When stuck (fresh perspective)
@@ -92,11 +92,12 @@ Use this as the standard code-quality review rubric after spec compliance passes
 ## Integration with Workflows
 
 **Subagent-Driven Development:**
-- Review after EACH phase, not after each task/sub-task
-- First run phase spec compliance review
+- Review after each reviewable slice, not after each task/sub-task
+- A slice may be an original phase or an independent set of tasks derived from the internal dependency schedule
+- First run slice spec compliance review
 - Then run simplification/code-quality review only after spec compliance passes and verification is green
-- Catch issues before they compound across phases
-- Fix before moving to next phase
+- Catch issues before they compound across dependent work
+- Fix before unblocking dependent waves
 
 **Executing Plans:**
 - Review after each phase checkpoint, not after every task/sub-task

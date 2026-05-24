@@ -162,4 +162,57 @@ fi
 
 echo ""
 
+# Test 10: Verify delegated implementation parallelization pass
+echo "Test 10: Parallel execution organization..."
+
+output=$(run_claude "When a user chooses delegated implementation with subagent-driven-development, should the controller rewrite the plan, or internally rethink phases/tasks for parallel execution? Mention session tool discovery." 30)
+
+if assert_contains "$output" "session.*tool\|tool.*discover\|subagent.*capabilit\|capabilit.*subagent" "Discovers session tools/subagent capabilities"; then
+    : # pass
+else
+    exit 1
+fi
+
+if assert_contains "$output" "parallel\|dependency\|wave\|DAG\|independent" "Builds a parallel execution organization"; then
+    : # pass
+else
+    exit 1
+fi
+
+if assert_contains "$output" "do not rewrite\|without rewriting\|canonical plan unchanged\|not rewrite" "Does not rewrite the plan"; then
+    : # pass
+else
+    exit 1
+fi
+
+echo ""
+
+# Test 11: Verify prompt templates support slices and parallel boundaries
+echo "Test 11: Prompt template consistency..."
+
+SDD_DIR="$SCRIPT_DIR/../../skills/subagent-driven-development"
+
+if grep -q "reviewable slice" "$SDD_DIR/spec-reviewer-prompt.md" && grep -q "Slice Requirements" "$SDD_DIR/phase-fix-prompt.md" && grep -q "reviewable slice" "$SDD_DIR/code-quality-reviewer-prompt.md"; then
+    echo "  [PASS] Reviewer/fix templates support reviewable slices"
+else
+    echo "  [FAIL] Reviewer/fix templates must support reviewable slices"
+    exit 1
+fi
+
+if grep -E -q 'executing-plans.*parallel session|parallel session.*executing-plans' "$SDD_DIR/SKILL.md"; then
+    echo "  [FAIL] subagent-driven-development should not describe executing-plans as a parallel-session fallback"
+    exit 1
+else
+    echo "  [PASS] Fallback wording avoids stale executing-plans parallel-session fallback language"
+fi
+
+if grep -q "Parallel Execution Boundaries" "$SDD_DIR/implementer-prompt.md" && grep -q "Do not edit outside your claimed scope" "$SDD_DIR/implementer-prompt.md"; then
+    echo "  [PASS] Implementer template includes parallel safety boundaries"
+else
+    echo "  [FAIL] Implementer template must include parallel safety boundaries"
+    exit 1
+fi
+
+echo ""
+
 echo "=== All subagent-driven-development skill tests passed ==="
