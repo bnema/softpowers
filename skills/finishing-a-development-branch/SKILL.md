@@ -9,7 +9,7 @@ description: Use when implementation is complete, all tests pass, and you need t
 
 Guide completion of development work by presenting clear options and handling chosen workflow.
 
-**Core principle:** Verify tests → Present options → Execute choice → Clean up.
+**Core principle:** Verify tests → Run local finalization hook if present → Present options → Execute choice → Clean up.
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
 
@@ -46,7 +46,15 @@ git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
 
 Or ask: "This branch split from main - is that correct?"
 
-### Step 3: Present Options
+### Step 3: Run Local Finalization Hook
+
+Before presenting options, check whether the active agent/project/user environment defines a local ready-for-PR or finalization hook.
+
+If present, run it first. It may require clean-tree checks, extra reviews, release checks, documentation updates, PR preparation, or external tooling. When it completes, continue here and present the normal options.
+
+If no local hook exists, continue directly.
+
+### Step 4: Present Options
 
 Present exactly these 4 options:
 
@@ -63,7 +71,7 @@ Which option?
 
 **Don't add explanation** - keep options concise.
 
-### Step 4: Execute Choice
+### Step 5: Execute Choice
 
 #### Option 1: Review branch locally
 
@@ -93,7 +101,7 @@ git merge <feature-branch>
 git branch -d <feature-branch>
 ```
 
-Then: Cleanup worktree (Step 5)
+Then: Cleanup worktree (Step 6)
 
 #### Option 3: Push and Create PR
 
@@ -112,7 +120,7 @@ EOF
 )"
 ```
 
-Then: Keep worktree (Step 5)
+Then: Keep worktree (Step 6)
 
 #### Option 4: Discard This Work
 
@@ -134,9 +142,9 @@ git checkout <base-branch>
 git branch -D <feature-branch>
 ```
 
-Then: Cleanup worktree (Step 5)
+Then: Cleanup worktree (Step 6)
 
-### Step 5: Cleanup Worktree
+### Step 6: Cleanup Worktree
 
 **For Options 2 and 4:**
 
@@ -171,6 +179,10 @@ git worktree remove <worktree-path>
 - **Problem:** "What should I do next?" → ambiguous
 - **Fix:** Present exactly 4 structured options
 
+**Skipping local finalization hooks**
+- **Problem:** User/project expects extra ready-for-PR checks before options
+- **Fix:** Check for a local finalization hook before presenting options
+
 **Automatic worktree cleanup**
 - **Problem:** Remove worktree when might need it (Options 1, 3)
 - **Fix:** Only cleanup for Options 2 and 4
@@ -183,6 +195,7 @@ git worktree remove <worktree-path>
 
 **Never:**
 - Proceed with failing tests
+- Present final options before an applicable local finalization hook runs
 - Merge without verifying tests on result
 - Delete work without confirmation
 - Force-push without explicit request
