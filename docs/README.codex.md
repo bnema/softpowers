@@ -140,6 +140,9 @@ Then open a new Codex session and ask for something skill-shaped:
 help me plan this feature
 ```
 
+The plugin manifest registers `hooks/hooks-codex.json`, so new Codex sessions
+also receive the `softpowers:using-softpowers` bootstrap automatically.
+
 Codex should list **Softpowers** as an enabled plugin and expose skills such as
 `softpowers:using-softpowers`, `softpowers:brainstorming`, and
 `softpowers:test-driven-development`.
@@ -170,7 +173,7 @@ Git checkout under `~/.codex/plugins/softpowers`, so updating stays simple.
 ## Notes for Maintainers
 
 - `.codex-plugin/plugin.json` describes the plugin shape for Codex plugin
-  workflows.
+  workflows, including the native SessionStart hook manifest.
 - `skills/using-softpowers/references/codex-tools.md` is the compatibility map
   for translating Claude Code-oriented skill instructions into Codex tools.
 - The sync workflow was adapted from upstream Superpowers and now targets the

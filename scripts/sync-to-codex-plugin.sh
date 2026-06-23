@@ -4,7 +4,7 @@
 #
 # Sync this softpowers checkout → a Codex plugins repository.
 # Clones the fork fresh into a temp dir, rsyncs tracked upstream plugin content
-# (including committed Codex files under .codex-plugin/ and any assets/), commits,
+# (including committed Codex files under .codex-plugin/, hooks/, and any assets/), commits,
 # pushes a sync branch, and opens a PR.
 # Path/user agnostic — auto-detects upstream from script location.
 #
@@ -54,7 +54,11 @@ EXCLUDES=(
   "/.gitattributes"
   "/.github/"
   "/.gitignore"
+  "/.gitmodules"
+  "/.kimi-plugin/"
   "/.opencode/"
+  "/.pi/"
+  "/.pre-commit-config.yaml"
   "/.version-bump.json"
   "/.worktrees/"
   ".DS_Store"
@@ -71,7 +75,7 @@ EXCLUDES=(
   # Directories not shipped by canonical Codex plugins
   "/commands/"
   "/docs/"
-  "/hooks/"
+  "/evals/"
   "/lib/"
   "/scripts/"
   "/tests/"
@@ -230,6 +234,7 @@ fi
 DEST="$DEST_REPO/$DEST_REL"
 PREVIEW_REPO="$DEST_REPO"
 PREVIEW_DEST="$DEST"
+SYNC_SOURCE=""
 
 overlay_destination_paths() {
   local repo="$1"
@@ -298,7 +303,7 @@ apply_to_preview_checkout() {
     mkdir -p "$PREVIEW_DEST"
   fi
 
-  rsync "${RSYNC_ARGS[@]}" "$UPSTREAM/" "$PREVIEW_DEST/"
+  rsync "${RSYNC_ARGS[@]}" "$SYNC_SOURCE/" "$PREVIEW_DEST/"
 }
 
 preview_checkout_has_changes() {
@@ -323,6 +328,36 @@ for pat in "${EXCLUDES[@]}"; do RSYNC_ARGS+=(--exclude="$pat"); done
 append_git_ignored_directory_excludes
 append_git_ignored_file_excludes
 
+copy_preserved_destination_metadata() {
+  local destination="$1"
+  local source="$2"
+  local path
+  local rel
+
+  [[ -d "$destination/skills" ]] || return 0
+
+  while IFS= read -r -d '' path; do
+    rel="${path#"$destination"/}"
+    mkdir -p "$source/$(dirname "$rel")"
+    cp -p "$path" "$source/$rel"
+  done < <(find "$destination/skills" -path '*/agents/openai.yaml' -type f -print0)
+}
+
+prepare_sync_source() {
+  local destination="$1"
+
+  [[ -n "$CLEANUP_DIR" ]] || CLEANUP_DIR="$(mktemp -d)"
+
+  SYNC_SOURCE="$CLEANUP_DIR/source-overlay"
+  rm -rf "$SYNC_SOURCE"
+  mkdir -p "$SYNC_SOURCE"
+
+  rsync "${RSYNC_ARGS[@]}" "$UPSTREAM/" "$SYNC_SOURCE/" >/dev/null
+  copy_preserved_destination_metadata "$destination" "$SYNC_SOURCE"
+}
+
+prepare_sync_source "$PREVIEW_DEST"
+
 # =============================================================================
 # Dry run preview (always shown)
 # =============================================================================
@@ -338,7 +373,7 @@ if [[ $BOOTSTRAP -eq 1 ]]; then
 fi
 echo ""
 echo "=== Preview (rsync --dry-run) ==="
-rsync "${RSYNC_ARGS[@]}" --dry-run --itemize-changes "$UPSTREAM/" "$PREVIEW_DEST/"
+rsync "${RSYNC_ARGS[@]}" --dry-run --itemize-changes "$SYNC_SOURCE/" "$PREVIEW_DEST/"
 echo "=== End preview ==="
 echo ""
 
@@ -375,7 +410,7 @@ echo "Syncing upstream content..."
 if [[ $BOOTSTRAP -eq 1 ]]; then
   mkdir -p "$DEST"
 fi
-rsync "${RSYNC_ARGS[@]}" "$UPSTREAM/" "$DEST/"
+rsync "${RSYNC_ARGS[@]}" "$SYNC_SOURCE/" "$DEST/"
 
 # Bail early if nothing actually changed
 cd "$DEST_REPO"
@@ -394,7 +429,7 @@ if [[ $BOOTSTRAP -eq 1 ]]; then
   COMMIT_TITLE="bootstrap softpowers v$UPSTREAM_VERSION from upstream main @ $UPSTREAM_SHORT"
   PR_BODY="Initial bootstrap of the softpowers plugin from upstream \`main\` @ \`$UPSTREAM_SHORT\` (v$UPSTREAM_VERSION).
 
-Creates \`$DEST_REL/\` by copying the tracked plugin files from upstream, including \`.codex-plugin/plugin.json\` and any tracked \`assets/\`.
+Creates \`$DEST_REL/\` by copying the tracked plugin files from upstream, including \`.codex-plugin/plugin.json\`, \`hooks/\`, and any tracked \`assets/\`.
 
 Run via: \`scripts/sync-to-codex-plugin.sh --bootstrap\`
 Upstream commit: https://github.com/bnema/softpowers/commit/$UPSTREAM_SHA
@@ -404,7 +439,7 @@ else
   COMMIT_TITLE="sync softpowers v$UPSTREAM_VERSION from upstream main @ $UPSTREAM_SHORT"
   PR_BODY="Automated sync from softpowers upstream \`main\` @ \`$UPSTREAM_SHORT\` (v$UPSTREAM_VERSION).
 
-Copies the tracked plugin files from upstream, including the committed Codex manifest and any tracked assets.
+Copies the tracked plugin files from upstream, including the committed Codex manifest, hooks, and any tracked assets.
 
 Run via: \`scripts/sync-to-codex-plugin.sh\`
 Upstream commit: https://github.com/bnema/softpowers/commit/$UPSTREAM_SHA

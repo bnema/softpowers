@@ -73,6 +73,19 @@ assert_matches() {
     fi
 }
 
+assert_not_matches() {
+    local haystack="$1"
+    local pattern="$2"
+    local description="$3"
+
+    if printf '%s' "$haystack" | grep -Eq -- "$pattern"; then
+        fail "$description"
+        echo "    did not expect to match: $pattern"
+    else
+        pass "$description"
+    fi
+}
+
 assert_path_absent() {
     local path="$1"
     local description="$2"
@@ -162,8 +175,12 @@ write_upstream_fixture() {
 
     mkdir -p \
         "$repo/.codex-plugin" \
+        "$repo/.kimi-plugin" \
+        "$repo/.pi/agents" \
         "$repo/.private-journal" \
         "$repo/assets" \
+        "$repo/evals/drill" \
+        "$repo/hooks" \
         "$repo/scripts" \
         "$repo/skills/example"
 
@@ -184,6 +201,23 @@ EOF
 .private-journal/
 EOF
 
+    cat > "$repo/.gitmodules" <<'EOF'
+[submodule "evals"]
+	path = evals
+	url = git@example.com:example/evals.git
+EOF
+
+    cat > "$repo/.pre-commit-config.yaml" <<'EOF'
+repos:
+  - repo: local
+    hooks:
+      - id: evals-check
+        name: evals check
+        entry: echo evals
+        language: system
+        files: ^evals/
+EOF
+
     if [[ "$with_pure_ignored" == "1" ]]; then
         cat >> "$repo/.gitignore" <<'EOF'
 ignored-cache/
@@ -197,11 +231,54 @@ EOF
 }
 EOF
 
+    cat > "$repo/.kimi-plugin/plugin.json" <<EOF
+{
+  "name": "softpowers",
+  "version": "$MANIFEST_VERSION"
+}
+EOF
+
     cat > "$repo/assets/softpowers-small.svg" <<'EOF'
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>
 EOF
 
     printf 'png fixture\n' > "$repo/assets/app-icon.png"
+    printf 'eval harness fixture\n' > "$repo/evals/drill/README.md"
+    printf 'pi extension fixture\n' > "$repo/.pi/agents/README.md"
+
+    cat > "$repo/hooks/hooks-codex.json" <<'EOF'
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start-codex",
+            "commandWindows": "& \"${PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start-codex",
+            "async": false
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+
+    cat > "$repo/hooks/session-start" <<'EOF'
+#!/usr/bin/env sh
+echo "session-start fixture"
+EOF
+    cat > "$repo/hooks/session-start-codex" <<'EOF'
+#!/usr/bin/env sh
+echo "session-start-codex fixture"
+EOF
+    cat > "$repo/hooks/run-hook.cmd" <<'EOF'
+@echo off
+echo run-hook fixture
+EOF
+    chmod +x "$repo/hooks/session-start" "$repo/hooks/session-start-codex" "$repo/hooks/run-hook.cmd"
 
     cat > "$repo/skills/example/SKILL.md" <<'EOF'
 # Example Skill
@@ -217,9 +294,18 @@ EOF
 
     git -C "$repo" add \
         .codex-plugin/plugin.json \
+        .kimi-plugin/plugin.json \
         .gitignore \
+        .gitmodules \
+        .pi/agents/README.md \
+        .pre-commit-config.yaml \
         assets/app-icon.png \
         assets/softpowers-small.svg \
+        evals/drill/README.md \
+        hooks/hooks-codex.json \
+        hooks/run-hook.cmd \
+        hooks/session-start \
+        hooks/session-start-codex \
         package.json \
         scripts/sync-to-codex-plugin.sh \
         skills/example/SKILL.md
@@ -244,6 +330,22 @@ EOF
     commit_fixture "$repo" "Initial destination fixture"
 }
 
+add_openai_agent_metadata_fixture() {
+    local repo="$1"
+
+    mkdir -p "$repo/plugins/softpowers/skills/example/agents"
+
+    cat > "$repo/plugins/softpowers/skills/example/agents/openai.yaml" <<'EOF'
+interface:
+  display_name: "Example"
+  short_description: "Destination-owned OpenAI metadata"
+EOF
+
+    git -C "$repo" add plugins/softpowers/skills/example/agents/openai.yaml
+
+    commit_fixture "$repo" "Add OpenAI agent metadata fixture"
+}
+
 dirty_tracked_destination_skill() {
     local repo="$1"
 
@@ -261,6 +363,8 @@ write_synced_destination_fixture() {
         "$repo/plugins/softpowers/.codex-plugin" \
         "$repo/plugins/softpowers/.private-journal" \
         "$repo/plugins/softpowers/assets" \
+        "$repo/plugins/softpowers/hooks" \
+        "$repo/plugins/softpowers/skills/example/agents" \
         "$repo/plugins/softpowers/skills/example"
 
     cat > "$repo/plugins/softpowers/.codex-plugin/plugin.json" <<EOF
@@ -276,10 +380,50 @@ EOF
 
     printf 'png fixture\n' > "$repo/plugins/softpowers/assets/app-icon.png"
 
+    cat > "$repo/plugins/softpowers/hooks/hooks-codex.json" <<'EOF'
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start-codex",
+            "commandWindows": "& \"${PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start-codex",
+            "async": false
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+
+    cat > "$repo/plugins/softpowers/hooks/session-start" <<'EOF'
+#!/usr/bin/env sh
+echo "session-start fixture"
+EOF
+    cat > "$repo/plugins/softpowers/hooks/session-start-codex" <<'EOF'
+#!/usr/bin/env sh
+echo "session-start-codex fixture"
+EOF
+    cat > "$repo/plugins/softpowers/hooks/run-hook.cmd" <<'EOF'
+@echo off
+echo run-hook fixture
+EOF
+    chmod +x "$repo/plugins/softpowers/hooks/session-start" "$repo/plugins/softpowers/hooks/session-start-codex" "$repo/plugins/softpowers/hooks/run-hook.cmd"
+
     cat > "$repo/plugins/softpowers/skills/example/SKILL.md" <<'EOF'
 # Example Skill
 
 Fixture content.
+EOF
+
+    cat > "$repo/plugins/softpowers/skills/example/agents/openai.yaml" <<'EOF'
+interface:
+  display_name: "Example"
+  short_description: "Destination-owned OpenAI metadata"
 EOF
 
     printf 'tracked keep\n' > "$repo/plugins/softpowers/.private-journal/keep.txt"
@@ -288,6 +432,11 @@ EOF
         plugins/softpowers/.codex-plugin/plugin.json \
         plugins/softpowers/assets/app-icon.png \
         plugins/softpowers/assets/softpowers-small.svg \
+        plugins/softpowers/hooks/hooks-codex.json \
+        plugins/softpowers/hooks/run-hook.cmd \
+        plugins/softpowers/hooks/session-start \
+        plugins/softpowers/hooks/session-start-codex \
+        plugins/softpowers/skills/example/agents/openai.yaml \
         plugins/softpowers/skills/example/SKILL.md \
         plugins/softpowers/.private-journal/keep.txt
 
@@ -297,10 +446,15 @@ EOF
 write_stale_ignored_destination_fixture() {
     local repo="$1"
 
-    mkdir -p "$repo/plugins/softpowers/.private-journal"
+    mkdir -p \
+        "$repo/plugins/softpowers/.kimi-plugin" \
+        "$repo/plugins/softpowers/.private-journal"
     printf 'fixture keep\n' > "$repo/plugins/softpowers/.fixture-keep"
+    printf '{"name":"stale-kimi"}\n' > "$repo/plugins/softpowers/.kimi-plugin/plugin.json"
     printf 'stale ignored leak\n' > "$repo/plugins/softpowers/.private-journal/leak.txt"
-    git -C "$repo" add plugins/softpowers/.fixture-keep
+    git -C "$repo" add \
+        plugins/softpowers/.fixture-keep \
+        plugins/softpowers/.kimi-plugin/plugin.json
 
     commit_fixture "$repo" "Initial stale ignored destination fixture"
 }
@@ -424,6 +578,7 @@ main() {
     local help_output
     local script_source
     local dirty_skill_path
+    local noop_openai_metadata_path
 
     echo "=== Test: sync-to-codex-plugin dry-run regression ==="
 
@@ -452,6 +607,7 @@ main() {
 
     init_repo "$dest"
     write_destination_fixture "$dest"
+    add_openai_agent_metadata_fixture "$dest"
     checkout_fixture_branch "$dest" "$dest_branch"
     dirty_tracked_destination_skill "$dest"
 
@@ -501,6 +657,7 @@ main() {
     preview_section="$(printf '%s\n' "$preview_output" | sed -n '/^=== Preview (rsync --dry-run) ===$/,/^=== End preview ===$/p')"
     stale_preview_section="$(printf '%s\n' "$stale_preview_output" | sed -n '/^=== Preview (rsync --dry-run) ===$/,/^=== End preview ===$/p')"
     dirty_skill_path="$dirty_apply_dest/plugins/softpowers/skills/example/SKILL.md"
+    noop_openai_metadata_path="$noop_apply_dest/plugins/softpowers/skills/example/agents/openai.yaml"
 
     echo ""
     echo "Preview assertions..."
@@ -508,14 +665,24 @@ main() {
     assert_contains "$preview_output" "Version:  $MANIFEST_VERSION" "Preview uses manifest version"
     assert_not_contains "$preview_output" "Version:  $PACKAGE_VERSION" "Preview does not use package.json version"
     assert_contains "$preview_section" ".codex-plugin/plugin.json" "Preview includes manifest path"
+    assert_not_contains "$preview_section" ".kimi-plugin/plugin.json" "Preview excludes Kimi manifest from Codex sync"
     assert_contains "$preview_section" "assets/softpowers-small.svg" "Preview includes SVG asset"
     assert_contains "$preview_section" "assets/app-icon.png" "Preview includes PNG asset"
+    assert_contains "$preview_section" "hooks/hooks-codex.json" "Preview includes Codex hook manifest"
+    assert_contains "$preview_section" "hooks/session-start" "Preview includes session-start hook"
+    assert_contains "$preview_section" "hooks/session-start-codex" "Preview includes Codex session-start hook"
+    assert_contains "$preview_section" "hooks/run-hook.cmd" "Preview includes hook command wrapper"
     assert_contains "$preview_section" ".private-journal/keep.txt" "Preview includes tracked ignored file"
     assert_not_contains "$preview_section" ".private-journal/leak.txt" "Preview excludes ignored untracked file"
     assert_not_contains "$preview_section" "ignored-cache/" "Preview excludes pure ignored directories"
+    assert_not_contains "$preview_section" "evals/" "Preview excludes eval harness"
+    assert_not_contains "$preview_section" ".gitmodules" "Preview excludes repo submodule metadata"
+    assert_not_contains "$preview_section" ".pre-commit-config.yaml" "Preview excludes repo pre-commit config"
+    assert_not_contains "$preview_section" ".pi/" "Preview excludes Pi extension metadata"
     assert_not_contains "$preview_output" "Overlay file (.codex-plugin/plugin.json) will be regenerated" "Preview omits overlay regeneration note"
     assert_not_contains "$preview_output" "Assets (softpowers-small.svg, app-icon.png) will be seeded from" "Preview omits assets seeding note"
     assert_contains "$preview_section" "skills/example/SKILL.md" "Preview reflects dirty tracked destination file"
+    assert_not_matches "$preview_section" "\\*deleting +skills/example/agents/openai\\.yaml" "Preview preserves destination-owned OpenAI agent metadata"
     assert_current_branch "$dest" "$dest_branch" "Preview leaves destination checkout on its original branch"
     assert_branch_absent "$dest" "sync/softpowers-*" "Preview does not create sync branch in destination checkout"
 
@@ -528,6 +695,7 @@ main() {
     echo ""
     echo "Convergence assertions..."
     assert_equals "$stale_preview_status" "0" "Stale ignored destination preview exits successfully"
+    assert_matches "$stale_preview_section" "\\*deleting +\\.kimi-plugin/plugin\\.json" "Preview deletes stale Kimi manifest from Codex plugin"
     assert_matches "$stale_preview_section" "\\*deleting +\\.private-journal/leak\\.txt" "Preview deletes stale ignored destination file"
 
     echo ""
@@ -553,6 +721,9 @@ Locally modified fixture content." "Dirty local apply preserves tracked working-
     assert_contains "$noop_apply_output" "No changes — embedded plugin was already in sync with upstream" "Clean no-op local apply reports no changes"
     assert_current_branch "$noop_apply_dest" "$noop_apply_dest_branch" "Clean no-op local apply leaves destination checkout on its original branch"
     assert_branch_absent "$noop_apply_dest" "sync/softpowers-*" "Clean no-op local apply does not create sync branch in destination checkout"
+    assert_file_equals "$noop_openai_metadata_path" "interface:
+  display_name: \"Example\"
+  short_description: \"Destination-owned OpenAI metadata\"" "Clean no-op local apply preserves OpenAI agent metadata"
 
     echo ""
     echo "Missing manifest assertions..."

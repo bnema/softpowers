@@ -20,6 +20,7 @@
     "workflow"
   ],
   "skills": "./skills/",
+  "hooks": "./hooks/hooks-codex.json",
   "interface": {
     "displayName": "Softpowers",
     "shortDescription": "Human-led planning, TDD, debugging, review, and verification workflows",

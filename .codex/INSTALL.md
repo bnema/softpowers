@@ -148,9 +148,10 @@ codex --version
 codex debug prompt-input "help me plan this feature" | grep "softpowers:using-softpowers"
 ```
 
-In a live Codex session, the available skills should include names such as
-`softpowers:using-softpowers`, `softpowers:brainstorming`, and
-`softpowers:test-driven-development`.
+In a live Codex session, the native SessionStart hook should inject the
+`softpowers:using-softpowers` bootstrap automatically, and the available skills
+should include names such as `softpowers:using-softpowers`,
+`softpowers:brainstorming`, and `softpowers:test-driven-development`.
 
 ## Updating
 
