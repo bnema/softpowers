@@ -34,12 +34,13 @@ You MUST create a task for each of these items and complete them in order:
 3. **Ask clarifying questions**: one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches**: with trade-offs and your recommendation
 5. **Present design**: in sections scaled to their complexity, get user approval after each section
-6. **Write markdown spec draft**: save the spec body to a unique temporary markdown path such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"`
-7. **Spec self-review**: quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-8. **Spec review loop**: dispatch the spec reviewer subagent on the markdown draft, fix issues until approved
-9. **Generate final HTML spec**: run `printenv PROJECTS_DOCS_PATH`, resolve `{repoName}` explicitly, save the spec to the resolved html path, validate it, then commit only in the repo that actually owns that path
-10. **User reviews written spec**: ask user to review the generated spec file before proceeding
-11. **Transition to implementation**: invoke writing-plans skill to create implementation plan
+6. **Ask output choice**: Ask the user to choose the final spec output: `Simple Markdown` or `Enriched HTML`
+7. **Write markdown spec draft**: save the spec body to a unique temporary markdown path such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"`
+8. **Spec self-review**: quick inline check for placeholders, contradictions, ambiguity, scope (see below)
+9. **Spec review loop**: dispatch the spec reviewer subagent on the markdown draft, fix issues until approved
+10. **Save final spec**: run `printenv PROJECTS_DOCS_PATH`, resolve `{repoName}` explicitly, save the spec to the selected `.md` or `.html` path, validate enriched HTML output, then commit only in the repo that actually owns that path
+11. **User reviews written spec**: ask user to review the saved spec file before proceeding
+12. **Transition to implementation**: invoke writing-plans skill to create implementation plan
 
 ## Process Flow
 
@@ -52,10 +53,11 @@ digraph brainstorming {
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
+    "Ask final output:\nSimple Markdown or Enriched HTML" [shape=box];
     "Write markdown spec draft" [shape=box];
     "Spec self-review\n(fix inline)" [shape=box];
     "Spec reviewer approves\nmarkdown draft?" [shape=diamond];
-    "Generate + validate\nfinal HTML spec" [shape=box];
+    "Save Markdown or\ngenerate + validate HTML" [shape=box];
     "User reviews spec?" [shape=diamond];
     "Invoke writing-plans skill" [shape=doublecircle];
 
@@ -67,12 +69,13 @@ digraph brainstorming {
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write markdown spec draft" [label="yes"];
+    "User approves design?" -> "Ask final output:\nSimple Markdown or Enriched HTML" [label="yes"];
+    "Ask final output:\nSimple Markdown or Enriched HTML" -> "Write markdown spec draft";
     "Write markdown spec draft" -> "Spec self-review\n(fix inline)";
     "Spec self-review\n(fix inline)" -> "Spec reviewer approves\nmarkdown draft?";
     "Spec reviewer approves\nmarkdown draft?" -> "Write markdown spec draft" [label="no, fix draft"];
-    "Spec reviewer approves\nmarkdown draft?" -> "Generate + validate\nfinal HTML spec" [label="yes"];
-    "Generate + validate\nfinal HTML spec" -> "User reviews spec?";
+    "Spec reviewer approves\nmarkdown draft?" -> "Save Markdown or\ngenerate + validate HTML" [label="yes"];
+    "Save Markdown or\ngenerate + validate HTML" -> "User reviews spec?";
     "User reviews spec?" -> "Write markdown spec draft" [label="changes requested"];
     "User reviews spec?" -> "Invoke writing-plans skill" [label="approved"];
 }
@@ -123,14 +126,19 @@ digraph brainstorming {
 
 **Documentation:**
 
+- Ask the user to choose the final spec output: `Simple Markdown` or `Enriched HTML`. Ask before writing the final spec artifact; do not assume HTML.
 - Before resolving the save path, run `printenv PROJECTS_DOCS_PATH`.
 - Resolve `{repoName}` this way:
   - git repo available: use the git top-level directory basename
   - no git repo: use the current project directory basename
   - project not on disk yet / slug still ambiguous: ask the human once and use that slug
-- The canonical spec path is:
-  - `$PROJECTS_DOCS_PATH/{repoName}/specs/YYYY-MM-DD-<topic>-design.html` when `PROJECTS_DOCS_PATH` is set
-  - `docs/softpowers/specs/YYYY-MM-DD-<topic>-design.html` when it is unset
+- The final spec path is:
+  - If the user chooses `Simple Markdown`:
+    - `$PROJECTS_DOCS_PATH/{repoName}/specs/YYYY-MM-DD-<topic>-design.md` when `PROJECTS_DOCS_PATH` is set
+    - `docs/softpowers/specs/YYYY-MM-DD-<topic>-design.md` when it is unset
+  - If the user chooses `Enriched HTML`:
+    - `$PROJECTS_DOCS_PATH/{repoName}/specs/YYYY-MM-DD-<topic>-design.html` when `PROJECTS_DOCS_PATH` is set
+    - `docs/softpowers/specs/YYYY-MM-DD-<topic>-design.html` when it is unset
 - Prefer markdown-first authoring. Draft the spec body in markdown at a unique temporary path, for example:
 
 ```bash
@@ -139,8 +147,9 @@ SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"
 
 - Softpowers doc helpers live in the Softpowers package, not in the project you are designing. Resolve `SOFTPOWERS_ROOT` to the package root that contains this `skills/` directory, then use absolute helper paths from there for every `scripts/`, `templates/`, `examples/`, and `docs/softpowers/` reference.
 - Do **not** run `node scripts/create-spec-doc.mjs` or `node scripts/validate-spec-doc.mjs` relative to the target project, and do **not** use `find` to hunt for those helpers. Resolve `SOFTPOWERS_ROOT` once from the skill/package path and reuse it.
-- After your self-review and before generating HTML, dispatch a reviewer subagent using `skills/brainstorming/spec-document-reviewer-prompt.md`. The reviewer should read the markdown draft, return `Approved` or `Issues Found`, and you should fix the markdown draft until it is approved.
-- Once the markdown draft is approved, generate the HTML shell and TOC with:
+- After your self-review and before creating the final spec artifact, dispatch a reviewer subagent using `skills/brainstorming/spec-document-reviewer-prompt.md`. Give the reviewer the selected output format and resolved final output path. The reviewer should read the markdown draft, return `Approved` or `Issues Found`, and you should fix the markdown draft until it is approved.
+- If the user chooses `Simple Markdown`, copy the approved markdown draft to the resolved `.md` path. Do not run the HTML helper or validator for this output mode.
+- If the user chooses `Enriched HTML`, generate the HTML shell and TOC with:
 
 ```bash
 node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" \
@@ -149,14 +158,14 @@ node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" \
   --body "$SPEC_DRAFT"
 ```
 
-- If you already have section fragments as HTML, pass `--body-format html` instead. Those fragments must contain `<section id="...">` blocks with `<h2>` headings.
+- If you already have section fragments as HTML and the user chose `Enriched HTML`, pass `--body-format html` instead. Those fragments must contain `<section id="...">` blocks with `<h2>` headings.
 - The helper fills `$SOFTPOWERS_ROOT/templates/spec.template.html`, builds the TOC, validates the finished document, and prints the final path clearly.
-- If you must fill the template manually, keep the shell intact and replace:
+- If you must fill the template manually for `Enriched HTML`, keep the shell intact and replace:
   - `{{DOC_TITLE}}` — the spec name shown in `<title>` and `<h1>`
   - `{{TOC_ITEMS}}` — the full TOC block, typically `<h3>Table of contents</h3><ol>...</ol>`
   - `{{OVERVIEW}}` — the complete spec body (sections, code blocks, tables, etc.)
-- Validate the saved spec with `node "$SOFTPOWERS_ROOT/scripts/validate-spec-doc.mjs" <resolved-spec-path>`. **This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the reported issues, then re-run the validator before proceeding to the next step.
-- If the user wants changes after reading the generated HTML, edit the markdown draft first, re-run the markdown review loop if the change is material, then regenerate and re-validate the HTML.
+- For `Enriched HTML`, validate the saved spec with `node "$SOFTPOWERS_ROOT/scripts/validate-spec-doc.mjs" <resolved-spec-path>`. **This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the reported issues, then re-run the validator before proceeding to the next step.
+- If the user wants changes after reading the final spec, edit the markdown draft first, re-run the markdown review loop if the change is material, then re-save the Markdown output or regenerate and re-validate the HTML.
 - Use elements-of-style:writing-clearly-and-concisely skill if available.
 - Commit rule:
   - if the resolved spec path is inside the current project repo, commit it there
@@ -175,20 +184,20 @@ After writing the markdown draft, look at it with fresh eyes:
 Fix any issues inline. No need to re-review: just fix and move on.
 
 **Spec Review Loop:**
-The markdown draft must be reviewed before HTML generation.
+The markdown draft must be reviewed before saving the selected final output.
 
 1. Save the draft to a unique temporary path such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"`.
 2. Run the self-review checklist above and fix any issues in the markdown draft.
-3. Dispatch a reviewer subagent using `skills/brainstorming/spec-document-reviewer-prompt.md`.
+3. Dispatch a reviewer subagent using `skills/brainstorming/spec-document-reviewer-prompt.md` with the selected output format and resolved output path.
 4. If the reviewer finds issues, fix the markdown draft and re-dispatch the reviewer.
-5. Only after the reviewer approves should you generate and validate the canonical HTML spec.
+5. Only after the reviewer approves should you save the Simple Markdown spec or generate and validate the Enriched HTML spec.
 
 **User Review Gate:**
-After the markdown spec review loop passes and the HTML spec validates, ask the user to review the written spec before proceeding:
+After the markdown spec review loop passes and the selected final spec is saved, ask the user to review the written spec before proceeding:
 
-> "Spec written to `<path>` and validated. Please review it and let me know if you want to make any changes before we start writing out the implementation plan."
+> "Spec written to `<path>`<validation note>. Please review it and let me know if you want to make any changes before we start writing out the implementation plan."
 
-Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
+Use `<validation note>` as ` and validated` for Enriched HTML, and omit it for Simple Markdown. Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
 
 **Implementation:**
 

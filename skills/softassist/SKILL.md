@@ -20,10 +20,11 @@ This is not passive "do it yourself" guidance and not autonomous agentic impleme
 
 ## Core Rules
 
-- Read the full HTML plan (`data-doc-kind="plan"`) once before giving guidance
-- Identify the current `data-phase-id`, `data-task-id`, and `data-step-id` before responding
-- Use `data-file`, `data-lines`, and `data-command` when present to tell the human exactly where to work and how to verify the step
-- Track plan progress with TodoWrite; the HTML plan remains the canonical readable artifact while live progress tracking stays outside the HTML file
+- Read the full approved plan once before giving guidance
+- For Enriched HTML plans (`data-doc-kind="plan"`), identify the current `data-phase-id`, `data-task-id`, and `data-step-id` before responding
+- For Simple Markdown plans, identify the current phase, task, and step headings before responding
+- Use `data-file`, `data-lines`, and `data-command` metadata or the equivalent Markdown `File:`, `Lines:`, and `Command:` fields when present to tell the human exactly where to work and how to verify the step
+- Track plan progress with TodoWrite; the approved plan remains the canonical readable artifact while live progress tracking stays outside the plan file
 - Before implementation starts, propose an ownership split and get the human's approval or adjustments
 - Present only the current step unless the human asks for more
 - Keep explanations concise by default
@@ -69,7 +70,7 @@ Do not start implementation guidance until the human approves or adjusts the spl
 
 ## Execution Loop
 
-1. Read the full HTML plan once. Locate the current `data-phase-id`, `data-task-id`, and `data-step-id`. Follow the plan's step order; use TodoWrite to track live completion without mutating the HTML.
+1. Read the full approved plan once. For Enriched HTML, locate the current `data-phase-id`, `data-task-id`, and `data-step-id`; for Simple Markdown, locate the current phase/task/step headings. Follow the plan's step order; use TodoWrite to track live completion without mutating the plan file.
 2. Propose and confirm the ownership split if this has not happened yet.
 3. Tell the user only the next step.
 4. Explain briefly why it comes now.
@@ -165,7 +166,7 @@ Do not stop at "implementation finished." Route the work through review and bran
 
 | Situation | What to do |
 |-----------|------------|
-| Plan just loaded | Read the full HTML plan once, create TodoWrite, identify first `data-phase-id`, `data-task-id`, `data-step-id` from the plan |
+| Plan just loaded | Read the full approved plan once, create TodoWrite, identify the first phase/task/step from HTML data attributes or Markdown headings |
 | Implementation about to start | Propose ownership split and ask for approval or adjustments |
 | User asks "what now?" | Give the next step only |
 | User seems stuck | Explain the current step, fetch docs, suggest the smallest move |

@@ -15,17 +15,26 @@ Assume the human is a skilled developer, but may know almost nothing about our t
 
 **Context:** This should be run in an isolated workspace. A dedicated worktree is recommended, but a fresh branch in the current directory is also supported when the human chooses that workflow.
 
-**Save plans to:** `$PROJECTS_DOCS_PATH/{repoName}/plans/YYYY-MM-DD-<feature-name>.html` if `PROJECTS_DOCS_PATH` is set; otherwise use `docs/softpowers/plans/YYYY-MM-DD-<feature-name>.html`
+**Save plans to:** the selected output path under `$PROJECTS_DOCS_PATH/{repoName}/plans/` if `PROJECTS_DOCS_PATH` is set; otherwise under `docs/softpowers/plans/`.
 
+- Ask the user to choose the final plan output: `Simple Markdown` or `Enriched HTML`. Ask before writing the final plan artifact; do not assume HTML.
 - Before resolving the save path, run `printenv PROJECTS_DOCS_PATH`.
 - Resolve `{repoName}` this way:
   - git repo available: use the git top-level directory basename
   - no git repo: use the current project directory basename
   - project not on disk yet / slug still ambiguous: ask the human once and use that slug
+- The final plan path is:
+  - If the user chooses `Simple Markdown`:
+    - `$PROJECTS_DOCS_PATH/{repoName}/plans/YYYY-MM-DD-<feature-name>.md` when `PROJECTS_DOCS_PATH` is set
+    - `docs/softpowers/plans/YYYY-MM-DD-<feature-name>.md` when it is unset
+  - If the user chooses `Enriched HTML`:
+    - `$PROJECTS_DOCS_PATH/{repoName}/plans/YYYY-MM-DD-<feature-name>.html` when `PROJECTS_DOCS_PATH` is set
+    - `docs/softpowers/plans/YYYY-MM-DD-<feature-name>.html` when it is unset
 - Author the plan in markdown first at a unique temporary path such as `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"`.
 - Softpowers doc helpers live in the Softpowers package, not in the repo being planned. Resolve `SOFTPOWERS_ROOT` to the package root that contains this `skills/` directory, then use absolute helper paths from there for every `scripts/`, `templates/`, `examples/`, and `docs/softpowers/` reference.
 - Do **not** run `node scripts/create-plan-doc.mjs` or `node scripts/validate-plan-doc.mjs` relative to the target project, and do **not** use `find` to hunt for those helpers. Resolve `SOFTPOWERS_ROOT` once from the skill/package path and reuse it.
-- After the markdown draft is approved, generate the final HTML with `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" ...`.
+- If the user chooses `Simple Markdown`, copy the approved markdown draft to the resolved `.md` path. Do not run the HTML helper or validator for this output mode.
+- If the user chooses `Enriched HTML`, generate the final HTML with `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" ...`.
 - The helper fills `$SOFTPOWERS_ROOT/templates/plan.template.html`, builds the full TOC block, maps markdown structure into phase/task/step HTML, validates the finished document, and prints the final path clearly.
 - Use small targeted snippets when they clarify a change; rely primarily on file refs, line refs, watch-outs, and verification blocks.
 - Commit rule:
@@ -60,7 +69,7 @@ Inside each sub-task, keep steps concrete and short:
 
 ## Markdown-First Plan Draft
 
-Write the plan body in markdown first. The markdown draft is the review surface for the plan reviewer subagent; the HTML file is the final canonical artifact used by `softassist` and other execution skills.
+Write the plan body in markdown first. The markdown draft is the review surface for the plan reviewer subagent and is either saved directly as `Simple Markdown` or transformed into `Enriched HTML` after approval.
 
 Use this structure in the temporary markdown draft (for example `$PLAN_DRAFT`):
 
@@ -107,14 +116,14 @@ Capture the failure output so the next step has a clear target.
   - `File:` — primary file touched
   - `Lines:` — affected line range
   - `Command:` — exact verification command
-  - `Spec section:` — anchor from the approved spec HTML
+  - `Spec section:` — anchor from the approved spec HTML when generating Enriched HTML; for Simple Markdown, use the closest stable spec section title or anchor
   - `Watchouts:` — short caution or expected result
 - After the metadata lines, include the actual step body in markdown.
 - For steps that change code, include the concrete code or a targeted code block that shows exactly what should be written.
 
-## Generated HTML Shape
+## Enriched HTML Shape
 
-The final plan is still an HTML document generated from `templates/plan.template.html`. The markdown draft must contain enough detail for the helper to produce this structure:
+When the user chooses `Enriched HTML`, the final plan is an HTML document generated from `templates/plan.template.html`. The markdown draft must contain enough detail for the helper to produce this structure:
 
 - `{{DOC_TITLE}}` — the feature name shown in `<title>` and `<h1>`
 - `{{TOC_ITEMS}}` — the full TOC block, typically `<h3>Table of contents</h3><ol><li><a href="#phase-N">Phase N: Title</a></li>...</ol>`
@@ -159,18 +168,22 @@ If you find issues, fix them inline. No need to re-review. Just fix and move on.
 
 ## Plan Review Loop
 
-The markdown draft must be reviewed before HTML generation.
+The markdown draft must be reviewed before saving the selected final output.
 
 1. Save the draft to a unique temporary path such as `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"`.
 2. Run the self-review checklist above and fix any issues in the markdown draft.
 3. Dispatch a reviewer subagent using `skills/writing-plans/plan-document-reviewer-prompt.md`.
-4. Give the reviewer both the markdown draft path and the approved spec HTML path.
+4. Give the reviewer the markdown draft path, selected output format, resolved output path, and approved spec path.
 5. If the reviewer finds issues, fix the markdown draft and re-dispatch the reviewer.
-6. Only after the reviewer approves should you generate and validate the canonical HTML plan.
+6. Only after the reviewer approves should you save the Simple Markdown plan or generate and validate the Enriched HTML plan.
 
-## HTML Generation
+## Final Output
 
-After the markdown review loop passes, generate the final plan HTML with:
+If the user chooses `Simple Markdown`, copy the approved markdown draft to the resolved `.md` path and skip HTML validation.
+
+If the user chooses `Enriched HTML`, first confirm the approved spec is available as Enriched HTML too. If the approved spec is only available as Simple Markdown, ask whether to create a Simple Markdown plan instead or generate an Enriched HTML spec first; do not invent spec anchors.
+
+Then generate the final plan HTML with:
 
 ```bash
 node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" \
@@ -180,19 +193,19 @@ node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" \
   --body "$PLAN_DRAFT"
 ```
 
-Then validate the output:
+Then validate the HTML output:
 
 ```bash
 node "$SOFTPOWERS_ROOT/scripts/validate-plan-doc.mjs" <resolved-plan-path>
 ```
 
-**This is a blocking gate:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the markdown draft only, then regenerate and re-run the validator before proceeding.
+**This is a blocking gate for Enriched HTML:** if the validator exits non-zero or reports any errors, stop immediately, show the full validation output to the user, fix the markdown draft only, then regenerate and re-run the validator before proceeding.
 
-If the user wants changes after reading the generated HTML, make every edit in the markdown draft, re-run the markdown review loop if the change is material, then regenerate and re-validate the HTML.
+If the user wants changes after reading the final plan, make every edit in the markdown draft, re-run the markdown review loop if the change is material, then re-save the Markdown output or regenerate and re-validate the HTML.
 
 ## Execution Handoff
 
-After saving the validated HTML plan, offer execution choice:
+After saving the final plan, offer execution choice:
 
 **"Plan complete and saved to `<resolved-plan-path>`. Choose an implementation style:**
 
@@ -229,5 +242,3 @@ After saving the validated HTML plan, offer execution choice:
 - For `New branch here`, ask for the new branch name before creating it.
 - If the working tree is dirty and the user chooses `New branch here`, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue.
 - Do not offer `Continue here` on the default branch.
-
-Once workspace selection is settled and before implementation starts, start the local reviewer server automatically in that workspace so the user can review while you work. Only ask instead if the user explicitly opted out or if you do not have the required session ID.

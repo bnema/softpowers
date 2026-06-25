@@ -33,23 +33,21 @@ This fork carries bnema-specific experiments on top of `obra/superpowers` and is
 Notable differences in this fork:
 
 - OpenCode and Pi install/update docs point at `github.com/bnema/softpowers`.
-- OpenCode has a local branch review command and browser handoff flow.
 - Pi support is experimental, including `.pi/agents/` setup for subagent-based workflows.
 - Heavy workflows are opt-in: small or clearly scoped tasks can stay in direct execution.
 - Plan execution recommends `softassist`, where the human stays the primary implementer and the agent provides guidance, research, review, verification, and explicitly delegated mechanical help.
 - Fully delegated implementation remains available for cases where the human deliberately wants the agent to implement phases or sub-tasks.
-- Specs, plans, and design docs are saved as reusable HTML documents. Both specs and implementation plans use the same HTML document approach:
-  - `brainstorming` produces HTML spec documents.
-  - `writing-plans` produces HTML implementation playbooks with phase/task/step navigation.
-  - `softassist` reads those HTML specs and plans, and guides step-by-step.
+- Both specs and implementation plans can be saved as either `Simple Markdown` or `Enriched HTML`. The workflow asks which output to use before creating the final artifact:
+  - `brainstorming` produces spec documents.
+  - `writing-plans` produces implementation playbooks with phases, tasks, and concrete verification steps.
+  - `softassist` reads the approved spec and plan, then guides step-by-step.
   - Document storage resolves paths as follows:
     - When `PROJECTS_DOCS_PATH` is set, files go under `$PROJECTS_DOCS_PATH/{repoName}/plans` or `$PROJECTS_DOCS_PATH/{repoName}/specs`.
     - Otherwise, `docs/softpowers/` in the repo is used.
     - Resolve the env variable explicitly with `printenv PROJECTS_DOCS_PATH`.
     - Derive `{repoName}` from the git top-level directory basename when possible.
     - Do not create a second repo-local copy when the resolved docs path lives outside the project repo.
-- Markdown-first doc authoring now has helper flows. Start from unique temp drafts such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"` and `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"` so concurrent agents do not collide. These helpers live in the Softpowers package, not in the target repo, so resolve `SOFTPOWERS_ROOT` to the installed package root and invoke the helpers with absolute paths like `node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" ...` and `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" ...` rather than `node scripts/...` from the project being designed. Before generating HTML, those drafts go through the self-review and reviewer-subagent approval gates described in `skills/brainstorming/` and `skills/writing-plans/`. Only after approval should the agent run `node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" --title "..." --slug ... --body "$SPEC_DRAFT"` for specs or `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" --title "..." --slug ... --spec <spec-path> --body "$PLAN_DRAFT"` for plans, then re-check the generated HTML with `node "$SOFTPOWERS_ROOT/scripts/validate-spec-doc.mjs" <spec-path>` and `node "$SOFTPOWERS_ROOT/scripts/validate-plan-doc.mjs" <plan-path>`. See `examples/html-docs/canonical-spec.md` and `docs/softpowers/specs/2026-05-13-canonical-html-spec-workflow-design.html` for the canonical spec example.
-- The local branch review server is consumed through the `local-pr-review-server` package from `bnema/local-pr-review-server`.
+- Markdown-first doc authoring now has helper flows. Start from unique temp drafts such as `SPEC_DRAFT="$(mktemp /tmp/softpowers-spec-XXXXXX.md)"` and `PLAN_DRAFT="$(mktemp /tmp/softpowers-plan-XXXXXX.md)"` so concurrent agents do not collide. These helpers live in the Softpowers package, not in the target repo, so resolve `SOFTPOWERS_ROOT` to the installed package root. For `Simple Markdown`, copy the approved draft to the final `.md` path. For `Enriched HTML`, invoke helpers with absolute paths like `node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" ...` and `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" ...` rather than `node scripts/...` from the project being designed. Before final output, those drafts go through the self-review and reviewer-subagent approval gates described in `skills/brainstorming/` and `skills/writing-plans/`. Only after approval should the agent run `node "$SOFTPOWERS_ROOT/scripts/create-spec-doc.mjs" --title "..." --slug ... --body "$SPEC_DRAFT"` for enriched specs or `node "$SOFTPOWERS_ROOT/scripts/create-plan-doc.mjs" --title "..." --slug ... --spec <spec-path> --body "$PLAN_DRAFT"` for enriched plans, then re-check generated HTML with `node "$SOFTPOWERS_ROOT/scripts/validate-spec-doc.mjs" <spec-path>` and `node "$SOFTPOWERS_ROOT/scripts/validate-plan-doc.mjs" <plan-path>`. See `examples/html-docs/canonical-spec.md` and `docs/softpowers/specs/2026-05-13-canonical-html-spec-workflow-design.html` for the canonical enriched spec example.
 - The fast Claude Code skill test runner skips `test-subagent-driven-development.sh` in this fork because it requires a working Claude Code org/session in headless mode.
 
 These changes are fork-specific unless and until they are merged upstream.
@@ -110,13 +108,13 @@ Start a new session in your chosen platform and ask for something that should tr
 
 0. **workflow selection** - For gray-area tasks, the agent offers a choice: direct execution, light guidance, or the full Softpowers flow.
 
-1. **brainstorming / co-design** - Activates when you choose the full design-first flow. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves a reusable HTML spec document.
+1. **brainstorming / co-design** - Activates when you choose the full design-first flow. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Asks whether to save a Simple Markdown or Enriched HTML spec document.
 
 2. **using-git-worktrees** - Activates after design approval when implementation needs an isolated workspace. Creates or verifies an isolated workspace, runs project setup, verifies clean test baseline.
 
-3. **writing-plans / co-planning** - Activates with approved design. Produces an HTML implementation playbook with phase/task/step navigation, concrete verification steps, and enough context for human-led implementation.
+3. **writing-plans / co-planning** - Activates with approved design. Asks whether to save a Simple Markdown or Enriched HTML implementation playbook with phases, concrete verification steps, and enough context for human-led implementation.
 
-4. **softassist** - Recommended after planning. The human remains the primary implementer. The agent reads the HTML plan, proposes an ownership split, guides one step at a time, fetches docs, runs verification, reviews changes, and handles agreed mechanical chores when explicitly delegated.
+4. **softassist** - Recommended after planning. The human remains the primary implementer. The agent reads the approved plan, proposes an ownership split, guides one step at a time, fetches docs, runs verification, reviews changes, and handles agreed mechanical chores when explicitly delegated.
 
 5. **delegated implementation** - Optional and explicit. If the human wants the agent to implement, the workflow can use `subagent-driven-development` or `executing-plans` with phase-based review gates. This is available, but not the default Softpowers path.
 

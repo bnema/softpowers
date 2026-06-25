@@ -61,7 +61,7 @@ Present exactly these 4 options:
 ```
 Implementation complete. What would you like to do?
 
-1. Review branch locally
+1. Keep branch for local inspection
 2. Merge back to <base-branch> locally
 3. Push and create a Pull Request
 4. Discard this work
@@ -73,11 +73,11 @@ Which option?
 
 ### Step 5: Execute Choice
 
-#### Option 1: Review branch locally
+#### Option 1: Keep branch for local inspection
 
 ```bash
-# Keep the branch checked out for local review
-echo "Reviewing branch <name>. Worktree preserved at <path>."
+# Keep the branch checked out for manual inspection
+echo "Branch <name> preserved at <path>."
 ```
 
 **Don't cleanup worktree.**
@@ -164,7 +164,7 @@ git worktree remove <worktree-path>
 
 | Option | Merge | Push | Keep Worktree | Cleanup Branch |
 |--------|-------|------|---------------|----------------|
-| 1. Review locally | - | - | ✓ | - |
+| 1. Keep for inspection | - | - | ✓ | - |
 | 2. Merge locally | ✓ | - | - | ✓ |
 | 3. Create PR | - | ✓ | ✓ | - |
 | 4. Discard | - | - | - | ✓ (force) |

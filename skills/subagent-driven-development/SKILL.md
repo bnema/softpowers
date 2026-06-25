@@ -113,7 +113,6 @@ Before dispatching any implementer subagent:
     - If dirty, warn that uncommitted changes will remain in the current directory after the branch switch and ask whether to continue
     - Create and switch to the fresh branch in the current directory only after confirmation
 7. For `Continue here`: verify the current branch is not the default branch, then proceed in place
-8. Once workspace selection is settled and before dispatching any implementer subagent, start the local reviewer server automatically in that workspace so the user can review while you work. Only ask instead if the user explicitly opted out or if you do not have the required session ID.
 
 ### Capability Discovery
 

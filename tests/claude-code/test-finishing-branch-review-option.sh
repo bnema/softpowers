@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 SKILL="$ROOT_DIR/skills/finishing-a-development-branch/SKILL.md"
 
-grep -q "1. Review branch locally" "$SKILL"
+grep -q "1. Keep branch for local inspection" "$SKILL"
 grep -q "2. Merge back to <base-branch> locally" "$SKILL"
 grep -q "3. Push and create a Pull Request" "$SKILL"
 grep -q "4. Discard this work" "$SKILL"
@@ -21,9 +21,9 @@ for stale in \
     exit 1
   fi
 done
-if grep -q "Option 1: Review branch locally" "$SKILL"; then
+if grep -q "Option 1: Keep branch for local inspection" "$SKILL"; then
   :
 else
-  echo "missing execution guidance for review option"
+  echo "missing execution guidance for local inspection option"
   exit 1
 fi

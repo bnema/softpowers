@@ -69,16 +69,19 @@ else
   echo "  [PASS] Plugin does not advertise a misleading skills path"
 fi
 
-echo "Test 5b: Checking OpenCode docs..."
-if grep -q "Review branch locally" "$REPO_ROOT/docs/README.opencode.md"; then
-  echo "  [PASS] OpenCode docs mention branch review"
+removed_package='local-pr-review-'"server"
+removed_handoff_pattern='local branch review[[:space:]-]+server|review[[:space:]-]+server|'"$removed_package"
+
+echo "Test 5b: Checking removed browser handoff docs are absent..."
+if ! grep -RqiE "$removed_handoff_pattern" "$REPO_ROOT/README.md" "$REPO_ROOT/.opencode/INSTALL.md" "$REPO_ROOT/commands"; then
+  echo "  [PASS] OpenCode-facing docs do not mention the removed browser handoff"
 else
-  echo "  [FAIL] OpenCode docs do not mention branch review"
+  echo "  [FAIL] OpenCode-facing docs still mention the removed browser handoff"
   exit 1
 fi
 
 echo "Test 5c: Checking OpenCode update guidance..."
-if grep -q "updates automatically when you restart OpenCode" "$REPO_ROOT/docs/README.opencode.md" "$REPO_ROOT/.opencode/INSTALL.md"; then
+if grep -q "updates automatically when you restart OpenCode" "$REPO_ROOT/README.md" "$REPO_ROOT/.opencode/INSTALL.md"; then
   echo "  [FAIL] OpenCode docs still claim restart auto-updates the plugin"
   exit 1
 else
@@ -97,8 +100,7 @@ else
 fi
 
 echo "Test 5e: Checking OpenCode refresh path explanation..."
-if grep -q "git URL slashes become nested directories" "$REPO_ROOT/docs/README.opencode.md" \
-  && grep -q "git URL slashes become nested directories" "$REPO_ROOT/.opencode/INSTALL.md" \
+if grep -q "git URL slashes become nested directories" "$REPO_ROOT/.opencode/INSTALL.md" \
   && grep -q "git URL slashes become nested directories" "$REPO_ROOT/commands/opencode-install-update.md"; then
   echo "  [PASS] OpenCode docs explain the cache path shape"
 else
@@ -106,23 +108,22 @@ else
   exit 1
 fi
 
-echo "Test 5f: Checking manual review session handoff docs..."
-if grep -q "session=<sessionID>" "$REPO_ROOT/docs/README.opencode.md"; then
-  echo "  [PASS] OpenCode docs mention the manual review session parameter"
+echo "Test 5f: Checking removed browser handoff session docs are absent..."
+if ! grep -Rqi "session=<sessionID>" "$REPO_ROOT/README.md" "$REPO_ROOT/.opencode/INSTALL.md" "$REPO_ROOT/commands"; then
+  echo "  [PASS] OpenCode-facing docs do not mention removed browser handoff session handoff"
 else
-  echo "  [FAIL] OpenCode docs do not mention session=<sessionID> for manual review"
+  echo "  [FAIL] OpenCode-facing docs still mention removed browser handoff session handoff"
   exit 1
 fi
 
-echo "Test 5g: Checking local-branch-review skill..."
-if [ -f "$SOFTPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" ] \
-  && [ -f "$SOFTPOWERS_SKILLS_DIR/local-branch-review/review-start.cjs" ] \
-  && [ -f "$SOFTPOWERS_SKILLS_DIR/local-branch-review/review-stop.cjs" ] \
-  && grep -q "review-start.cjs" "$SOFTPOWERS_SKILLS_DIR/local-branch-review/SKILL.md" \
-  && grep -q "review-stop.cjs" "$SOFTPOWERS_SKILLS_DIR/local-branch-review/SKILL.md"; then
-  echo "  [PASS] local-branch-review skill exists with cache-safe launcher wrappers"
+echo "Test 5g: Checking removed browser handoff skill is absent..."
+removed_skill_dir="$SOFTPOWERS_SKILLS_DIR/local-""branch""-review"
+if [ ! -e "$removed_skill_dir/SKILL.md" ] \
+  && [ ! -e "$removed_skill_dir/review-""start.cjs" ] \
+  && [ ! -e "$removed_skill_dir/review-""stop.cjs" ]; then
+  echo "  [PASS] removed browser handoff skill files are absent"
 else
-  echo "  [FAIL] local-branch-review skill missing wrappers or launcher docs"
+  echo "  [FAIL] removed browser handoff skill files still exist"
   exit 1
 fi
 
@@ -149,14 +150,13 @@ else
   echo "  [PASS] Root plugin helper has been moved out of the plugin scan path"
 fi
 
-echo "Test 8: Checking installed branch-review integration files..."
-if [ -f "$SOFTPOWERS_DIR/.opencode/plugins/branch-review/review-shared.mjs" ] \
-  && [ ! -f "$SOFTPOWERS_DIR/.opencode/plugins/branch-review/runtime-source.cjs" ] \
-  && [ ! -f "$SOFTPOWERS_DIR/.opencode/plugins/branch-review/server.cjs" ] \
-  && [ -d "$SOFTPOWERS_DIR/node_modules/local-pr-review-server" ]; then
-  echo "  [PASS] Installed package uses the external local-pr-review-server dependency"
+echo "Test 8: Checking removed browser handoff integration files are absent..."
+removed_branch_dir="$SOFTPOWERS_DIR/.opencode/plugins/branch-""review"
+if [ ! -e "$removed_branch_dir" ] \
+  && [ ! -e "$SOFTPOWERS_DIR/node_modules/$removed_package" ]; then
+  echo "  [PASS] Installed package has no removed browser handoff integration files"
 else
-  echo "  [FAIL] Installed package is missing the external dependency or still vendors the runtime"
+  echo "  [FAIL] Installed package still includes removed browser handoff integration files"
   exit 1
 fi
 
